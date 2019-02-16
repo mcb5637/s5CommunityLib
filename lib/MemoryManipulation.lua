@@ -1,11 +1,11 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("comfort/IstDrin")
+mcbPacker.require("s5CommunityLib/comfort/table/IstDrin")
 mcbPacker.require("comfort/s5HookLoader")
 mcbPacker.require("comfort/MemList")
 mcbPacker.require("comfort/entity/IsEntityOfType")
 mcbPacker.require("comfort/round")
 mcbPacker.require("comfort/ArmorClasses")
-mcbPacker.require("comfort/CopyTable")
+mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 end --mcbPacker.ignore
 
 --MemoryManipulation.ReadObj(S5Hook.GetEntityMem(132339))
