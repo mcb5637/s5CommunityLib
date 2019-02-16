@@ -1,10 +1,9 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/IstDrin")
-mcbPacker.require("comfort/s5HookLoader")
-mcbPacker.require("comfort/MemList")
-mcbPacker.require("comfort/entity/IsEntityOfType")
-mcbPacker.require("comfort/round")
-mcbPacker.require("comfort/ArmorClasses")
+mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
+mcbPacker.require("s5CommunityLib/comfort/number/round")
+mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 end --mcbPacker.ignore
 
