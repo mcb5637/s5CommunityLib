@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
-mcbPacker.require("fixes/metatable")
+mcbPacker.require("s5CommunityLib/fixes/metatable")
 end --mcbPacker.ignore
 
 
