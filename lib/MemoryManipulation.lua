@@ -66,7 +66,9 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 			elseif fi.datatype==MemoryManipulation.DataType.Bit then
 				val = MemoryManipulation.ReadSingleBit(sv2, fi.bitOffset)
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
-				val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+				if sv2[0]:GetInt()>0 then
+					val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+				end
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 				val = objInfo[fi.name] or {}
 				objInfo[fi.name] = val
@@ -77,6 +79,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 						local vtn = MemoryManipulation.VTableNames[vt]
 						--LuaDebugger.Log(vt..(IstDrin(vt, MemoryManipulation.ClassVTable) or "nil"))
 						if (not readFilter or readFilter[fi.name][vtn]~=nil) and MemoryManipulation.ObjFieldInfo[vt] then
+							S5Hook.Log(vtn)
 							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn], nil, readFilter and readFilter[fi.name][vtn])
 						end
 					end
@@ -148,7 +151,9 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 			elseif fi.datatype==MemoryManipulation.DataType.Bit then
 				MemoryManipulation.WriteSingleBit(sv2, fi.bitOffset, val)
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
-				MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+				if sv2[0]:GetInt()>0 then
+					MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+				end
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 				local li = MemoryManipulation.MemList.init(sv2, 4)
 				for sv3 in li:iterator() do
@@ -225,64 +230,16 @@ end
 
 
 MemoryManipulation.ClassVTable = {
-	GGL_CLeaderBehaviorProps = tonumber("775FA4", 16),
-	GGL_CLeaderBehavior = tonumber("7761E0", 16),
-	
-	GGL_CSoldierBehaviorProps = tonumber("773D10", 16),
-	
-	GGL_CLimitedAttachmentBehavior = tonumber("775E84", 16),
-	GGL_CLimitedAttachmentBehaviorProperties = tonumber("775EB4", 16),
-	
-	GGL_CGLBehaviorAnimationEx = tonumber("776B64", 16),
-	GGL_CGLAnimationBehaviorExProps = tonumber("776C48", 16),
-	
-	GGL_CThiefCamouflageBehavior = tonumber("00773934", 16),
-	
-	GGL_CHeroBehavior = tonumber("0077677C", 16),
-	
-	GGL_CCamouflageBehaviorProps = tonumber("7778D8", 16),
-	GGL_CCamouflageBehavior = tonumber("007738F4", 16),
-	GD_CCamouflageBehaviorProps = tonumber("76AEA0", 16),
-	
-	GGL_CGLBuildingProps = tonumber("76EC78", 16),
-	GGL_CBuilding = tonumber("76EB94", 16),
-	
-	GGL_CGLSettlerProps = tonumber("76E498", 16),
-	GGL_CSettler = tonumber("76E3CC", 16),
-	
-	GGL_CBehaviorDefaultMovement = tonumber("7786AC", 16),
-	GGL_CSettlerMovement = tonumber("77471C", 16),
-	GGL_CLeaderMovement = tonumber("775ED4", 16),
-	
-	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
-	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
-	
-	GGL_CBridgeProperties = tonumber("778148", 16),
-	GGL_CBridgeEntity = tonumber("77805C", 16),
-	
-	GGL_CAffectMotivationBehaviorProps = tonumber("7791D4", 16),
-	
-	GGL_CThiefBehaviorProperties = tonumber("7739E0", 16),
-	GGL_CThiefBehavior = tonumber("7739B0", 16),
-	
-	GGL_CWorkerBehaviorProps = tonumber("772B90", 16),
-	
-	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
-	
-	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
-	
-	GGL_CSerfBattleBehaviorProps = tonumber("774B50", 16),
-	
-	GGL_CBattleSerfBehavior = tonumber("7788C4", 16),
-	GGL_CBattleSerfBehaviorProps = tonumber("77889C", 16),
-	
+	-- main entities
 	EGL_CGLEEntityProps = tonumber("76E47C", 16),
 	EGL_CGLEEntity = tonumber("783E74", 16),
 	
+	GGL_CEntityProperties = tonumber("776FEC", 16),
 	EGL_CMovingEntity = tonumber("783F84", 16),
 	GGL_CEvadingEntity = tonumber("770A7C", 16),
 	
-	GGL_CEntityProperties = tonumber("776FEC", 16),
+	GGL_CGLSettlerProps = tonumber("76E498", 16),
+	GGL_CSettler = tonumber("76E3CC", 16),
 	
 	GGL_CGLAnimalProps = tonumber("779074", 16),
 	GGL_CAnimal = tonumber("778F7C", 16),
@@ -291,12 +248,109 @@ MemoryManipulation.ClassVTable = {
 	
 	GGL_CBuildBlockProperties = tonumber("76EB38", 16),
 	
+	GGL_CGLBuildingProps = tonumber("76EC78", 16),
+	GGL_CBuilding = tonumber("76EB94", 16),
+	
+	GGL_CBridgeProperties = tonumber("778148", 16),
+	GGL_CBridgeEntity = tonumber("77805C", 16),
+	
 	GGL_CResourceDoodadProperties = tonumber("76FF68", 16),
 	GGL_CResourceDoodad = tonumber("76FEA4", 16),
 	
-	GGlue_CGlueEntityProps = tonumber("788824", 16),
+	-- display
+	ED_CDisplayEntityProps = tonumber("788840", 16),
 	
+	-- behaviors
+	EGL_CGLEBehaviorProps = tonumber("772A2C", 16),
+	GGL_CBehaviorWalkCommand = tonumber("7736A4", 16),
+	
+	GGL_CHeroBehavior = tonumber("0077677C", 16),
+	
+	GGL_CLeaderBehaviorProps = tonumber("775FA4", 16),
+	GGL_CLeaderBehavior = tonumber("7761E0", 16),
+	
+	GGL_CSoldierBehaviorProps = tonumber("773D10", 16),
+	
+	GGL_CLimitedAttachmentBehaviorProperties = tonumber("775EB4", 16),
+	GGL_CLimitedAttachmentBehavior = tonumber("775E84", 16),
+	
+	GGL_CGLAnimationBehaviorExProps = tonumber("776C48", 16),
+	GGL_CGLBehaviorAnimationEx = tonumber("776B64", 16),
+	
+	GGL_CHeroAbilityProps = tonumber("773774", 16),
+	GGL_CBombPlacerBehavior = tonumber("7783D8", 16),
+	
+	GGL_CCamouflageBehaviorProps = tonumber("7778D8", 16),
+	GGL_CCamouflageBehavior = tonumber("7738F4", 16),
+	GGL_CThiefCamouflageBehavior = tonumber("773934", 16),
+	GD_CCamouflageBehaviorProps = tonumber("76AEA0", 16),
+	
+	GGL_CHeroHawkBehaviorProps = tonumber("77672C", 16),
+	GGL_CHeroHawkBehavior = tonumber("7766F0", 16),
+	
+	GGL_CInflictFearAbilityProps = tonumber("776674", 16),
+	GGL_CInflictFearAbility = tonumber("776638", 16),
+	
+	GGL_CCannonBuilderBehaviorProps = tonumber("777510", 16),
+	GGL_CCannonBuilderBehavior = tonumber("7774D4", 16),
+	
+	GGL_CRangedEffectAbilityProps = tonumber("774E9C", 16),
+	GGL_CRangedEffectAbility = tonumber("774E54", 16),
+	
+	GGL_CCircularAttackProps = tonumber("7774A0", 16),
+	GGL_CCircularAttack = tonumber("777464", 16),
+	
+	GGL_CSummonBehaviorProps = tonumber("773C50", 16),
+	GGL_CSummonBehavior = tonumber("773C10", 16),
+	
+	GGL_CConvertSettlerAbilityProps = tonumber("7772D0", 16),
+	GGL_CConvertSettlerAbility = tonumber("777294", 16),
+	
+	GGL_CSniperAbilityProps = tonumber("7745E8", 16),
+	GGL_CSniperAbility = tonumber("7745AC", 16),
+	
+	GGL_CMotivateWorkersAbilityProps = tonumber("775788", 16),
+	GGL_CMotivateWorkersAbility = tonumber("77574C", 16),
+	
+	GGL_CShurikenAbilityProps = tonumber("7746B4", 16),
+	GGL_CShurikenAbility = tonumber("774658", 16),
+	
+	EGL_CMovementBehaviorProps = tonumber("784938", 16),
+	GGL_CBehaviorDefaultMovement = tonumber("7786AC", 16),
+	GGL_CSettlerMovement = tonumber("77471C", 16),
+	GGL_CLeaderMovement = tonumber("775ED4", 16),
+	GGL_CSoldierMovement = tonumber("77438C", 16),
+	
+	GGL_CSentinelBehaviorProps = tonumber("774BAC", 16),
+	GGL_CSentinelBehavior = tonumber("774B6C", 16),
+	
+	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
+	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
+	
+	GGL_CAffectMotivationBehaviorProps = tonumber("7791D4", 16),
+	
+	GGL_CThiefBehaviorProperties = tonumber("7739E0", 16),
+	GGL_CThiefBehavior = tonumber("7739B0", 16),
+	
+	GGL_CWorkerBehaviorProps = tonumber("772B90", 16),
+	GGL_CWorkerBehavior = tonumber("772B30", 16),
+	
+	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
+	
+	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
+	
+	GGL_CSerfBattleBehaviorProps = tonumber("774B50", 16),
+	
+	GGL_CBattleSerfBehaviorProps = tonumber("77889C", 16),
+	GGL_CBattleSerfBehavior = tonumber("7788C4", 16),
+	
+	GGL_CGLAnimationBehaviorExProps = tonumber("776C48", 16),
+	GGL_CGLBehaviorAnimationEx = tonumber("776B64", 16),
+	
+	-- other stuff
+	GGlue_CGlueEntityProps = tonumber("788824", 16),
 	EGL_CGLEModelSet = tonumber("76E380", 16),
+	
 }
 MemoryManipulation.VTableNames = {}
 for k,v in pairs(MemoryManipulation.ClassVTable) do
@@ -304,29 +358,8 @@ for k,v in pairs(MemoryManipulation.ClassVTable) do
 end
 MemoryManipulation.DataType= {Int=1, Float=2, ObjectPointer=3, ObjectPointerList=4, Bit=5, EmbeddedObjectList=6, EmbeddedObject=7, ListOfInt=8, String=9}
 MemoryManipulation.ObjFieldInfo = {
-	Position = {
-		hasNoVTable = true,
-		fields = {
-			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
-			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
-		}
-	},
-	PositionWithRotation = {
-		hasNoVTable = true,
-		fields = {
-			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
-			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
-			{name="r", index={2}, datatype=MemoryManipulation.DataType.Float, readConv=math.deg, writeConv=math.rad},
-		}
-	},
-	[MemoryManipulation.ClassVTable.GGL_CLeaderBehavior] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderBehavior,
-		fields = {
-			{name="TroopHealthCurrent", index={27}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="TroopHealthPerSoldier", index={28}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="Experience", index={32}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-		},
-	},
+	-- entities
+	markerEntities=nil,
 	[MemoryManipulation.ClassVTable.EGL_CGLEEntity] = {
 		vtable = MemoryManipulation.ClassVTable.EGL_CGLEEntity,
 		fields = {
@@ -344,7 +377,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="VisibleFlag", index={28}, datatype=MemoryManipulation.DataType.Bit, bitOffset=2, check={1,0}},
 			{name="BehaviorList", index={31}, datatype=MemoryManipulation.DataType.ObjectPointerList},
 			{name="CurrentState", index={34}, datatype=MemoryManipulation.DataType.Int, check={}},
-			{name="EntityStateBehaviours", index={35}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="EntityStateBehaviors", index={35}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="TaskListId", index={36}, datatype=MemoryManipulation.DataType.Int, check={}}, -- use logic to set
 			{name="TaskIndex", index={37}, datatype=MemoryManipulation.DataType.Int, check={}}, -- where in the task list is the entity
 			{name="CurrentHealth", index={50}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
@@ -452,44 +485,8 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="AmbientSoundType", index={67}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>0 and a <=22 end},
 		},
 	},
-	[MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior,
-		fields = {
-			{name="MaxAttachment", index={6,0,4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-		},
-	},
-	[MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement,
-		fields = {
-			{name="MovementSpeed", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
-			{name="TurningSpeed", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end, readConv=math.deg, writeConv=math.rad},
-		},
-	},
-	[MemoryManipulation.ClassVTable.GGL_CSettlerMovement] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CSettlerMovement,
-		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
-		fields = {
-			{name="BlockingFlag", index={15}, datatype=MemoryManipulation.DataType.Int, check={1,0}},
-		},
-	},
-	[MemoryManipulation.ClassVTable.GGL_CLeaderMovement] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderMovement,
-		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
-		fields = {
-		},
-	},
-	["GGL_CHeroAbility"] = {-- no vtable known
-		fields = {
-			{name="AbilitySecondsCharged", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end}, -- TODO max
-		},
-	},
-	[MemoryManipulation.ClassVTable.GGL_CCamouflageBehavior] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CCamouflageBehavior,
-		inheritsFrom = {"GGL_CHeroAbility"},
-		fields = {
-			{name="InvisibilityRemaining", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end}, -- TODO max
-		},
-	},
+	-- entity props
+	markerEntityProps=nil,
 	[MemoryManipulation.ClassVTable.EGL_CGLEEntityProps] = {
 		vtable = MemoryManipulation.ClassVTable.EGL_CGLEEntityProps,
 		fields = {
@@ -578,14 +575,6 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="TerrainPos2", index={40}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
 		},
 	},
-	[MemoryManipulation.ClassVTable.GGlue_CGlueEntityProps] = {
-		vtable = MemoryManipulation.ClassVTable.GGlue_CGlueEntityProps,
-		fields = {
-			{name="LogicProps", index={2}, datatype=MemoryManipulation.DataType.ObjectPointer},
-			{name="DisplayProps", index={3}, datatype=MemoryManipulation.DataType.ObjectPointer},
-			{name="BehaviorProps", index={5}, datatype=MemoryManipulation.DataType.ObjectPointerList},
-		},
-	},
 	[MemoryManipulation.ClassVTable.GGL_CResourceDoodadProperties] = {
 		vtable = MemoryManipulation.ClassVTable.GGL_CResourceDoodadProperties,
 		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildBlockProperties},
@@ -638,6 +627,434 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="ConstructionModel2", index={132}, datatype=MemoryManipulation.DataType.Int, check=Models},
 		},
 	},
+	-- entitytyp
+	markerEntityType=nil,
+	[MemoryManipulation.ClassVTable.GGlue_CGlueEntityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGlue_CGlueEntityProps,
+		fields = {
+			{name="LogicProps", index={2}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="DisplayProps", index={3}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="BehaviorProps", index={5}, datatype=MemoryManipulation.DataType.ObjectPointerList},
+		},
+	},
+	-- behavior props
+	markerBehaviorProps=nil,
+	[MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps,
+		fields = {
+			{name="BehaviorIndex", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="BehaviorClass", index={3}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CMovementBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CMovementBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="MovementSpeed", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="TurningSpeed", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end, readConv=math.deg, writeConv=math.rad},
+			{name="MoveTaskList", index={6}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="MoveIdleAnim", index={7}, datatype=MemoryManipulation.DataType.Int, check=nil}, -- TODO needs check for valid animation
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="RechargeTimeSeconds", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCamouflageBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCamouflageBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="DurationSeconds", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="DiscoveryRange", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CHeroHawkBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CHeroHawkBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="HawkType", index={5}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="HawkMaxRange", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CInflictFearAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CInflictFearAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="Animation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="FlightDuration", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Range", index={8}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="FlightRange", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCannonBuilderBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCannonBuilderBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CRangedEffectAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CRangedEffectAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="AffectsOwn", index={5}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="AffectsFriends", index={5}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="AffectsNeutrals", index={5}, datatype=MemoryManipulation.DataType.Bit, bitOffset=2, check={1,0}},
+			{name="AffectsHostiles", index={5}, datatype=MemoryManipulation.DataType.Bit, bitOffset=3, check={1,0}},
+			{name="AffectsMilitaryOnly", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="AffectsLongRangeOnly", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="Range", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="DurationSeconds", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="DamageFactor", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ArmorFactor", index={10}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="HealthRecoveryFactor", index={11}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Effect", index={12}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+			{name="HealEffect", index={13}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCircularAttackProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCircularAttackProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="Animation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="DamageClass", index={7}, datatype=MemoryManipulation.DataType.Int, check=DamageClasses},
+			{name="Damage", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Range", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			-- 10 effect?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSummonBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSummonBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="SummonedEntityType", index={5}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="NumberOfSummonedEntities", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="SummonTaskList", index={7}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CConvertSettlerAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CConvertSettlerAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="ConversionTaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="HPToMSFactor", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ConversionStartRange", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ConversionMaxRange", index={8}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSniperAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSniperAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="Animation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="Range", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="DamageFactor", index={8}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CMotivateWorkersAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CMotivateWorkersAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="Animation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="Range", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeBonus", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Effect", index={9}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CShurikenAbilityProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CShurikenAbilityProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CHeroAbilityProps},
+		fields = {
+			{name="TaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="Animation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="Range", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="MaxArcDegree", index={8}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="NumberShuriken", index={9}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ProjectileType", index={10}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+			{name="ProjectileOffsetHeight", index={11}, datatype=MemoryManipulation.DataType.Float, check=nil},
+			{name="ProjectileOffsetFront", index={12}, datatype=MemoryManipulation.DataType.Float, check=nil},
+			{name="ProjectileOffsetRight", index={13}, datatype=MemoryManipulation.DataType.Float, check=nil},
+			{name="DamageClass", index={14}, datatype=MemoryManipulation.DataType.Int, check=DamageClasses},
+			{name="DamageAmount", index={15}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSentinelBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSentinelBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="Range", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CGLAnimationBehaviorExProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CGLAnimationBehaviorExProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="SuspensionAnimation", index={4}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="AnimSet", index={5}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CWorkerBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CWorkerBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="WorkTaskList", index={4}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="WorkIdleTaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="WorkWaitUntil", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="EatTaskList", index={8}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="EatIdleTaskList", index={9}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="EatWait", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="RestTaskList", index={11}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="RestIdleTaskList", index={12}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="RestWait", index={13}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="LeaveTaskList", index={15}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="AmountResearched", index={16}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeChangeFarm", index={18}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeChangeResidence", index={19}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeChangeCamp", index={20}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeMaxCangeFarm", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="WorkTimeMaxChangeResidence", index={22}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ExhaustedWorkMotivationMalus", index={23}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="TransportAmount", index={24}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TransportModel", index={25}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="TransportAnim", index={26}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="ResourceToRefine", index={27}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="WorkTimeChangeWork", index={28}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	-- behaviors
+	markerBehaviors=nil,
+	["EGL_CGLEBehavior"] = {-- no vtable known
+		fields = {
+			{name="BehaviorIndex", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="BehaviorProps", index={3}, datatype=MemoryManipulation.DataType.ObjectPointer},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			--{name="Counter", index={4}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="MovementSpeed", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="TurningSpeed", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end, readConv=math.deg, writeConv=math.rad},
+			{name="SpeedFactor", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSettlerMovement] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSettlerMovement,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
+		fields = {
+			{name="PositionHiRes", index={9}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
+			{name="Position", index={12}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
+			{name="BlockingFlag", index={15}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLeaderMovement] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderMovement,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
+		fields = {
+			{name="MoveTaskList", index={8}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="NextWayPoint", index={9}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
+			{name="LastTurnPos", index={12}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
+			{name="IsPathingUsed", index={15}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="IsMoveFinished", index={15}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSoldierMovement] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSoldierMovement,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLeaderBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderBehavior,
+		fields = {
+			{name="TroopHealthCurrent", index={27}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TroopHealthPerSoldier", index={28}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Experience", index={32}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	["GGL_CHeroAbility"] = {-- no vtable known
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="AbilitySecondsCharged", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCamouflageBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCamouflageBehavior,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="InvisibilityRemaining", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CThiefCamouflageBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CThiefCamouflageBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CCamouflageBehavior},
+		fields = {
+			{name="TimeToInvisibility", index={9}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CHeroHawkBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CHeroHawkBehavior,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CInflictFearAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CInflictFearAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBombPlacerBehavior] = { -- bomb entity hardcoded?
+		vtable = MemoryManipulation.ClassVTable.GGL_CBombPlacerBehavior,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="StartPosition", index={6}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="TargetPosition", index={8}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="PlacedBomb", index={10}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			-- 11 remaining turns?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCannonBuilderBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCannonBuilderBehavior,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="StartPosition", index={7}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="CannonType", index={9}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="FoundationType", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="PlacedCannon", index={11}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CRangedEffectAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CRangedEffectAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="SecondsRemaining", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCircularAttack] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCircularAttack,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSummonBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSummonBehavior,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CConvertSettlerAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CConvertSettlerAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="TimeToConvert", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSniperAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSniperAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="TargetId", index={7}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CMotivateWorkersAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CMotivateWorkersAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CShurikenAbility] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CShurikenAbility,
+		inheritsFrom = {"GGL_CHeroAbility"},
+		fields = {
+			{name="TargetId", index={7}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior,
+		fields = {
+			{name="MaxAttachment", index={6,0,4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSentinelBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSentinelBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CGLBehaviorAnimationEx] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CGLBehaviorAnimationEx,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="Animation", index={4}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="AnimCategory", index={5}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="SuspendedAnimation", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="StartTurn", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Duration", index={8}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="PlayBackwards", index={9}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="TurnToWaitFor", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Speed", index={11}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			-- 19 animset?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBehaviorWalkCommand] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBehaviorWalkCommand,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="TargetPosition", index={4}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CWorkerBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CWorkerBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="WorkTimeRemaining", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TargetWorkTime", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Motivation", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="BehaviorProps2", index={7}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="CycleIndex", index={8}, datatype=MemoryManipulation.DataType.Int, check={0,1,2}},
+			{name="TimesWorked", index={9}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TimesNoWork", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TimesNoFood", index={11}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TimesNoRest", index={12}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TimesNoPay", index={13}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="JoblessSinceTurn", index={14}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="CouldConsumeResource", index={15}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="IsLeaving", index={16}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TransportAmount", index={17}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	-- display props
+	markerDisplayProps=nil,
+	[MemoryManipulation.ClassVTable.ED_CDisplayEntityProps] = {
+		vtable = MemoryManipulation.ClassVTable.ED_CDisplayEntityProps,
+		fields = {
+			{name="DisplayClass", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="Model", index={2}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="Model2", index={3}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="Model3", index={4}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="Model4", index={5}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="DrawPlayerColor", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="CastShadow", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="RenderInFoW", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=2, check={1,0}},
+			{name="HighQualityOnly", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=3, check={1,0}},
+			{name="MapEditor_Rotateable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="MapEditor_Placeable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="AnimList", index={8}, datatype=MemoryManipulation.DataType.ListOfInt},
+		},
+	},
+	-- misc stuff (embedded objects, helper tables...)
+	markerMiscStuff=nil,
 	[MemoryManipulation.ClassVTable.EGL_CGLEModelSet] = {
 		vtable = MemoryManipulation.ClassVTable.EGL_CGLEModelSet,
 		fields = {
@@ -697,6 +1114,21 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="MysteriousInt", index={0}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="TechList", index={2}, datatype=MemoryManipulation.DataType.ListOfInt},
 		},
+	},
+	Position = {
+		hasNoVTable = true,
+		fields = {
+			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
+			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
+		}
+	},
+	PositionWithRotation = {
+		hasNoVTable = true,
+		fields = {
+			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
+			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
+			{name="r", index={2}, datatype=MemoryManipulation.DataType.Float, readConv=math.deg, writeConv=math.rad},
+		}
 	},
 }
 
