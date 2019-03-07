@@ -9,7 +9,7 @@ end --mcbPacker.ignore
 
 --MemoryManipulation.ReadObj(S5Hook.GetEntityMem(132339))
 --MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CLimitedAttachmentBehavior.MaxAttachment", true)
---MemoryManipulation.GetSingleValue(132339, "BehaviorList.GGL_CLimitedAttachmentBehavior.MaxAttachment")
+--MemoryManipulation.SetSingleValue(65575, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", 6)
 --MemoryManipulation.ReadObj(MemoryManipulation.GetETypePointer(Entities.PU_Hero1a))
 
 
@@ -23,6 +23,13 @@ function MemoryManipulation.MemList.init(sv, length)
 	local ep, bp = sv[1]:GetInt(), sv[0]:GetInt()
 	S5Hook.SetPreciseFPU()
 	s.num = (ep-bp)/length
+	return s
+end
+function MemoryManipulation.MemList.initFromPointerAndSize(sv, length)
+	local s = CopyTable(MemoryManipulation.MemList)
+	s.sv = sv
+	s.len = length/4
+	s.num = sv[1]:GetInt()
 	return s
 end
 function MemoryManipulation.MemList:get(i)
@@ -107,6 +114,17 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 			elseif fi.datatype==MemoryManipulation.DataType.String then
 				if sv2[0]:GetInt()>0 then
 					val = sv2[0]:GetString()
+				end
+			elseif fi.datatype==MemoryManipulation.DataType.DataPointerListSize then
+				val = objInfo[fi.name] or {}
+				objInfo[fi.name] = val
+				local i=1
+				local li = MemoryManipulation.MemList.initFromPointerAndSize(sv2, 4)
+				for sv3 in li:iterator() do
+					if sv3[0]:GetInt()>0 then
+						val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+					end
+					i=i+1
 				end
 			elseif fi.datatype==nil then
 				val = sv2
@@ -264,12 +282,19 @@ MemoryManipulation.ClassVTable = {
 	EGL_CGLEBehaviorProps = tonumber("772A2C", 16),
 	GGL_CBehaviorWalkCommand = tonumber("7736A4", 16),
 	
-	GGL_CHeroBehavior = tonumber("0077677C", 16),
+	GGL_CHeroBehaviorProps = tonumber("7767F4", 16),
+	GGL_CHeroBehavior = tonumber("77677C", 16),
 	
+	GGL_CBattleBehaviorProps = tonumber("7731C0", 16),
+	GGL_CBattleBehavior = tonumber("77313C", 16),
 	GGL_CLeaderBehaviorProps = tonumber("775FA4", 16),
 	GGL_CLeaderBehavior = tonumber("7761E0", 16),
-	
 	GGL_CSoldierBehaviorProps = tonumber("773D10", 16),
+	GGL_CSoldierBehavior = tonumber("773CC8", 16),
+	GGL_CSerfBattleBehaviorProps = tonumber("774B50", 16),
+	GGL_CSerfBattleBehavior = tonumber("774A98", 16),
+	GGL_CBattleSerfBehaviorProps = tonumber("77889C", 16),
+	GGL_CBattleSerfBehavior = tonumber("7788C4", 16),
 	
 	GGL_CLimitedAttachmentBehaviorProperties = tonumber("775EB4", 16),
 	GGL_CLimitedAttachmentBehavior = tonumber("775E84", 16),
@@ -324,28 +349,35 @@ MemoryManipulation.ClassVTable = {
 	GGL_CSentinelBehaviorProps = tonumber("774BAC", 16),
 	GGL_CSentinelBehavior = tonumber("774B6C", 16),
 	
-	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
-	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
+	GGL_CWorkerBehaviorProps = tonumber("772B90", 16),
+	GGL_CWorkerBehavior = tonumber("772B30", 16),
+	
+	GGL_CSerfBehaviorProps = tonumber("774A14", 16),
+	GGL_CSerfBehavior = tonumber("774874", 16),
+	
+	GGL_CFormationBehaviorProperties = tonumber("776DE4", 16),
+	GGL_CFormationBehavior = tonumber("776D60", 16),
+	
+	GGL_CCamperBehaviorProperties = tonumber("7777D4", 16),
+	GGL_CCamperBehavior = tonumber("77777C", 16),
+	
+	GGL_CGLBehaviorPropsDying = tonumber("778634", 16),
+	GGL_CGLBehaviorDying = tonumber("7785E4", 16),
+	
+	
+	
+	
+	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
+	
+	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
 	
 	GGL_CAffectMotivationBehaviorProps = tonumber("7791D4", 16),
 	
 	GGL_CThiefBehaviorProperties = tonumber("7739E0", 16),
 	GGL_CThiefBehavior = tonumber("7739B0", 16),
 	
-	GGL_CWorkerBehaviorProps = tonumber("772B90", 16),
-	GGL_CWorkerBehavior = tonumber("772B30", 16),
-	
-	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
-	
-	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
-	
-	GGL_CSerfBattleBehaviorProps = tonumber("774B50", 16),
-	
-	GGL_CBattleSerfBehaviorProps = tonumber("77889C", 16),
-	GGL_CBattleSerfBehavior = tonumber("7788C4", 16),
-	
-	GGL_CGLAnimationBehaviorExProps = tonumber("776C48", 16),
-	GGL_CGLBehaviorAnimationEx = tonumber("776B64", 16),
+	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
+	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
 	
 	-- other stuff
 	GGlue_CGlueEntityProps = tonumber("788824", 16),
@@ -356,7 +388,7 @@ MemoryManipulation.VTableNames = {}
 for k,v in pairs(MemoryManipulation.ClassVTable) do
 	MemoryManipulation.VTableNames[v] = k
 end
-MemoryManipulation.DataType= {Int=1, Float=2, ObjectPointer=3, ObjectPointerList=4, Bit=5, EmbeddedObjectList=6, EmbeddedObject=7, ListOfInt=8, String=9}
+MemoryManipulation.DataType= {Int=1, Float=2, ObjectPointer=3, ObjectPointerList=4, Bit=5, EmbeddedObjectList=6, EmbeddedObject=7, ListOfInt=8, String=9, DataPointerListSize=10}
 MemoryManipulation.ObjFieldInfo = {
 	-- entities
 	markerEntities=nil,
@@ -828,6 +860,110 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="WorkTimeChangeWork", index={28}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBattleBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBattleBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="BattleTaskList", index={4}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="NormalAttackAnim1", index={5}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="NormalAttackAnim2", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="CounterAttackAnim", index={7}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="FinishingMoveAnim", index={8}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="MissAttackAnim", index={9}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="BattleIdleAnim", index={10}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="BattleWalkAnim", index={11}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="HitAnim", index={12}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="DamageClass", index={13}, datatype=MemoryManipulation.DataType.Int, check=DamageClasses},
+			{name="DamageAmount", index={14}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MaxDamageRandomBonus", index={15}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="DamageRange", index={16}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ProjectileEffectID", index={17}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+			{name="ProjectileOffsetFront", index={18}, datatype=MemoryManipulation.DataType.Float},
+			{name="ProjectileOffsetRight", index={19}, datatype=MemoryManipulation.DataType.Float},
+			{name="ProjectileOffsetHeight", index={20}, datatype=MemoryManipulation.DataType.Float},
+			{name="BattleWaitUntil", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MissChance", index={22}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MaxRange", index={23}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="MinRange", index={24}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLeaderBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehaviorProps},
+		fields = {
+			{name="SoldierType", index={25}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="BarrackUpgradeCategory", index={26}, datatype=MemoryManipulation.DataType.Int, check=UpgradeCategories},
+			{name="HomeRadius", index={27}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="HealingPoints", index={28}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="HealingSeconds", index={29}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="AutoAttackRange", index={30}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="UpkeepCosts", index={31}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSoldierBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSoldierBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehaviorProps},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSerfBattleBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSerfBattleBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehaviorProps},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBattleSerfBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBattleSerfBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CLeaderBehaviorProps},
+		fields = {
+			--{name="TurnIntoSerfTaskList", index={32}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSerfBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSerfBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="ResourceSearchRadius", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ApproachConbstructionSiteTaskList", index={5}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="TurnIntoBattleSerfTaskList", index={6}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="ExtractionInfo", index={8}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="ExtractionInfo", objectSize=3},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="Attachments", index={5}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="LimitedAttachmentProps", objectSize=9},
+			--{name="Attachments", index={5}, datatype=nil},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CFormationBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CFormationBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="IdleAnims", index={5}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="IdleAnimProps", objectSize=2},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCamperBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCamperBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="Range", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CGLBehaviorPropsDying] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CGLBehaviorPropsDying,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="DyingTaskList", index={4}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CHeroBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CHeroBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+		},
+	},
 	-- behaviors
 	markerBehaviors=nil,
 	["EGL_CGLEBehavior"] = {-- no vtable known
@@ -871,14 +1007,6 @@ MemoryManipulation.ObjFieldInfo = {
 		vtable = MemoryManipulation.ClassVTable.GGL_CSoldierMovement,
 		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBehaviorDefaultMovement},
 		fields = {
-		},
-	},
-	[MemoryManipulation.ClassVTable.GGL_CLeaderBehavior] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderBehavior,
-		fields = {
-			{name="TroopHealthCurrent", index={27}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="TroopHealthPerSoldier", index={28}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="Experience", index={32}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
 	["GGL_CHeroAbility"] = {-- no vtable known
@@ -979,12 +1107,6 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="TargetId", index={7}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
 		},
 	},
-	[MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior] = {
-		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior,
-		fields = {
-			{name="MaxAttachment", index={6,0,4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-		},
-	},
 	[MemoryManipulation.ClassVTable.GGL_CSentinelBehavior] = {
 		vtable = MemoryManipulation.ClassVTable.GGL_CSentinelBehavior,
 		inheritsFrom = {"EGL_CGLEBehavior"},
@@ -1034,6 +1156,113 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="TransportAmount", index={17}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBattleBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBattleBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="SuccessDistance", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="FailureDistance", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="TimeOutTime", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="StartTurn", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TargetPosition", index={8}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="StartFollowing", index={10}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="StopFollowing", index={10}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="FollowStatus", index={11}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="LatestHitTurn", index={12}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="LatestAttackerID", index={14}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="BattleStatus", index={15}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="NoMoveNecessary", index={16}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="NormalRangeCheckNecessary", index={16}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="Command", index={17}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="AttackMoveTarget", index={18}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="MilliSecondsToWait", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MSToPlayHitAnimation", index={22}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="HitPlayed", index={23}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLeaderBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLeaderBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehavior},
+		fields = {
+			{name="TroopHealthCurrent", index={27}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TroopHealthPerSoldier", index={28}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TerritoryCenter", index={29}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="TerritoryCenterRange", index={31}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Experience", index={32}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="PatrolPoints", index={34}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="Position", objectSize=2},
+			{name="DefendOrientation", index={38}, datatype=MemoryManipulation.DataType.Float, readConv=math.deg, writeConv=math.rad},
+			{name="TrainingStartTurn", index={39}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="SecondsSinceHPRefresh", index={41}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="NudgeCount", index={42}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="FormationType", index={43}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="StartBattlePosition", index={44}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSoldierBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSoldierBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehavior},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSerfBattleBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSerfBattleBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBattleBehavior},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBattleSerfBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBattleSerfBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CLeaderBehavior},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CSerfBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CSerfBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedAttachmentBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="Attachment1", index={6,0}, datatype=MemoryManipulation.DataType.ObjectPointer, vtableOverride="LimitedAttachment"},
+			--{name="test", index={0}, datatype=nil},
+			-- TODO figure out, how more than 1 attachment type works
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CFormationBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CFormationBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="AnimStartTurn", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="AnimDuration", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCamperBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCamperBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {-- TODO fields, inheritance not working again
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CGLBehaviorDying] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CGLBehaviorDying,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CHeroBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CHeroBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="ResurrectionTimePassed", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="SpawnTurn", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="FriendNear", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="EnemyNear", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+		},
+	},
 	-- display props
 	markerDisplayProps=nil,
 	[MemoryManipulation.ClassVTable.ED_CDisplayEntityProps] = {
@@ -1050,7 +1279,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="HighQualityOnly", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=3, check={1,0}},
 			{name="MapEditor_Rotateable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
 			{name="MapEditor_Placeable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
-			{name="AnimList", index={8}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="AnimList", index={9}, datatype=MemoryManipulation.DataType.ListOfInt},
 		},
 	},
 	-- misc stuff (embedded objects, helper tables...)
@@ -1128,6 +1357,38 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
 			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
 			{name="r", index={2}, datatype=MemoryManipulation.DataType.Float, readConv=math.deg, writeConv=math.rad},
+		}
+	},
+	ExtractionInfo = {
+		hasNoVTable = true,
+		fields = {
+			{name="ResourceEntityType", index={0}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="Delay", index={1}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Amount", index={2}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		}
+	},
+	LimitedAttachmentProps = {
+		hasNoVTable = true,
+		fields = {
+			{name="Type", index={1}, datatype=MemoryManipulation.DataType.String},
+			--{name="AttachmentType", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="Limit", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		}
+	},
+	LimitedAttachment = {
+		hasNoVTable = true,
+		fields = {
+			{name="AttachmentType", index={3}, datatype=MemoryManipulation.DataType.Int},
+			{name="Limit", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="IsActive", index={5}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="AttachmentInfo", index={6}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		}
+	},
+	IdleAnimProps = {
+		hasNoVTable = true,
+		fields = {
+			{name="AnimID", index={0}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="Frequency", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		}
 	},
 }
