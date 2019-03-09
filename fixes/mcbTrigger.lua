@@ -1,5 +1,5 @@
 
---- author:mcb		current maintainer:mcb		v2.2b                           Dank an Chromix
+--- author:mcb		current maintainer:mcb		v2.3b                           Dank an Chromix
 -- Funktionen anstelle von Funktionsnamen als Trigger
 -- Tableindexierung in Funktionsanamen (sowas wie "foo.bar")
 -- tables als Trigger-Argumente
@@ -89,11 +89,13 @@ function mcbTrigger.getFunc(f)
 	end
 end
 
-function mcbTrigger.fireTriggerDebugger(event)
+function mcbTrigger.fireTriggerDebugger(event, cev)
 	mcbTrigger.currStartTime = XGUIEng.GetSystemTime()
-	local cev = {}
-	for k,v in pairs(mcbTrigger.event) do
-		cev[k] = v()
+	if not cev then
+		cev = {}
+		for k,v in pairs(mcbTrigger.event) do
+			cev[k] = v()
+		end
 	end
 	local ev = mcbTrigger.triggers[event]
 	local rem, remi = {}, 1
@@ -122,11 +124,13 @@ function mcbTrigger.fireTriggerDebugger(event)
 	end
 end
 
-function mcbTrigger.fireTriggerXpcall(event)
+function mcbTrigger.fireTriggerXpcall(event, cev)
 	mcbTrigger.currStartTime = XGUIEng.GetSystemTime()
-	local cev = {}
-	for k,v in pairs(mcbTrigger.event) do
-		cev[k] = v()
+	if not cev then
+		cev = {}
+		for k,v in pairs(mcbTrigger.event) do
+			cev[k] = v()
+		end
 	end
 	local ev = mcbTrigger.triggers[event]
 	local rem, remi = {}, 1
@@ -272,7 +276,7 @@ function mcbTrigger.init()
 	mcbTrigger.hackTrigger()
 	for _,event in ipairs{
 		Events.LOGIC_EVENT_DIPLOMACY_CHANGED, Events.LOGIC_EVENT_ENTITY_CREATED, Events.LOGIC_EVENT_ENTITY_DESTROYED,
-		Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, Events.LOGIC_EVENT_ENTITY_IN_RANGE_OF_ENTITY,
+		Events.LOGIC_EVENT_ENTITY_IN_RANGE_OF_ENTITY,
 		Events.LOGIC_EVENT_EVERY_SECOND, Events.LOGIC_EVENT_EVERY_TURN, Events.LOGIC_EVENT_GOODS_TRADED,
 		Events.LOGIC_EVENT_RESEARCH_DONE, Events.LOGIC_EVENT_TRIBUTE_PAID, Events.LOGIC_EVENT_WEATHER_STATE_CHANGED,
 	} do
@@ -281,6 +285,7 @@ function mcbTrigger.init()
 		end
 		mcbTrigger.RequestTrigger(event, nil, "mcbTrigger_action", 1, nil, {event})
 	end
+	mcbTrigger.entityHurtEntityBaseTriggerId = mcbTrigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "mcbTrigger_action", 1, nil, {Events.LOGIC_EVENT_ENTITY_HURT_ENTITY})
 	StartSimpleJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, nil, f, 1, nil, arg)
 	end
@@ -399,12 +404,12 @@ function mcbTrigger.ktr.run()
 		local solth, solph = mcbEMan.GetLeaderTroopHealth(id)
 		local currSolHealth = solth - ((Logic.LeaderGetNumberOfSoldiers(id)-1) * solph)
 		if currSolHealth <= dmg then
-			mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity)
+			mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, mcbTrigger.currentEvent)
 		end
 		return
 	end
 	if Logic.GetEntityHealth(id) <= dmg then
-		mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity)
+		mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, mcbTrigger.currentEvent)
 	end
 end
 mcbTrigger.ktr.init()
