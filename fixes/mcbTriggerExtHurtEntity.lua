@@ -32,7 +32,7 @@ end --mcbPacker.ignore
 -- - s5HookLoader
 -- - mcbTrigger
 -- 
-mcbTriggerExtHurtEntity = {projectiles={}, currentProjectile={}, createdCbs={}, hitCbs={}}
+mcbTriggerExtHurtEntity = {projectiles={}, currentProjectile={}, createdCbs={}, hitCbs={}, currentEntity={}}
 
 function mcbTriggerExtHurtEntity.projectileCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId)
 	if creatorType == 7816856 then
@@ -71,6 +71,9 @@ function mcbTriggerExtHurtEntity.projectileHit(effectType, startPosX, startPosY,
 	mcbTriggerExtHurtEntity.currentProjectile = mcbTriggerExtHurtEntity.projectiles[effectId]
 	mcbTriggerExtHurtEntity.projectiles[effectId] = nil
 	mcbTriggerExtHurtEntity.currentProjectile.tick = Logic.GetTimeMs()
+	if mcbTriggerExtHurtEntity.currentEntity.tick==mcbTriggerExtHurtEntity.currentProjectile.tick then
+		mcbTriggerExtHurtEntity.currentEntity = {}
+	end
 	for _,f in ipairs(mcbTriggerExtHurtEntity.hitCbs) do
 		mcbTrigger.protectedCall(f, effectType, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, aoeRange, effectId)
 	end
@@ -90,16 +93,29 @@ end
 
 function mcbTriggerExtHurtEntity.getProjectileInfo()
 	local so = S5Hook.HurtEntityTrigger_GetSource()
-	if so == S5HookHurtEntitySources.ArrowProjectile or so == S5HookHurtEntitySources.CannonProjectile or so == S5HookHurtEntitySources.SniperAttackAbility then
-		assert(mcbTriggerExtHurtEntity.currentProjectile.tick==Logic.GetTimeMs())
+	if (so == S5HookHurtEntitySources.ArrowProjectile or so == S5HookHurtEntitySources.CannonProjectile
+	or so == S5HookHurtEntitySources.SniperAttackAbility) and mcbTriggerExtHurtEntity.currentProjectile.tick==Logic.GetTimeMs() then
 		return mcbTriggerExtHurtEntity.currentProjectile
+	end
+end
+
+function mcbTriggerExtHurtEntity.getEntityInfo()
+	local so = S5Hook.HurtEntityTrigger_GetSource()
+	if (so == S5HookHurtEntitySources.ArrowProjectile or so == S5HookHurtEntitySources.CannonProjectile
+	or so == S5HookHurtEntitySources.SniperAttackAbility) and mcbTriggerExtHurtEntity.currentEntity.tick==Logic.GetTimeMs() then
+		return mcbTriggerExtHurtEntity.currentEntity
 	end
 end
 
 function mcbTriggerExtHurtEntity.hurtEntity(attackerId, targetId)
 	if attackerId==0 then
 		local pinf = mcbTriggerExtHurtEntity.getProjectileInfo()
-		attackerId = pinf.attackerId
+		local einf = mcbTriggerExtHurtEntity.getEntityInfo()
+		if pinf then
+			attackerId = pinf.attackerId
+		elseif einf then
+			attackerId = einf.attackerId
+		end
 	end
 	local t = {}
 	for k,v in pairs(mcbTrigger.event) do
@@ -110,11 +126,29 @@ function mcbTriggerExtHurtEntity.hurtEntity(attackerId, targetId)
 	mcbTrigger_action(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, t)
 end
 
+function mcbTriggerExtHurtEntity.destroyedTrigger()
+	local id = Event.GetEntityID()
+	local ty = Logic.GetEntityType(id)
+	if ty==Entities.XD_Bomb1 or ty==Entities.XD_Keg1 then -- TODO check behaviors with memorymanipulation
+		mcbTriggerExtHurtEntity.currentEntity = {
+			tick = Logic.GetTimeMs(),
+			attackerId = id,
+			attackerType = ty,
+		}
+		if mcbTriggerExtHurtEntity.currentEntity.tick==mcbTriggerExtHurtEntity.currentProjectile.tick then
+			mcbTriggerExtHurtEntity.currentProjectile = {}
+		end
+	end
+end
+
 function mcbTriggerExtHurtEntity.init()
 	mcbTrigger.UnrequestTrigger(mcbTrigger.entityHurtEntityBaseTriggerId)
 	S5Hook.SetEffectCreatedCallback(mcbTriggerExtHurtEntity.projectileCreated)
 	S5Hook.SetGlobalProjectileHitCallback(mcbTriggerExtHurtEntity.projectileHit)
 	S5Hook.SetHurtEntityCallback(mcbTriggerExtHurtEntity.hurtEntity)
+	if not mcbTriggerExtHurtEntity.destroyedTriggerId then
+		mcbTriggerExtHurtEntity.destroyedTriggerId = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_DESTROYED, nil, "mcbTriggerExtHurtEntity.destroyedTrigger", 1)
+	end
 end
 
 table.insert(s5HookLoader.cb, mcbTriggerExtHurtEntity.init)

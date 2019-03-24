@@ -242,6 +242,18 @@ function MemoryManipulation.WriteSingleBit(sv, off, b)
 	sv[0]:SetInt(v)
 end
 
+function MemoryManipulation.HasEntityBehavior(id, beh)
+	local vtn = MemoryManipulation.VTableNames[beh]
+	assert(vtn)
+	return MemoryManipulation.GetSingleValue(id, "BehaviorList."..vtn..".BehaviorIndex")~=true
+end
+
+function MemoryManipulation.HasEntityTypeBehavior(ety, beh)
+	local vtn = MemoryManipulation.VTableNames[beh]
+	assert(vtn)
+	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ety), "BehaviorProps."..vtn..".BehaviorIndex")~=true
+end
+
 function MemoryManipulation.GetETypePointer(ety)
 	return S5Hook.GetRawMem(9002416)[0][16]:Offset(ety*8)
 end
@@ -364,17 +376,23 @@ MemoryManipulation.ClassVTable = {
 	GGL_CGLBehaviorPropsDying = tonumber("778634", 16),
 	GGL_CGLBehaviorDying = tonumber("7785E4", 16),
 	
+	GGL_CBombBehaviorProperties = tonumber("7784A0", 16),
+	GGL_CBombBehavior = tonumber("778468", 16),
 	
-	
-	
-	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
-	
-	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
-	
-	GGL_CAffectMotivationBehaviorProps = tonumber("7791D4", 16),
+	GGL_CKegBehaviorProperties = tonumber("776558", 16),
+	GGL_CKegBehavior = tonumber("7764D8", 16),
 	
 	GGL_CThiefBehaviorProperties = tonumber("7739E0", 16),
 	GGL_CThiefBehavior = tonumber("7739B0", 16),
+	
+	GGL_CAutoCannonBehaviorProps = tonumber("778CD4", 16),
+	GGL_CAutoCannonBehavior = tonumber("778CF0", 16),
+	
+	GGL_CResourceRefinerBehaviorProperties = tonumber("774C24", 16),
+	GGL_CResourceRefinerBehavior = tonumber("774BCC", 16),
+	
+	GGL_CAffectMotivationBehaviorProps = tonumber("7791D4", 16),
+	GGL_CAffectMotivationBehavior = tonumber("77918C", 16),
 	
 	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
 	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
@@ -964,6 +982,78 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBombBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBombBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="Radius", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Delay", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Damage", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ExplosionEffectID", index={7}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+			{name="AffectedEntityTypes", index={9}, datatype=MemoryManipulation.DataType.ListOfInt},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CKegBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CKegBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="Radius", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Damage", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Delay", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="DamagePercent", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ExplosionEffectID", index={8}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CThiefBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CThiefBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="SecondsNeededToSteal", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MinimumAmountToSteal", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MaximumAmountToSteal", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="CarryingModelID", index={7}, datatype=MemoryManipulation.DataType.Int, check=Models},
+			{name="StealGoodsTaskList", index={8}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+			{name="SecureGoodsTaskList", index={9}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CAutoCannonBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CAutoCannonBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="NumberOfShots", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=-1 end},
+			{name="RotationSpeed", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end, readConv=math.deg, writeConv=math.rad},
+			{name="CannonBallEffectType", index={6}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
+			{name="ReloadTime", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MaxAttackRange", index={11}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end}, -- check autoattackrange and this
+			{name="DamageClass", index={13}, datatype=MemoryManipulation.DataType.Int, check=DamageClasses},
+			{name="DamageAmount", index={14}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="DamageRange", index={15}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="BattleTaskList", index={16}, datatype=MemoryManipulation.DataType.Int, check=TaskLists},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CResourceRefinerBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CResourceRefinerBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="ResourceType", index={4}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="InitialFactor", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="SupplierCategory", index={10}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CAffectMotivationBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CAffectMotivationBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="MotivationEffect", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLimitedLifespanBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedLifespanBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="LifespanSeconds", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
 	-- behaviors
 	markerBehaviors=nil,
 	["EGL_CGLEBehavior"] = {-- no vtable known
@@ -1261,6 +1351,65 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="SpawnTurn", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="FriendNear", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
 			{name="EnemyNear", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBombBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBombBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="TimeToExplode", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end, readConv=function(a) return a/10 end, writeConv=function(a) return a*10 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CKegBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CKegBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="TimeToExplode", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end, readConv=function(a) return a/10 end, writeConv=function(a) return a*10 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CThiefBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CThiefBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="Amount", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ResourceType", index={5}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="StolenFromPlayer", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 and a<9 end},
+			{name="TimeToSteal", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end, readConv=function(a) return a/10 end, writeConv=function(a) return a*10 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CAutoCannonBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CAutoCannonBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="ShotsLeft", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=-1 end},
+			-- there are a lot of 0s and stuff i can't make sense of, but shotsleft is probably the most imprortant anyway
+			-- 8 seems to be some sort of attack time counter
+			-- 9 is 275 at least on pilgrims cannon
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CResourceRefinerBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CResourceRefinerBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CAffectMotivationBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CAffectMotivationBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			-- 5 player?
+			-- 6 building finished?
+			-- 7 random value?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLimitedLifespanBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLimitedLifespanBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
+			{name="RemainingLifespanSeconds", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
 	-- display props

@@ -25,10 +25,10 @@ end
 
 function HurtProjectileFix.OnHit()
 	local so = S5Hook.HurtEntityTrigger_GetSource()
-	if so == S5HookHurtEntitySources.CannonProjectile then
+	local pinf = mcbTriggerExtHurtEntity.getProjectileInfo()
+	if so == S5HookHurtEntitySources.CannonProjectile and pinf then
 		local at = Event.GetEntityID1()
 		local def = Event.GetEntityID2()
-		local pinf = mcbTriggerExtHurtEntity.getProjectileInfo()
 		local dmod = HurtProjectileFix.GetDamageMod(mcbEMan.GetEntityTypeArmorClass(Logic.GetEntityType(def)), HurtProjectileFix.lastProjectile.damageClass)
 		local dmg = HurtProjectileFix.lastProjectile.baseDamage * dmod - Logic.GetEntityArmor(def)
 		S5Hook.HurtEntityTrigger_SetDamage(dmg)
