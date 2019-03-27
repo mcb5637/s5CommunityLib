@@ -11,30 +11,81 @@ end --mcbPacker.ignore
 --MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CLimitedAttachmentBehavior.MaxAttachment", true)
 --MemoryManipulation.SetSingleValue(65575, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", 6)
 --MemoryManipulation.ReadObj(MemoryManipulation.GetETypePointer(Entities.PU_Hero1a))
+--MemoryManipulation.ReadObj(MemoryManipulation.GetPlayerStatusPointer(1))
+--MemoryManipulation.ReadObj(MemoryManipulation.GetDamageModifierPointer(), nil, MemoryManipulation.ObjFieldInfo.DamageClassList)
+--MemoryManipulation.ReadObj(MemoryManipulation.GetLogicPropertiesPointer())
+--MemoryManipulation.ReadObj(MemoryManipulation.GetPlayerAttractionPropsPointer())
+--MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(Technologies.GT_Architecture), nil, MemoryManipulation.ObjFieldInfo.Technology)
+--MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(Entities.PB_Residence1), "LogicProps.BlockingArea", {{{X=100,Y=100},{X=500,Y=500}}})
 
 
 MemoryManipulation = {}
 
+MemoryManipulation.MemBackup = {BackupList={}}
+
+function MemoryManipulation.MemBackup.CreateBackupOf(sv, size)
+	local b = {}
+	for i=1,size do
+		b[i] = sv[i-1]:GetInt()
+	end
+	MemoryManipulation.MemBackup.BackupList[sv:GetInt()] = b
+	return b
+end
+
+function MemoryManipulation.MemBackup.RestoreSingleBackup(sv, deleteBackup)
+	local index = nil
+	if type(sv)~="userdata" then
+		index = sv
+		sv = S5Hook.GetRawMem(sv)
+	else
+		index = sv:GetInt()
+	end
+	local b = MemoryManipulation.MemBackup.BackupList[index]
+	if not b then
+		return false
+	end
+	for i,v in ipairs(b) do
+		sv[i-1]:SetInt(v)
+	end
+	if b.free then
+		S5Hook.FreeMem(b.free)
+	end
+	if deleteBackup then
+		MemoryManipulation.MemBackup.BackupList[index] = nil
+	end
+	return true
+end
+
+function MemoryManipulation.MemBackup.RestoreAll(deleteBackups)
+	for sv, b in pairs(MemoryManipulation.MemBackup.BackupList) do
+		MemoryManipulation.MemBackup.RestoreSingleBackup(sv)
+	end
+	if deleteBackups then
+		MemoryManipulation.MemBackup.BackupList = {}
+	end
+end
+
 MemoryManipulation.MemList = {}
 function MemoryManipulation.MemList.init(sv, length)
 	local s = CopyTable(MemoryManipulation.MemList)
-	s.sv = sv
+	s.base = sv
+	s.sv = sv[0]
 	s.len = length/4
 	local ep, bp = sv[1]:GetInt(), sv[0]:GetInt()
 	S5Hook.SetPreciseFPU()
 	s.num = (ep-bp)/length
 	return s
 end
-function MemoryManipulation.MemList.initFromPointerAndSize(sv, length)
+function MemoryManipulation.MemList.initManually(sv, length, num)
 	local s = CopyTable(MemoryManipulation.MemList)
 	s.sv = sv
 	s.len = length/4
-	s.num = sv[1]:GetInt()
+	s.num = num
 	return s
 end
 function MemoryManipulation.MemList:get(i)
 	assert(i>=0 and i<self.num)
-	return self.sv[0]:Offset(i*self.len)
+	return self.sv:Offset(i*self.len)
 end
 function MemoryManipulation.MemList:iterator()
 	local i, count = -1, self.num
@@ -44,6 +95,21 @@ function MemoryManipulation.MemList:iterator()
             return self:get(i)
         end
     end
+end
+function MemoryManipulation.MemList:override(newNum)
+	assert(self.base)
+	MemoryManipulation.MemBackup.RestoreSingleBackup(self.base, true) -- restore previous backup
+	local b = MemoryManipulation.MemBackup.CreateBackupOf(self.base, 3)
+	S5Hook.SetPreciseFPU()
+	local newp = S5Hook.ReAllocMem(0, newNum*self.len*4)
+	b.free = newp -- auto free on restore backup
+	S5Hook.SetPreciseFPU()
+	local ep = newp + newNum*self.len*4
+	self.base[0]:SetInt(newp)
+	self.base[1]:SetInt(ep)
+	self.base[2]:SetInt(ep)
+	self.num = newNum
+	self.sv = self.base[0]
 end
 
 function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
@@ -74,11 +140,10 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 				val = MemoryManipulation.ReadSingleBit(sv2, fi.bitOffset)
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
 				if sv2[0]:GetInt()>0 then
-					val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+					val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
-				val = objInfo[fi.name] or {}
-				objInfo[fi.name] = val
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local li = MemoryManipulation.MemList.init(sv2, 4)
 				for sv3 in li:iterator() do
 					if sv3[0]:GetInt()>0 then
@@ -87,45 +152,64 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 						--LuaDebugger.Log(vt..(IstDrin(vt, MemoryManipulation.ClassVTable) or "nil"))
 						if (not readFilter or readFilter[fi.name][vtn]~=nil) and MemoryManipulation.ObjFieldInfo[vt] then
 							S5Hook.Log(vtn)
-							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn], nil, readFilter and readFilter[fi.name][vtn])
+							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn], nil, readFilter and readFilter[fi.name]~=true and readFilter[fi.name][vtn])
 						end
 					end
 				end
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
-				val = MemoryManipulation.ReadObj(sv2, objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
-				val = objInfo[fi.name] or {}
 				objInfo[fi.name] = val
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
+				val = MemoryManipulation.ReadObj(sv2, objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local i=1
 				local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
 				for sv3 in li:iterator() do
-					val[i] = MemoryManipulation.ReadObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+					val[i] = MemoryManipulation.ReadObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 					i=i+1
 				end
-			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
-				val = objInfo[fi.name] or {}
 				objInfo[fi.name] = val
+			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local i=1
 				local li = MemoryManipulation.MemList.init(sv2, 4)
 				for sv3 in li:iterator() do
 					val[i] = sv3[0]:GetInt()
 					i=i+1
 				end
+				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.String then
 				if sv2[0]:GetInt()>0 then
 					val = sv2[0]:GetString()
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.DataPointerListSize then
-				val = objInfo[fi.name] or {}
-				objInfo[fi.name] = val
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local i=1
 				local li = MemoryManipulation.MemList.initFromPointerAndSize(sv2, 4)
 				for sv3 in li:iterator() do
 					if sv3[0]:GetInt()>0 then
-						val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name])
+						val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 					end
 					i=i+1
 				end
+				objInfo[fi.name] = val
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
+				local i=1
+				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+				for sv3 in li:iterator() do
+					val[i] = sv3[0]:GetFloat()
+					i=i+1
+				end
+				objInfo[fi.name] = val
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
+				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
+				local i=1
+				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+				for sv3 in li:iterator() do
+					val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
+					i=i+1
+				end
+				objInfo[fi.name] = val
 			elseif fi.datatype==nil then
 				val = sv2
 			end
@@ -153,10 +237,20 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 				sv2 = sv2:Offset(i)
 			end
 			if type(fi.check)=="function" then
-				assert(fi.check(objInfo[fi.name]), sv)
+				assert(fi.check(objInfo[fi.name], sv))
 			end
 			if type(fi.check)=="table" then
 				assert(IstDrin(objInfo[fi.name], fi.check))
+			end
+			if type(fi.checkAll)=="function" then
+				for k,v in pairs(objInfo[fi.name]) do
+					assert(fi.checkAll(k, v, sv))
+				end
+			end
+			if type(fi.checkAll)=="function" then
+				for k,v in pairs(objInfo[fi.name]) do
+					assert(IstDrin(v, fi.checkAll))
+				end
 			end
 			local val = objInfo[fi.name]
 			if fi.writeConv then
@@ -183,6 +277,44 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
 				MemoryManipulation.WriteObj(sv2, val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
+				local li = MemoryManipulation.MemList.init(sv2, 4)
+				li:override(table.getn(val))
+				local i=1
+				for sv3 in li:iterator() do
+					sv3[0]:SetInt(val[i])
+					i=i+1
+				end
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
+				local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
+				li:override(table.getn(val))
+				local i=1
+				for sv3 in li:iterator() do
+					if val[i] then
+						MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+					end
+					i=i+1
+				end
+			elseif fi.datatype==MemoryManipulation.DataType.String then
+				assert(false, "cannot write strings")
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
+				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+				local i=1
+				for sv3 in li:iterator() do
+					if val[i] then
+						sv3[0]:SetFloat(val[i])
+					end
+					i=i+1
+				end
+			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
+				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+				local i=1
+				for sv3 in li:iterator() do
+					if val[i] then
+						MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+					end
+					i=i+1
+				end
 			end
 		end
 	end
@@ -258,6 +390,34 @@ function MemoryManipulation.GetETypePointer(ety)
 	return S5Hook.GetRawMem(9002416)[0][16]:Offset(ety*8)
 end
 
+function MemoryManipulation.GetPlayerStatusPointer(player)
+	return S5Hook.GetRawMem(8758176)[0][10][player*2+1]
+end
+
+function MemoryManipulation.GetDamageModifierPointer()
+	return S5Hook.GetRawMem(8758236)[0][2]
+end
+
+function MemoryManipulation.GetLogicPropertiesPointer()
+	return S5Hook.GetRawMem(8758240)[0]
+end
+
+function MemoryManipulation.GetPlayerAttractionPropsPointer()
+	return S5Hook.GetRawMem(8809088)[0]
+end
+
+function MemoryManipulation.GetTechnologyPointer(tid)
+	return S5Hook.GetRawMem(8758176)[0][13][1][tid-1]
+end
+
+function MemoryManipulation.OnLeaveMap()
+	MemoryManipulation.MemBackup.RestoreAll(true)
+	S5Hook.ReloadEntities()
+end
+
+function MemoryManipulation.OnLoadMap()
+	
+end
 
 MemoryManipulation.ClassVTable = {
 	-- main entities
@@ -401,12 +561,31 @@ MemoryManipulation.ClassVTable = {
 	GGlue_CGlueEntityProps = tonumber("788824", 16),
 	EGL_CGLEModelSet = tonumber("76E380", 16),
 	
+	GGL_CLogicProperties = tonumber("76EFCC", 16),
+	GGL_CLogicProperties_SBuildingUpgradeCategory = tonumber("76EF10", 16),
+	GGL_CLogicProperties_SSettlerUpgradeCategory = tonumber("76EF18", 16),
+	GGL_CLogicProperties_STaxationLevel = tonumber("76EF20", 16),
+	GGL_CLogicProperties_STradeResource = tonumber("76EF28", 16),
+	GGL_CLogicProperties_SBlessCategory = tonumber("76EFC4", 16),
+	
+	GGL_CDamageClassProps = tonumber("788978", 16),
+	
+	-- player stuff
+	GGL_CPlayerStatus = tonumber("76FA88", 16),
+	
+	GGL_CPlayerAttractionProps = tonumber("770834", 16),
+	GGL_CPlayerAttractionHandler = tonumber("770868", 16),
+	
 }
 MemoryManipulation.VTableNames = {}
 for k,v in pairs(MemoryManipulation.ClassVTable) do
 	MemoryManipulation.VTableNames[v] = k
 end
-MemoryManipulation.DataType= {Int=1, Float=2, ObjectPointer=3, ObjectPointerList=4, Bit=5, EmbeddedObjectList=6, EmbeddedObject=7, ListOfInt=8, String=9, DataPointerListSize=10}
+MemoryManipulation.DataType = {Int=1, Float=2, Bit=3, String=4,
+	ObjectPointer=11, EmbeddedObject=12, DataPointerListSize=13, EmbeddedFixedLengthObjectPointers=14,
+	ObjectPointerList=21, EmbeddedObjectList=22,
+	ListOfInt=31, EmbeddedFixedLengthFloats=32,
+}
 MemoryManipulation.ObjFieldInfo = {
 	-- entities
 	markerEntities=nil,
@@ -541,7 +720,7 @@ MemoryManipulation.ObjFieldInfo = {
 		vtable = MemoryManipulation.ClassVTable.EGL_CGLEEntityProps,
 		fields = {
 			{name="Class", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
-			{name="Categories", index={4}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="Categories", index={4}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=EntityCategories},
 			{name="ApproachPos", index={7}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
 			{name="ApproachR", index={9}, datatype=MemoryManipulation.DataType.Float},
 			{name="Race", index={10}, datatype=nil},
@@ -649,7 +828,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="DoorPos", index={46}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
 			{name="LeavePos", index={48}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
 			{name="ConstructionInfo", index={50}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="constructionInfo"},
-			{name="BuildOn", index={76}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="BuildOn", index={76}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=Entities},
 			{name="HideBase", index={79}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
 			{name="CanBeSold", index={79}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
 			{name="IsWall", index={79}, datatype=MemoryManipulation.DataType.Bit, bitOffset=2, check={1,0}},
@@ -657,7 +836,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="UpgradeSite", index={101}, datatype=MemoryManipulation.DataType.Int, check=Entities},
 			{name="ArmorClass", index={102}, datatype=MemoryManipulation.DataType.Int, check=ArmorClasses},
 			{name="ArmorAmount", index={103}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="WorkTaskList", index={105}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="WorkTaskList", index={105}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=TaskLists},
 			{name="MilitaryInfo", index={108}, datatype=nil},
 			{name="CollapseTime", index={112}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="Convertible", index={113}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
@@ -990,7 +1169,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="Delay", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="Damage", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="ExplosionEffectID", index={7}, datatype=MemoryManipulation.DataType.Int, check=GGL_Effects},
-			{name="AffectedEntityTypes", index={9}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="AffectedEntityTypes", index={9}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=Entities},
 		},
 	},
 	[MemoryManipulation.ClassVTable.GGL_CKegBehaviorProperties] = {
@@ -1383,7 +1562,7 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="BehaviorProps2", index={4}, datatype=MemoryManipulation.DataType.ObjectPointer},
 			{name="ShotsLeft", index={10}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=-1 end},
-			-- there are a lot of 0s and stuff i can't make sense of, but shotsleft is probably the most imprortant anyway
+			-- there are a lot of 0s and stuff i can't make sense of, but shotsleft is probably the most important anyway
 			-- 8 seems to be some sort of attack time counter
 			-- 9 is 275 at least on pilgrims cannon
 		},
@@ -1428,15 +1607,149 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="HighQualityOnly", index={6}, datatype=MemoryManipulation.DataType.Bit, bitOffset=3, check={1,0}},
 			{name="MapEditor_Rotateable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
 			{name="MapEditor_Placeable", index={7}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
-			{name="AnimList", index={9}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="AnimList", index={9}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=nil},
+		},
+	},
+	-- player status
+	markerPlayerStatus = nil,
+	[MemoryManipulation.ClassVTable.GGL_CPlayerStatus] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CPlayerStatus,
+		fields = {
+			{name="t", index={0}, datatype=nil},
+			{name="PlayerID", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="PlayerAttractionHandler", index={197}, datatype=MemoryManipulation.DataType.ObjectPointer},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CPlayerAttractionHandler] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CPlayerAttractionHandler,
+		fields = {
+			{name="t", index={0}, datatype=nil},
+			{name="PaydayStarted", index={2}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="PaydayStartTick", index={3}, datatype=MemoryManipulation.DataType.Int},
+			-- 8 list of all player entities?
+			-- 12 list of all player hqs?
+			-- 16 list of all player vcs?
+			-- 20 list of all player buildings (workplaces)?
+			-- 24 list of all residences?
+			-- 28 list of all farms?
+			-- 36 empty list?
+			-- 40 another list of buildings?
+			-- 48 list of all settlers with lifetime?
+			-- 52 list of all leaders?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CPlayerAttractionProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CPlayerAttractionProps,
+		fields = {
+			{name="AttractionFrequency", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="PaydayFrequency", index={2}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="EntityTypeBanTime", index={3}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="ReAttachWorkerFrequency", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="PlayerMoneyDispo", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MaximumDistanceWorkerToFarm", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="MaximumDistanceWorkerToResidence", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		},
 	},
 	-- misc stuff (embedded objects, helper tables...)
 	markerMiscStuff=nil,
+	["Technology"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="t", index={0}},
+			{name="TimeToResearch", index={1}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ResourceCosts", index={3}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="costInfo"},
+			{name="RequiredTecConditions", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="TecConditions", index={23}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqTechnology"},
+			{name="RequiredEntityConditions", index={26}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="EntityConditions", index={28}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqBuilding"},
+		},
+	},
+	["TechnologyReqBuilding"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="EntityType", index={0}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="Amount", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	["TechnologyReqTechnology"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="TecType", index={0}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="TecCategoryType", index={1}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	["DamageClassList"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="DamageClasses", index={1}, datatype=MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers, fixedLength=7},
+			-- there is a damageclass 0, nowhere defined, possibly to avoid errors when entitytype damageclass not set
+			-- i avoid giving access to it because i'm not sure about that and it simplifies code by correcting lua/c indexing ;)
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CDamageClassProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CDamageClassProps,
+		fields = {
+			{name="BonusVsArmorClass", index={1}, datatype=MemoryManipulation.DataType.EmbeddedFixedLengthFloats, fixedLength=7},
+			-- there is no armorclass 0, but this spot is filled by the vtable (which convieniently fixes lua/c indexing)
+		},
+	},
 	[MemoryManipulation.ClassVTable.EGL_CGLEModelSet] = {
 		vtable = MemoryManipulation.ClassVTable.EGL_CGLEModelSet,
 		fields = {
-			{name="ModelList", index={2}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="ModelList", index={2}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=Models},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties,
+		fields = {
+			{name="t", index={0}, datatype=nil},
+			{name="CompensationOnBuildingSale", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="BuildingUpgrades", index={3}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=4},
+			{name="SettlerUpgrades", index={7}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=3},
+			{name="TaxationLevels", index={11}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=3},
+			{name="TradeResources", index={15}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=8},
+			{name="BlessCategories", index={19}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=7},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties_SBuildingUpgradeCategory] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties_SBuildingUpgradeCategory,
+		fields = {
+			{name="Category", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="FirstBuilding", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties_SSettlerUpgradeCategory] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties_SSettlerUpgradeCategory,
+		fields = {
+			{name="Category", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="FirstSettler", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties_STaxationLevel] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties_STaxationLevel,
+		fields = {
+			{name="RegularTax", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="MotivationChange", index={2}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties_STradeResource] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties_STradeResource,
+		fields = {
+			{name="ResourceType", index={1}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="BasePrice", index={2}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="MinPrice", index={3}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="MaxPrice", index={4}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Inflation", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Deflation", index={6}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkAmount", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CLogicProperties_SBlessCategory] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CLogicProperties_SBlessCategory,
+		fields = {
+			{name="Name", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="RequiredFaith", index={2}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="EntityTypes", index={4}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=Entities},
 		},
 	},
 	costInfo = {
@@ -1490,7 +1803,7 @@ MemoryManipulation.ObjFieldInfo = {
 		hasNoVTable = true,
 		fields = {
 			{name="MysteriousInt", index={0}, datatype=MemoryManipulation.DataType.Int, check={}},
-			{name="TechList", index={2}, datatype=MemoryManipulation.DataType.ListOfInt},
+			{name="TechList", index={2}, datatype=MemoryManipulation.DataType.ListOfInt, checkAll=Technologies},
 		},
 	},
 	Position = {
@@ -1502,9 +1815,8 @@ MemoryManipulation.ObjFieldInfo = {
 	},
 	PositionWithRotation = {
 		hasNoVTable = true,
+		inheritsFrom = {"Position"},
 		fields = {
-			{name="X", index={0}, datatype=MemoryManipulation.DataType.Float},
-			{name="Y", index={1}, datatype=MemoryManipulation.DataType.Float},
 			{name="r", index={2}, datatype=MemoryManipulation.DataType.Float, readConv=math.deg, writeConv=math.rad},
 		}
 	},
@@ -1558,3 +1870,6 @@ do
 		applyInheritance(o)
 	end
 end
+
+table.insert(framework2.map.endCallback, MemoryManipulation.OnLeaveMap)
+table.insert(s5HookLoader.cb, MemoryManipulation.OnLoadMap)
