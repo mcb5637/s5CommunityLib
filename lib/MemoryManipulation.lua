@@ -18,7 +18,57 @@ end --mcbPacker.ignore
 --MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(Technologies.GT_Architecture), nil, MemoryManipulation.ObjFieldInfo.Technology)
 --MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(Entities.PB_Residence1), "LogicProps.BlockingArea", {{{X=100,Y=100},{X=500,Y=500}}})
 
-
+--- author:mcb		current maintainer:mcb		v0.1b
+-- Gesammeltes Wissen über Siedler Objekte. Besteht aus verschiedenen Bereichen:
+-- - LibFuncs: Einfachste Funktionen die Zugriff auf einen einzelnen Wert eines entities/annderen objektes geben.
+-- - Spezielle Funktionen: Etwas kompliziertere Funktionen die meistens mehrere Werte gemeinsam ändern müssen.
+-- - Hauptfunktionen: Grundlage für alles andere.
+-- - ObjFieldInfo: Enthält alle notwendigen objekttypen/indizies und gibt ihnen strings als namen.
+-- 		(das einzige was für eine andere Version angepasst werden muss).
+-- - GetXXXPointer: Stellt Pointer auf bestimmte Objekte bereit.
+-- Zur normalen verwendung muss nur LibFuncs und Spezielle Funktionen beachtet werden, der rest sollte nur für entwicklung verwendet werden.
+-- (Natürlich nutzen LibFuncs und Spezielle Funktionen die anderen und sie müssen deswegen vorhanden sein, sie sollten aber nicht dikekt genutzt werden).
+-- 
+-- LibFuncs:
+-- - MemoryManipulation.Get/SetLeaderExperience						Die Erfahrung eines Leaders.
+-- - MemoryManipulation.Get/SetLeaderTroopHealth					Die gesundheit der Soldaten eines leaders (Alle aufaddiert, -1 -> noch nicht verwendet, voll).
+-- - MemoryManipulation.Get/SetSettlerMovementSpeed					Die bewegungsgeschwidigkeit einer einheit (Scm/sec).
+-- - MemoryManipulation.Get/SetSettlerRotationSpeed					Die rotationsgeschwindigkeit einer einheit (deg/sec).
+-- - MemoryManipulation.GetLeaderOfSoldier							Der leader eines soldiers (kein set verfügbar).
+-- 
+-- Spezielle Funktionen:
+-- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
+-- - MemoryManipulation.HasEntityTypeBehavior(ety, beh)				Testet ob ein entitytyp ein spezielles behaviorprops (gegeben über vtable) hat.
+-- - MemoryManipulation.IsSoldier(id)								Gibt zurück ob ein entity ein soldier ist.
+-- 
+-- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
+-- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
+-- - MemoryManipulation.CreateLibFuncs()							Erstellt die LibFuncs, wird aus OnLoadMap aufgerufen, kann aber auch selbst aufgerufen werden.
+-- 
+-- Hauptfunktionen:
+-- - MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)	Liest ein Objekt ein, sv ist ein pointer auf das objekt.
+-- 																		objInfo (optional) Ist das table in das alles geschrieben wird (wird zurückgegeben).
+-- 																		fieldInfo (optional) Dient zum überschreiben der ObjFieldInfo.
+-- 																		readFilter (optional) Wenn gegeben, liest nur wenn der name in readFilter gegeben ist (true->alles).
+-- - MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)			Schreibt vorhandene werte in ein Objekt. (Parameter wie bei Read).
+-- - MemoryManipulation.ConvertToObjInfo(adr, val, objInfo)			Konvertiert einen String-pfad in die passende table-struktur.
+-- - MemoryManipulation.GetSingleValue(sv, adr)						Liest einen einzelnen Wert von einem string-pfad. (Konvertiert entities zu pointern).
+-- - MemoryManipulation.SetSingleValue(sv, adr, val)				Schreibt einen einzelnen Wert von einem String-pfad. (Konvertiert entities zu pointern).
+-- - MemoryManipulation.ReadSingleBit(sv, off)						Liest ein int von sv[0] und extrahiert ein einzelnes bit.
+-- - MemoryManipulation.WriteSingleBit(sv, off, b)					Ändert ein einzelnes bit an sv[0].
+-- 
+-- GetXXXPointer:
+-- - MemoryManipulation.GetETypePointer(ety)						Gibt einen Pointer auf einen entitytyp zurück.
+-- - MemoryManipulation.GetPlayerStatusPointer(player)				Gibt einen pointer auf das player-status objekt zurück.
+-- - MemoryManipulation.GetDamageModifierPointer()					Gibt einen pointer auf das damage-modifier objekt zuück
+-- 																		(vtable muss manuell mit MemoryManipulation.ObjFieldInfo.DamageClassList
+-- 																		überschrieben werden).
+-- - MemoryManipulation.GetLogicPropertiesPointer()					Gibt einen pointer auf das logic-props objekt zurück.
+-- - MemoryManipulation.GetPlayerAttractionPropsPointer()			Gibt einen pointer auf das playerattractionprops objekt zurück.
+-- - MemoryManipulation.GetTechnologyPointer(tid)					Gibt einen pointer auf eine technologie zurück
+-- 																		(vtable muss manuell mit MemoryManipulation.ObjFieldInfo.Technology
+-- 																		überschrieben werden).
+-- 
 MemoryManipulation = {}
 
 MemoryManipulation.MemBackup = {BackupList={}}
@@ -343,9 +393,23 @@ function MemoryManipulation.GetSingleValue(sv, adr)
 	if type(sv)=="number" then
 		sv = S5Hook.GetEntityMem(sv)
 	end
-	local objInfo, t, adr = MemoryManipulation.ConvertToObjInfo(adr, true)
-	MemoryManipulation.ReadObj(sv, objInfo, nil, objInfo)
-	return t[adr]
+	local objInfo, t, n = nil, nil, nil
+	if type(adr)=="table" then
+		t,n={},{}
+		for i,a in ipairs(adr) do
+			objInfo, t[i], n[i] = MemoryManipulation.ConvertToObjInfo(a, true, objInfo)
+		end
+		MemoryManipulation.ReadObj(sv, objInfo, nil, objInfo)
+		for i,a in ipairs(adr) do
+			if t[i][n[i]]~=true then
+				return t[i][n[i]]
+			end
+		end
+	else
+		objInfo, t, n = MemoryManipulation.ConvertToObjInfo(adr, true)
+		MemoryManipulation.ReadObj(sv, objInfo, nil, objInfo)
+		return t[n]~=true and t[n] or nil
+	end
 end
 
 function MemoryManipulation.SetSingleValue(sv, adr, val)
@@ -355,8 +419,16 @@ function MemoryManipulation.SetSingleValue(sv, adr, val)
 	if type(sv)=="number" then
 		sv = S5Hook.GetEntityMem(sv)
 	end
-	local objInfo = MemoryManipulation.ConvertToObjInfo(adr, val)
-	MemoryManipulation.WriteObj(sv, objInfo)
+	local objInfo= nil
+	if type(adr)=="table" then
+		for i,a in ipairs(adr) do
+			objInfo = MemoryManipulation.ConvertToObjInfo(a, val, objInfo)
+		end
+		MemoryManipulation.WriteObj(sv, objInfo)
+	else
+		local objInfo = MemoryManipulation.ConvertToObjInfo(adr, val)
+		MemoryManipulation.WriteObj(sv, objInfo)
+	end
 end
 
 function MemoryManipulation.ReadSingleBit(sv, off)
@@ -1872,4 +1944,48 @@ do
 end
 
 table.insert(framework2.map.endCallback, MemoryManipulation.OnLeaveMap)
-table.insert(s5HookLoader.cb, MemoryManipulation.OnLoadMap)
+table.insert(s5HookLoader.cb, 1, MemoryManipulation.OnLoadMap)
+
+
+function MemoryManipulation.IsSoldier(id)
+	return MemoryManipulation.HasEntityBehavior(id, MemoryManipulation.ClassVTable.GGL_CSoldierBehavior)
+end
+
+-- insert lib funcs here
+
+function MemoryManipulation.GetLeaderTroopHealth(id)
+	assert(Logic.IsLeader(id)==1)
+	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent")
+end
+function MemoryManipulation.SetLeaderTroopHealth(id, val)
+	assert(Logic.IsLeader(id)==1)
+	return MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent", val)
+end
+function MemoryManipulation.GetLeaderExperience(id)
+	assert(Logic.IsLeader(id)==1)
+	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience")
+end
+function MemoryManipulation.SetLeaderExperience(id, val)
+	assert(Logic.IsLeader(id)==1)
+	return MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience", val)
+end
+function MemoryManipulation.GetSettlerRotationSpeed(id)
+	assert(Logic.IsSettler(id)==1)
+	return MemoryManipulation.GetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"})
+end
+function MemoryManipulation.SetSettlerRotationSpeed(id, val)
+	assert(Logic.IsSettler(id)==1)
+	return MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}, val)
+end
+function MemoryManipulation.GetLeaderOfSoldier(id)
+	assert(MemoryManipulation.IsSoldier(id))
+	return MemoryManipulation.GetSingleValue(id, "LeaderId")
+end
+function MemoryManipulation.GetSettlerMovementSpeed(id)
+	assert(Logic.IsSettler(id)==1)
+	return MemoryManipulation.GetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"})
+end
+function MemoryManipulation.SetSettlerMovementSpeed(id, val)
+	assert(Logic.IsSettler(id)==1)
+	return MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}, val)
+end
