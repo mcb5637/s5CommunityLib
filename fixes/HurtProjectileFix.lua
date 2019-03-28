@@ -6,7 +6,19 @@ mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("comfort/mcbEMan")
 end --mcbPacker.ignore
 
-
+--- author:mcb		current maintainer:mcb		v1.0
+-- Fixt die schadensberechnung von kanonen-projektilen.
+-- 
+-- - HurtProjectileFix.Init()			Aus der FMA aufrufen.
+-- 
+-- Ich empfehle weiterhin die damageclasses von PV_Cannon2 und PV_Cannon3 zu tauschen, damit die tatsächlichen stärken und schwächen der kanonen wie in den tooltips beschrieben sind.
+-- 
+-- Benötigt:
+-- - mcbTrigger
+-- - mcbTriggerExtHurtEntity
+-- - S5Hook (neueste version mit hurt-callback)
+-- - ArmorClasses
+-- - mcbEMan (durch MemoryManipulation zu ersetzen sobald fertig)
 HurtProjectileFix = {projectileMem={}, lastProjectile={}}
 
 function HurtProjectileFix.OnEffectCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId)

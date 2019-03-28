@@ -5,6 +5,7 @@ mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
 mcbPacker.require("s5CommunityLib/comfort/number/round")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
+mcbPacker.require("comfort/framework2")
 end --mcbPacker.ignore
 
 --MemoryManipulation.ReadObj(S5Hook.GetEntityMem(132339))
@@ -69,6 +70,15 @@ end --mcbPacker.ignore
 -- 																		(vtable muss manuell mit MemoryManipulation.ObjFieldInfo.Technology
 -- 																		überschrieben werden).
 -- 
+-- Benötigt:
+-- - S5Hook
+-- - s5HookLoader
+-- - framework2
+-- - IsEntityOfType
+-- - ArmorClasses
+-- - round
+-- - IstDrin
+-- - CopyTable
 MemoryManipulation = {}
 
 MemoryManipulation.MemBackup = {BackupList={}}

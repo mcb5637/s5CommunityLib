@@ -28,7 +28,17 @@ end --mcbPacker.ignore
 -- 															effectId,
 -- 														}
 -- 
+-- mcbTriggerExtHurtEntity.getEntityInfo()				Nur aus dem LOGIC_EVENT_ENTITY_HURT_ENTITY trigger aufrufen!
+-- 														Gibt informationen über das bomben-entity zurück.
+-- 														{
+--															tick,
+--															attackerId,
+--															attackerType,
+--														}
+-- 														
+-- 
 -- Benötigt:
+-- - S5Hook (neuester, mit hurt callback)
 -- - s5HookLoader
 -- - mcbTrigger
 -- 
