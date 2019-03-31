@@ -285,6 +285,9 @@ function mcbTrigger.init()
 		end
 		mcbTrigger.RequestTrigger(event, nil, "mcbTrigger_action", 1, nil, {event})
 	end
+	if not mcbTrigger.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] then
+		mcbTrigger.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] = {}
+	end
 	mcbTrigger.entityHurtEntityBaseTriggerId = mcbTrigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "mcbTrigger_action", 1, nil, {Events.LOGIC_EVENT_ENTITY_HURT_ENTITY})
 	StartSimpleJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, nil, f, 1, nil, arg)
