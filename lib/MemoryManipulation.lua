@@ -36,11 +36,17 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetSettlerMovementSpeed					Die bewegungsgeschwidigkeit einer einheit (Scm/sec).
 -- - MemoryManipulation.Get/SetSettlerRotationSpeed					Die rotationsgeschwindigkeit einer einheit (deg/sec).
 -- - MemoryManipulation.GetLeaderOfSoldier							Der leader eines soldiers (kein set verfügbar).
+-- - MemoryManipulation.GetBarracksAutoFillActive					Der autofill status einer Kaserne (Set über GUI).
+-- - MemoryManipulation.Get/SetSoldierTypeOfLeaderType				Der typ der soldiers eines leaders.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
 -- - MemoryManipulation.HasEntityTypeBehavior(ety, beh)				Testet ob ein entitytyp ein spezielles behaviorprops (gegeben über vtable) hat.
 -- - MemoryManipulation.IsSoldier(id)								Gibt zurück ob ein entity ein soldier ist.
+-- - MemoryManipulation.CostTableFromRead(r)						Erstellt ein normales CostTable von ausgelesenen Kosten.
+-- - MemoryManipulation.CostTableToWritable(c, ignoreZeroes)		Erstellt zu schreibende Daten aus einem CostTable. (wenn ignoreZeroes gesetzt ist, werden nur Kosten~=0 geschrieben).
+-- - MemoryManipulation.GetSettlerTypeCost(ty)						Gibt die Kosten für diesen Settler typ zurück (Leader oder soldier).
+-- - MemoryManipulation.SetSettlerTypeCost(ty, c, ignoreZeroes)		Setzt die Kosten für diesen Settler typ.
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
@@ -200,7 +206,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 				val = MemoryManipulation.ReadSingleBit(sv2, fi.bitOffset)
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
 				if sv2[0]:GetInt()>0 then
-					val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
+					val = MemoryManipulation.ReadObj(sv2[0], objInfo[fi.name] and objInfo[fi.name]~=true and objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
@@ -218,7 +224,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
-				val = MemoryManipulation.ReadObj(sv2, objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
+				val = MemoryManipulation.ReadObj(sv2, objInfo[fi.name] and objInfo[fi.name]~=true and objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local i=1
@@ -638,6 +644,9 @@ MemoryManipulation.ClassVTable = {
 	
 	GGL_CLimitedLifespanBehaviorProps = tonumber("775DE4", 16),
 	GGL_CLimitedLifespanBehavior = tonumber("775D9C", 16),
+	
+	GGL_CBarrackBehaviorProperties = tonumber("778B34", 16),
+	GGL_CBarrackBehavior = tonumber("778A68", 16),
 	
 	-- other stuff
 	GGlue_CGlueEntityProps = tonumber("788824", 16),
@@ -1315,6 +1324,18 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="LifespanSeconds", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBarrackBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBarrackBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			{name="TrainingTaskList1", index={4}, datatype=MemoryManipulation.DataType.Int, check=Tasklist},
+			{name="TrainingTaskList2", index={5}, datatype=MemoryManipulation.DataType.Int, check=Tasklist},
+			{name="TrainingTaskList3", index={6}, datatype=MemoryManipulation.DataType.Int, check=Tasklist},
+			--{name="MaxTrainingNumber", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="LeaveTaskList", index={8}, datatype=MemoryManipulation.DataType.Int, check=Tasklist},
+			{name="TrainingTime", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+		},
+	},
 	-- behaviors
 	markerBehaviors=nil,
 	["EGL_CGLEBehavior"] = {-- no vtable known
@@ -1673,6 +1694,13 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="RemainingLifespanSeconds", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBarrackBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBarrackBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="AutoFillActive", index={4}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={0,1}},
+		},
+	},
 	-- display props
 	markerDisplayProps=nil,
 	[MemoryManipulation.ClassVTable.ED_CDisplayEntityProps] = {
@@ -1956,20 +1984,82 @@ end
 table.insert(framework2.map.endCallback, MemoryManipulation.OnLeaveMap)
 table.insert(s5HookLoader.cb, 1, MemoryManipulation.OnLoadMap)
 
+function MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
+	local w = {}
+	for rty, name in pairs{
+		[ResourceType.Gold] = "Gold",
+		[ResourceType.Stone] = "Stone",
+		[ResourceType.Iron] = "Iron",
+		[ResourceType.Sulfur] = "Sulfur",
+		[ResourceType.Clay] = "Clay",
+		[ResourceType.Wood] = "Wood",
+	} do
+		if not (ignoreZeroes and c[rty]<=0) then
+			w[name] = c[rty]
+		end
+	end
+	return w
+end
+
+function MemoryManipulation.CostTableFromRead(r)
+	local c = {}
+	for _,rty in pairs(ResourceType) do
+		c[rty] = 0
+	end
+	for rty, name in pairs{
+		[ResourceType.Gold] = "Gold",
+		[ResourceType.Stone] = "Stone",
+		[ResourceType.Iron] = "Iron",
+		[ResourceType.Sulfur] = "Sulfur",
+		[ResourceType.Clay] = "Clay",
+		[ResourceType.Wood] = "Wood",
+	} do
+		c[rty] = r[name]
+	end
+	return c
+end
 
 function MemoryManipulation.IsSoldier(id)
 	return MemoryManipulation.HasEntityBehavior(id, MemoryManipulation.ClassVTable.GGL_CSoldierBehavior)
 end
 
+function MemoryManipulation.GetSettlerTypeCost(ty)
+	local c = MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.Cost")
+	return MemoryManipulation.CostTableFromRead(c)
+end
+
+function MemoryManipulation.SetSettlerTypeCost(ty, c, ignoreZeroes)
+	c = MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.Cost", c)
+end
+
 -- insert lib funcs here
 
+function MemoryManipulation.GetBarracksAutoFillActive(id)
+	assert(Logic.IsBuilding(id)==1)
+	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CBarrackBehavior.AutoFillActive")
+end
+function MemoryManipulation.GetMovementCheckBlockingFlag(id)
+	assert(Logic.IsSettler(id)==1)
+	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CSettlerMovement.BlockingFlag")
+end
+function MemoryManipulation.SetMovementCheckBlockingFlag(id, val)
+	assert(Logic.IsSettler(id)==1)
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CSettlerMovement.BlockingFlag", val)
+end
+function MemoryManipulation.GetSoldierTypeOfLeaderType(typ)
+	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(typ), "BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType")
+end
+function MemoryManipulation.SetSoldierTypeOfLeaderType(typ, val)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), "BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType", val)
+end
 function MemoryManipulation.GetLeaderTroopHealth(id)
 	assert(Logic.IsLeader(id)==1)
 	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent")
 end
 function MemoryManipulation.SetLeaderTroopHealth(id, val)
 	assert(Logic.IsLeader(id)==1)
-	return MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent", val)
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent", val)
 end
 function MemoryManipulation.GetLeaderExperience(id)
 	assert(Logic.IsLeader(id)==1)
@@ -1977,7 +2067,7 @@ function MemoryManipulation.GetLeaderExperience(id)
 end
 function MemoryManipulation.SetLeaderExperience(id, val)
 	assert(Logic.IsLeader(id)==1)
-	return MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience", val)
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience", val)
 end
 function MemoryManipulation.GetSettlerRotationSpeed(id)
 	assert(Logic.IsSettler(id)==1)
@@ -1985,7 +2075,7 @@ function MemoryManipulation.GetSettlerRotationSpeed(id)
 end
 function MemoryManipulation.SetSettlerRotationSpeed(id, val)
 	assert(Logic.IsSettler(id)==1)
-	return MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}, val)
+	MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}, val)
 end
 function MemoryManipulation.GetLeaderOfSoldier(id)
 	assert(MemoryManipulation.IsSoldier(id))
@@ -1997,5 +2087,5 @@ function MemoryManipulation.GetSettlerMovementSpeed(id)
 end
 function MemoryManipulation.SetSettlerMovementSpeed(id, val)
 	assert(Logic.IsSettler(id)==1)
-	return MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}, val)
+	MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}, val)
 end
