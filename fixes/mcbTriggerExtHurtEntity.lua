@@ -26,6 +26,7 @@ end --mcbPacker.ignore
 -- 															damage,
 -- 															radius,
 -- 															effectId,
+-- 															isHookCreated,
 -- 														}
 -- 
 -- mcbTriggerExtHurtEntity.getEntityInfo()				Nur aus dem LOGIC_EVENT_ENTITY_HURT_ENTITY trigger aufrufen!
@@ -44,7 +45,7 @@ end --mcbPacker.ignore
 -- 
 mcbTriggerExtHurtEntity = {projectiles={}, currentProjectile={}, createdCbs={}, hitCbs={}, currentEntity={}}
 
-function mcbTriggerExtHurtEntity.projectileCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId)
+function mcbTriggerExtHurtEntity.projectileCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId, isHookCreated)
 	if creatorType == 7816856 then
 		mcbTriggerExtHurtEntity.projectiles[effectId] = {
 			effectType = effectType,
@@ -56,12 +57,13 @@ function mcbTriggerExtHurtEntity.projectileCreated(effectType, playerId, startPo
 			damage = damage,
 			radius = radius,
 			effectId = effectId,
+			isHookCreated = isHookCreated,
 		}
 	elseif creatorType ~= 7790912 then
 		LuaDebugger.Log("unknown effect created: "..creatorType)
 	end
 	for _,f in ipairs(mcbTriggerExtHurtEntity.createdCbs) do
-		mcbTrigger.protectedCall(f, effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId)
+		mcbTrigger.protectedCall(f, effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId, isHookCreated)
 	end
 end
 

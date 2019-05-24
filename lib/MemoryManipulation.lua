@@ -38,6 +38,31 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.GetLeaderOfSoldier							Der leader eines soldiers (kein set verfügbar).
 -- - MemoryManipulation.GetBarracksAutoFillActive					Der autofill status einer Kaserne (Set über GUI).
 -- - MemoryManipulation.Get/SetSoldierTypeOfLeaderType				Der typ der soldiers eines leaders.
+-- - MemoryManipulation.Get/SetEntityTypeMaxRange					Die maximale Angriffsreichweite eines entitytyps (melee normalerweise 250).
+-- - MemoryManipulation.Get/SetEntityScale							Der Skalierungsfaktor des entities.
+-- - MemoryManipulation.Get/SetBuildingHeight						Die höhe eines Gebäudes (während bau ==bauvortschritt).
+-- - MemoryManipulation.Get/SetSettlerOverheadWidget				Typ der Anzeige über dem settler (0->nur Name, 1->Name+Bar (auch für nicht Leader), 2->Worker,
+-- 																		3->Name+Bar (nur Leader), 4->Nix).
+-- - MemoryManipulation.Get/SetMovingEntityTargetPos				Die Zielposition, zu der ein Entity sich bewegt.
+-- - MemoryManipulation.Get/SetEntityCamouflageRemaining			Die Zeit, die ein entity noch unsichtbar ist (nur standard-unsichtbarkeit, nicht Dieb).
+-- - MemoryManipulation.GetEntityTimeToCamouflage					Die Zeit, die ein entity noch sichtbar ist (diebes-unsichtbarkeit, nicht standard).
+-- - MemoryManipulation.Get/SetHeroResurrectionTime					Die Zeit, bis ein Held wiederbelebt wird.
+-- - MemoryManipulation.Get/SetEntityLimitedLifespanRemainingSeconds	Die Zeit die ein LimitedLifespan entity noch lebt.
+-- - MemoryManipulation.Get/SetEntityTypeLimitedLifespanSeconds		Die Zeit, die entities von diesem Typ leben.
+-- - MemoryManipulation.Get/SetLeaderTypeUpkeepCost					Die Kosten die ein leader dieses Types jeden Zahltag kostet.
+-- - MemoryManipulation.Get/SetEntityTypeMaxHealth					Die MaximalHP eines entitytypes.
+-- - MemoryManipulation.Get/SetBuildingTypeKegEffectFactor			Der Schadens-Faktor der bei Diebes-Sabotagen verwendet wird.
+-- - MemoryManipulation.Get/SetBuildingTypeAffectMotivation			Der Motivations-Effekt eines gebäudetypes (Set hat keine Wirkung auf bereits existierende Gebäude).
+-- - MemoryManipulation.Get/SetEntityTypeSuspensionAnimation		Die suspended-animation eines entitytypes.
+-- - MemoryManipulation.Get/SetLeaderTypeHealingPoints				Die HP die dieser entitytyp bei jeder regeneration dazuerhält.
+-- - MemoryManipulation.Get/SetLeaderTypeHealingSeconds				Die Zeit zwischen Regenerationen dieses entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeDamageClass				Die Damageclass der autoattack eines entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeBattleWaitUntil			Die BattleWaitUntil der autoattack eines entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeMissChance				Die MissChance der autoattack eines entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeMaxRange					Die maximale reichweite der autoattack eines entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeMinRange					Die minimale reichweite der autoattacks eines entitytypes.
+-- - MemoryManipulation.Get/SetLeaderTypeAutoAttackRange			Die reichweite in der leader dieses types automatisch angreifen.
+-- - MemoryManipulation.Get/SetBuildingTypeNumOfAttractableSettlers	Die anzahl der VC-plätze die gebäude dieses types zur verfügung stellen (wird nicht von allen typen genutzt).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -47,6 +72,14 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.CostTableToWritable(c, ignoreZeroes)		Erstellt zu schreibende Daten aus einem CostTable. (wenn ignoreZeroes gesetzt ist, werden nur Kosten~=0 geschrieben).
 -- - MemoryManipulation.GetSettlerTypeCost(ty)						Gibt die Kosten für diesen Settler typ zurück (Leader oder soldier).
 -- - MemoryManipulation.SetSettlerTypeCost(ty, c, ignoreZeroes)		Setzt die Kosten für diesen Settler typ.
+-- - MemoryManipulation.GetEntityMaxRange(id)						Die maximale Angriffsreichweite eines entities (direkt vom entity oder vom typ, falls 0).
+-- - MemoryManipulation.SetEntityTimeToCamouflage(id, sec)			Die Zeit, die ein entity noch sichtbar ist (diebes-unsichtbarkeit, nicht standard).
+-- - MemoryManipulation.SetThiefStolenResourceInfo(id, rty, am)		Setzt Resourcentyp und Menge die ein Dieb bei sich trägt (Get über Logic).
+-- - MemoryManipulation.ReanimateHero(id)							Belebt einen toten Helden wieder (ignoriert normalerweise nebenstehende Truppen).
+-- - MemoryManipulation.GetBuildingTypeCost(ty)						Gibt die Kosten für den Bau eines Gebäudetypes zurück.
+-- - MemoryManipulation.SetBuildingTypeCost(ty, c, ignoreZeroes)	Setzt die Kosten für den bau eines gebäudetypes.
+-- - MemoryManipulation.GetBuildingTypeUpgradeCost(ty)				Die kosten um ein gebäude dieses types auf die nächste stufe auszubauen.
+-- - MemoryManipulation.SetBuildingTypeUpgradeCost(ty, c, ignoreZeroes)		Setzt die Ausbaukosten (Logic.FillBuildingUpgradeCostsTable nicht aktualisiert).
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
@@ -57,7 +90,7 @@ end --mcbPacker.ignore
 -- 																		objInfo (optional) Ist das table in das alles geschrieben wird (wird zurückgegeben).
 -- 																		fieldInfo (optional) Dient zum überschreiben der ObjFieldInfo.
 -- 																		readFilter (optional) Wenn gegeben, liest nur wenn der name in readFilter gegeben ist (true->alles).
--- - MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)			Schreibt vorhandene werte in ein Objekt. (Parameter wie bei Read).
+-- - MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)			Schreibt vorhandene werte in ein Objekt. (Parameter wie bei Read). Gibt zurück, ob irgendetwas geschrieben wurde.
 -- - MemoryManipulation.ConvertToObjInfo(adr, val, objInfo)			Konvertiert einen String-pfad in die passende table-struktur.
 -- - MemoryManipulation.GetSingleValue(sv, adr)						Liest einen einzelnen Wert von einem string-pfad. (Konvertiert entities zu pointern).
 -- - MemoryManipulation.SetSingleValue(sv, adr, val)				Schreibt einen einzelnen Wert von einem String-pfad. (Konvertiert entities zu pointern).
@@ -189,7 +222,6 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 	assert(fieldInfo.hasNoVTable or fieldInfo.vtable==sv[0]:GetInt())
 	for _,fi in ipairs(fieldInfo.fields) do
 		if not readFilter or readFilter[fi.name]~=nil then
-			S5Hook.Log(fi.name)
 			local sv2 = sv
 			for _,i in ipairs(fi.index) do
 				if sv2~=sv then
@@ -217,8 +249,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 						local vtn = MemoryManipulation.VTableNames[vt]
 						--LuaDebugger.Log(vt..(IstDrin(vt, MemoryManipulation.ClassVTable) or "nil"))
 						if (not readFilter or readFilter[fi.name][vtn]~=nil) and MemoryManipulation.ObjFieldInfo[vt] then
-							S5Hook.Log(vtn)
-							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn], nil, readFilter and readFilter[fi.name]~=true and readFilter[fi.name][vtn])
+							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn] and val[vtn]~=true and val[vtn], nil, readFilter and readFilter[fi.name]~=true and readFilter[fi.name][vtn]~=true and readFilter[fi.name][vtn])
 						end
 					end
 				end
@@ -289,6 +320,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 end
 
 function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
+	local ret = false
 	if not fieldInfo then
 		fieldInfo = MemoryManipulation.ObjFieldInfo[sv[0]:GetInt()]
 	end
@@ -324,13 +356,16 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 			end
 			if fi.datatype==MemoryManipulation.DataType.Int then
 				sv2[0]:SetInt(val)
+				ret = true
 			elseif fi.datatype==MemoryManipulation.DataType.Float then
 				sv2[0]:SetFloat(val)
+				ret = true
 			elseif fi.datatype==MemoryManipulation.DataType.Bit then
 				MemoryManipulation.WriteSingleBit(sv2, fi.bitOffset, val)
+				ret = true
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
 				if sv2[0]:GetInt()>0 then
-					MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+					ret = ret or MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 				local li = MemoryManipulation.MemList.init(sv2, 4)
@@ -338,11 +373,11 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 					local vt = sv3[0][0]:GetInt()
 					local vtn = MemoryManipulation.VTableNames[vt]
 					if val[vtn] then
-						MemoryManipulation.WriteObj(sv3[0], val[vtn])
+						ret = ret or MemoryManipulation.WriteObj(sv3[0], val[vtn])
 					end
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
-				MemoryManipulation.WriteObj(sv2, val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+				ret = ret or MemoryManipulation.WriteObj(sv2, val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
 			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
 				local li = MemoryManipulation.MemList.init(sv2, 4)
 				li:override(table.getn(val))
@@ -351,13 +386,14 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 					sv3[0]:SetInt(val[i])
 					i=i+1
 				end
+				ret = true
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
 				local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
 				li:override(table.getn(val))
 				local i=1
 				for sv3 in li:iterator() do
 					if val[i] then
-						MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+						ret = ret or MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
 					end
 					i=i+1
 				end
@@ -369,6 +405,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 				for sv3 in li:iterator() do
 					if val[i] then
 						sv3[0]:SetFloat(val[i])
+						ret = true
 					end
 					i=i+1
 				end
@@ -377,13 +414,14 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 				local i=1
 				for sv3 in li:iterator() do
 					if val[i] then
-						MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+						ret = ret or MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
 					end
 					i=i+1
 				end
 			end
 		end
 	end
+	return ret
 end
 
 function MemoryManipulation.ConvertToObjInfo(adr, val, objInfo)
@@ -421,10 +459,12 @@ function MemoryManipulation.GetSingleValue(sv, adr)
 				return t[i][n[i]]
 			end
 		end
+		assert(false, "no valid adress found")
 	else
 		objInfo, t, n = MemoryManipulation.ConvertToObjInfo(adr, true)
 		MemoryManipulation.ReadObj(sv, objInfo, nil, objInfo)
-		return t[n]~=true and t[n] or nil
+		assert(t[n]~=true, "no valid adress found")
+		return t[n]
 	end
 end
 
@@ -440,10 +480,10 @@ function MemoryManipulation.SetSingleValue(sv, adr, val)
 		for i,a in ipairs(adr) do
 			objInfo = MemoryManipulation.ConvertToObjInfo(a, val, objInfo)
 		end
-		MemoryManipulation.WriteObj(sv, objInfo)
+		assert(MemoryManipulation.WriteObj(sv, objInfo), "no valid adress found")
 	else
 		local objInfo = MemoryManipulation.ConvertToObjInfo(adr, val)
-		MemoryManipulation.WriteObj(sv, objInfo)
+		assert(MemoryManipulation.WriteObj(sv, objInfo), "no valid adress found")
 	end
 end
 
@@ -504,7 +544,9 @@ function MemoryManipulation.OnLeaveMap()
 end
 
 function MemoryManipulation.OnLoadMap()
-	
+	if not MemoryManipulation.LibFuncsCreated then
+		MemoryManipulation.CreateLibFuncs()
+	end
 end
 
 MemoryManipulation.ClassVTable = {
@@ -1965,19 +2007,21 @@ MemoryManipulation.ObjFieldInfo = {
 }
 
 do
-	local function applyInheritance(of)
+	local function applyInheritance(of, name)
 		if of.inheritsFrom and not of.inheritanceDone then
 			for _,c in ipairs(of.inheritsFrom) do
-				applyInheritance(MemoryManipulation.ObjFieldInfo[c])
+				applyInheritance(MemoryManipulation.ObjFieldInfo[c], c)
 				for _,f in ipairs(MemoryManipulation.ObjFieldInfo[c].fields) do
 					table.insert(of.fields, f)
 				end
+				MemoryManipulation.ObjFieldInfo[c].SubClassList = MemoryManipulation.ObjFieldInfo[c].SubClassList or {}
+				table.insert(MemoryManipulation.ObjFieldInfo[c].SubClassList, name)
 			end
 		end
 		of.inheritanceDone=true
 	end
-	for _,o in pairs(MemoryManipulation.ObjFieldInfo) do
-		applyInheritance(o)
+	for n,o in pairs(MemoryManipulation.ObjFieldInfo) do
+		applyInheritance(o, n)
 	end
 end
 
@@ -2033,59 +2077,188 @@ function MemoryManipulation.SetSettlerTypeCost(ty, c, ignoreZeroes)
 	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.Cost", c)
 end
 
--- insert lib funcs here
+function MemoryManipulation.GetBuildingTypeCost(ty)
+	local c = MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.ConstructionInfo.Cost")
+	return MemoryManipulation.CostTableFromRead(c)
+end
 
-function MemoryManipulation.GetBarracksAutoFillActive(id)
-	assert(Logic.IsBuilding(id)==1)
-	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CBarrackBehavior.AutoFillActive")
+function MemoryManipulation.SetBuildingTypeCost(ty, c, ignoreZeroes)
+	c = MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.ConstructionInfo.Cost", c)
 end
-function MemoryManipulation.GetMovementCheckBlockingFlag(id)
-	assert(Logic.IsSettler(id)==1)
-	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CSettlerMovement.BlockingFlag")
+
+function MemoryManipulation.GetBuildingTypeUpgradeCost(ty)
+	local c = MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.Upgrade.Cost")
+	return MemoryManipulation.CostTableFromRead(c)
 end
-function MemoryManipulation.SetMovementCheckBlockingFlag(id, val)
-	assert(Logic.IsSettler(id)==1)
-	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CSettlerMovement.BlockingFlag", val)
+
+function MemoryManipulation.SetBuildingTypeUpgradeCost(ty, c, ignoreZeroes)
+	c = MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(ty), "LogicProps.Upgrade.Cost", c)
 end
-function MemoryManipulation.GetSoldierTypeOfLeaderType(typ)
-	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(typ), "BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType")
+
+function MemoryManipulation.GetEntityMaxRange(id)
+	assert(IsValid(id))
+	local r = MemoryManipulation.GetSingleValue(id, "MaxAttackRange")
+	if r > 0 then
+		return r
+	end
+	return MemoryManipulation.GetEntityTypeMaxRange(Logic.GetEntityType(id))
 end
-function MemoryManipulation.SetSoldierTypeOfLeaderType(typ, val)
-	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), "BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType", val)
+
+function MemoryManipulation.SetEntityTimeToCamouflage(id, sec)
+	if type(id)=="string" then
+		id = GetID(id)
+	end
+	local w = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CThiefCamouflageBehavior.TimeToInvisibility", sec)
+	MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CThiefCamouflageBehavior.InvisibilityRemaining", (sec==0) and 15 or 0, w)
+	assert(MemoryManipulation.WriteObj(S5Hook.GetEntityMem(id), w))
 end
-function MemoryManipulation.GetLeaderTroopHealth(id)
-	assert(Logic.IsLeader(id)==1)
-	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent")
+
+function MemoryManipulation.SetThiefStolenResourceInfo(id, rty, am)
+	if type(id)=="string" then
+		id = GetID(id)
+	end
+	if rty==0 then
+		am = 0
+	end
+	local w = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CThiefBehavior.Amount", am)
+	MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CThiefBehavior.ResourceType", rty, w)
+	assert(MemoryManipulation.WriteObj(S5Hook.GetEntityMem(id), w))
+	if rty==0 then
+		Logic.SetModelAndAnimSet(id, Models.PU_Thief)
+	else
+		Logic.SetModelAndAnimSet(id, Models.PU_ThiefCarry)
+	end
 end
-function MemoryManipulation.SetLeaderTroopHealth(id, val)
-	assert(Logic.IsLeader(id)==1)
-	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent", val)
+
+function MemoryManipulation.ReanimateHero(id)
+	if type(id)=="string" then
+		id = GetID(id)
+	end
+	assert(Logic.IsHero(id)==1 and IsDead(id))
+	local w = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CHeroBehavior.ResurrectionTimePassed", 10000)
+	MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CHeroBehavior.FriendNear", 1, w)
+	MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CHeroBehavior.EnemyNearif", 0, w)
+	assert(MemoryManipulation.WriteObj(S5Hook.GetEntityMem(id), w))
 end
-function MemoryManipulation.GetLeaderExperience(id)
-	assert(Logic.IsLeader(id)==1)
-	return MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience")
+
+function MemoryManipulation.GetDamageModifier(damageclass, armorclass)
+	local t = MemoryManipulation.ReadObj(MemoryManipulation.GetDamageModifierPointer(), nil, MemoryManipulation.ObjFieldInfo.DamageClassList)
+	return t.DamageClasses[damageclass].BonusVsArmorClass[armorclass]
 end
-function MemoryManipulation.SetLeaderExperience(id, val)
-	assert(Logic.IsLeader(id)==1)
-	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLeaderBehavior.Experience", val)
+
+function MemoryManipulation.SetDamageModifier(damageclass, armorclass, factor)
+	local t = MemoryManipulation.ReadObj(MemoryManipulation.GetDamageModifierPointer(), nil, MemoryManipulation.ObjFieldInfo.DamageClassList)
+	t.DamageClasses[damageclass].BonusVsArmorClass[armorclass] = factor
+	return MemoryManipulation.WriteObj(MemoryManipulation.GetDamageModifierPointer(), t, MemoryManipulation.ObjFieldInfo.DamageClassList) -- TODO something not working here
 end
-function MemoryManipulation.GetSettlerRotationSpeed(id)
-	assert(Logic.IsSettler(id)==1)
-	return MemoryManipulation.GetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"})
+
+function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
+	local r = "{"..pre..class..post
+	local function f(c)
+		if MemoryManipulation.ObjFieldInfo[c].SubClassList then
+			for _, subc in ipairs(MemoryManipulation.ObjFieldInfo[c].SubClassList) do
+				r = r..", "..pre..IstDrin(subc, MemoryManipulation.ClassVTable)..post
+				f(subc)
+			end
+		end
+	end
+	f(MemoryManipulation.ClassVTable[class])
+	r = r.."}"
+	return r
 end
-function MemoryManipulation.SetSettlerRotationSpeed(id, val)
-	assert(Logic.IsSettler(id)==1)
-	MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}, val)
+
+-- lib funcs
+MemoryManipulation.LibFuncBase = {Entity=1, EntityType=2}
+
+MemoryManipulation.GetLeaderExperience = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLeaderBehavior.Experience"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.SetLeaderExperience = MemoryManipulation.GetLeaderExperience
+MemoryManipulation.GetLeaderTroopHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.SetLeaderTroopHealth = MemoryManipulation.GetLeaderTroopHealth
+MemoryManipulation.GetSettlerMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.SetSettlerMovementSpeed = MemoryManipulation.GetSettlerMovementSpeed
+MemoryManipulation.GetSettlerRotationSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.SetSettlerRotationSpeed = MemoryManipulation.GetSettlerRotationSpeed
+MemoryManipulation.GetLeaderOfSoldier = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"LeaderId"', check="\tassert(MemoryManipulation.IsSoldier(id))\n"}
+MemoryManipulation.GetMovementCheckBlockingFlag = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CSettlerMovement.BlockingFlag"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.SetMovementCheckBlockingFlag = MemoryManipulation.GetMovementCheckBlockingFlag
+MemoryManipulation.GetBarracksAutoFillActive = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CBarrackBehavior.AutoFillActive"', check="\tassert(Logic.IsBuilding(id)==1)\n"}
+MemoryManipulation.GetSoldierTypeOfLeaderType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType"'}
+MemoryManipulation.SetSoldierTypeOfLeaderType = MemoryManipulation.GetSoldierTypeOfLeaderType
+MemoryManipulation.GetEntityTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange"')}
+MemoryManipulation.SetEntityTypeMaxRange = MemoryManipulation.GetEntityTypeMaxRange
+MemoryManipulation.GetEntityScale = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"Scale"', check="\tassert(IsValid(id))\n"}
+MemoryManipulation.SetEntityScale = MemoryManipulation.GetEntityScale
+MemoryManipulation.GetBuildingHeight = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BuildingHeight"', check="\tassert(Logic.IsBuilding(id)==1)\n"}
+MemoryManipulation.SetBuildingHeight = MemoryManipulation.GetBuildingHeight
+MemoryManipulation.GetSettlerOverheadWidget = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"OverheadWidget"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.SetSettlerOverheadWidget = MemoryManipulation.GetSettlerOverheadWidget
+MemoryManipulation.GetMovingEntityTargetPos = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TargetPosition"'}
+MemoryManipulation.SetMovingEntityTargetPos = MemoryManipulation.GetMovingEntityTargetPos
+MemoryManipulation.GetEntityCamouflageRemaining = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.SetEntityCamouflageRemaining = MemoryManipulation.GetEntityCamouflageRemaining
+MemoryManipulation.GetEntityTimeToCamouflage = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CThiefCamouflageBehavior.TimeToInvisibility"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.GetHeroResurrectionTime = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CHeroBehavior.ResurrectionTimePassed"', check="\tassert(Logic.IsHero(id)==1)\n"}
+MemoryManipulation.SetHeroResurrectionTime = MemoryManipulation.GetHeroResurrectionTime
+MemoryManipulation.GetEntityLimitedLifespanRemainingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLimitedLifespanBehavior.RemainingLifespanSeconds"'}
+MemoryManipulation.SetEntityLimitedLifespanRemainingSeconds = MemoryManipulation.GetEntityLimitedLifespanRemainingSeconds
+MemoryManipulation.GetEntityTypeLimitedLifespanSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLimitedLifespanBehaviorProps.LifespanSeconds"'}
+MemoryManipulation.SetEntityTypeLimitedLifespanSeconds = MemoryManipulation.GetEntityTypeLimitedLifespanSeconds
+MemoryManipulation.GetLeaderTypeUpkeepCost = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLeaderBehaviorProps.UpkeepCosts"'}
+MemoryManipulation.SetLeaderTypeUpkeepCost = MemoryManipulation.GetLeaderTypeUpkeepCost
+MemoryManipulation.GetEntityTypeMaxHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"MaxHealth"'}
+MemoryManipulation.SetEntityTypeMaxHealth = MemoryManipulation.GetEntityTypeMaxHealth
+MemoryManipulation.GetBuildingTypeKegEffectFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"KegEffectFactor"'}
+MemoryManipulation.SetBuildingTypeKegEffectFactor = MemoryManipulation.GetBuildingTypeKegEffectFactor
+MemoryManipulation.GetBuildingTypeAffectMotivation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CAffectMotivationBehaviorProps.MotivationEffect"'}
+MemoryManipulation.SetBuildingTypeAffectMotivation = MemoryManipulation.GetBuildingTypeAffectMotivation
+MemoryManipulation.GetEntityTypeSuspensionAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CGLAnimationBehaviorExProps.SuspensionAnimation"'}
+MemoryManipulation.SetEntityTypeSuspensionAnimation = MemoryManipulation.GetEntityTypeSuspensionAnimation
+MemoryManipulation.GetLeaderTypeHealingPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingPoints"')}
+MemoryManipulation.SetLeaderTypeHealingPoints = MemoryManipulation.GetLeaderTypeHealingPoints
+MemoryManipulation.GetLeaderTypeHealingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingSeconds"')}
+MemoryManipulation.SetLeaderTypeHealingSeconds = MemoryManipulation.GetLeaderTypeHealingSeconds
+MemoryManipulation.GetSettlerTypeDamageClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.DamageClass"')}
+MemoryManipulation.SetSettlerTypeDamageClass = MemoryManipulation.GetSettlerTypeDamageClass
+MemoryManipulation.GetSettlerTypeBattleWaitUntil = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.BattleWaitUntil"')}
+MemoryManipulation.SetSettlerTypeBattleWaitUntil = MemoryManipulation.GetSettlerTypeBattleWaitUntil
+MemoryManipulation.GetSettlerTypeMissChance = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MissChance"')}
+MemoryManipulation.SetSettlerTypeMissChance = MemoryManipulation.GetSettlerTypeMissChance
+MemoryManipulation.GetSettlerTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange"')}
+MemoryManipulation.SetSettlerTypeMaxRange = MemoryManipulation.GetSettlerTypeMaxRange
+MemoryManipulation.GetSettlerTypeMinRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MinRange"')}
+MemoryManipulation.SetSettlerTypeMinRange = MemoryManipulation.GetSettlerTypeMinRange
+MemoryManipulation.GetLeaderTypeAutoAttackRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.AutoAttackRange"')}
+MemoryManipulation.SetLeaderTypeAutoAttackRange = MemoryManipulation.GetLeaderTypeAutoAttackRange
+MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"NumberOfAttractableSettlers"'}
+MemoryManipulation.SetBuildingTypeNumOfAttractableSettlers = MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers
+
+--
+function MemoryManipulation.CreateLibFuncs()
+	local tocompile = ""
+	for name, desc in pairs(MemoryManipulation) do
+		if type(desc)=="table" and desc.LibFuncBase then
+			local st = string.sub(name, 1, 3)
+			if desc.LibFuncBase==MemoryManipulation.LibFuncBase.Entity then
+				if st=="Get" then
+					tocompile = tocompile..("function MemoryManipulation."..name.."(id)\n\tid = GetID(id)\n"..(desc.check or "").."\treturn MemoryManipulation.GetSingleValue(id, "..desc.path..")\nend\n")
+				end
+				if st=="Set" then
+					tocompile = tocompile..("function MemoryManipulation."..name.."(id, val)\n\tid = GetID(id)\n"..(desc.check or "").."\tMemoryManipulation.SetSingleValue(id, "..desc.path..", val)\nend\n")
+				end
+			elseif desc.LibFuncBase==MemoryManipulation.LibFuncBase.EntityType then
+				if st=="Get" then
+					tocompile = tocompile..("function MemoryManipulation."..name.."(typ)\n"..(desc.check or "").."\treturn MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(typ), "..desc.path..")\nend\n")
+				end
+				if st=="Set" then
+					tocompile = tocompile..("function MemoryManipulation."..name.."(typ, val)\n"..(desc.check or "").."\tMemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), "..desc.path..", val)\nend\n")
+				end
+			end
+		end
+	end
+	LuaDebugger.Log(tocompile)
+	S5Hook.Eval(tocompile)() -- upvalues dont work, but simply compiling it does ;)
+	MemoryManipulation.LibFuncsCreated = true
 end
-function MemoryManipulation.GetLeaderOfSoldier(id)
-	assert(MemoryManipulation.IsSoldier(id))
-	return MemoryManipulation.GetSingleValue(id, "LeaderId")
-end
-function MemoryManipulation.GetSettlerMovementSpeed(id)
-	assert(Logic.IsSettler(id)==1)
-	return MemoryManipulation.GetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"})
-end
-function MemoryManipulation.SetSettlerMovementSpeed(id, val)
-	assert(Logic.IsSettler(id)==1)
-	MemoryManipulation.SetSingleValue(id, {"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}, val)
-end
+

@@ -9,7 +9,9 @@ end --mcbPacker.ignore
 --- author:mcb		current maintainer:mcb		v1.0
 -- Fixt die schadensberechnung von kanonen-projektilen.
 -- 
--- - HurtProjectileFix.Init()			Aus der FMA aufrufen.
+-- - HurtProjectileFix.Init()													Aus der FMA aufrufen.
+-- - HurtProjectileFix.AddProjectileToFix(effectId, baseDamage, damageClass)	Nach dem erstellen eines Projektiles mit S5Hook.CreateProjectile
+-- 																					aufrufen den Schaden für dieses Projektil zu ändern (Hook Projektile normalerweise nicht geändert).
 -- 
 -- Ich empfehle weiterhin die damageclasses von PV_Cannon2 und PV_Cannon3 zu tauschen, damit die tatsächlichen stärken und schwächen der kanonen wie in den tooltips beschrieben sind.
 -- 
@@ -21,13 +23,22 @@ end --mcbPacker.ignore
 -- - mcbEMan (durch MemoryManipulation zu ersetzen sobald fertig)
 HurtProjectileFix = {projectileMem={}, lastProjectile={}}
 
-function HurtProjectileFix.OnEffectCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId)
+function HurtProjectileFix.OnEffectCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId, isHookCreated)
 	if creatorType == 7816856 then
-		HurtProjectileFix.projectileMem[effectId] = {
-			baseDamage = Logic.GetEntityDamage(attackerId), -- modified by hero auras and techs
-			damageClass = mcbEMan.GetEntityTypeDamageClass(Logic.GetEntityType(attackerId)),
-		}
+		if IsValid(attackerId) and isHookCreated==0 then
+			HurtProjectileFix.AddProjectileToFix(effectId,
+				Logic.GetEntityDamage(attackerId), -- modified by hero auras and techs
+				mcbEMan.GetEntityTypeDamageClass(Logic.GetEntityType(attackerId))
+			)
+		end
 	end
+end
+
+function HurtProjectileFix.AddProjectileToFix(effectId, baseDamage, damageClass)
+	HurtProjectileFix.projectileMem[effectId] = {
+		baseDamage = baseDamage,
+		damageClass = damageClass,
+	}
 end
 
 function HurtProjectileFix.OnProjectileHit(effectType, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, aoeRange, effectId)
@@ -38,7 +49,7 @@ end
 function HurtProjectileFix.OnHit()
 	local so = S5Hook.HurtEntityTrigger_GetSource()
 	local pinf = mcbTriggerExtHurtEntity.getProjectileInfo()
-	if so == S5HookHurtEntitySources.CannonProjectile and pinf then
+	if so == S5HookHurtEntitySources.CannonProjectile and pinf and HurtProjectileFix.lastProjectile then
 		local at = Event.GetEntityID1()
 		local def = Event.GetEntityID2()
 		local dmod = HurtProjectileFix.GetDamageMod(mcbEMan.GetEntityTypeArmorClass(Logic.GetEntityType(def)), HurtProjectileFix.lastProjectile.damageClass)
