@@ -63,6 +63,18 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetSettlerTypeMinRange					Die minimale reichweite der autoattacks eines entitytypes.
 -- - MemoryManipulation.Get/SetLeaderTypeAutoAttackRange			Die reichweite in der leader dieses types automatisch angreifen.
 -- - MemoryManipulation.Get/SetBuildingTypeNumOfAttractableSettlers	Die anzahl der VC-plätze die gebäude dieses types zur verfügung stellen (wird nicht von allen typen genutzt).
+-- - MemoryManipulation.Get/SetThiefTypeTimeToSteal					Die zeit die ein dieb zum stehlen braucht.
+-- - MemoryManipulation.Get/SetThiefTypeStealMax					Das Maximum, was ein dieb auf ein mal stiehlt.
+-- - MemoryManipulation.Get/SetThiefTypeStealMin					Das Minimum, was ein dieb auf ein mal stiehlt.
+-- - MemoryManipulation.Get/SetEntityTypeCamouflageDuration			Die dauer der tarnung (dauer bis aktivierung bei dieben) dieses types.
+-- - MemoryManipulation.Get/SetEntityTypeCamouflageDiscoveryRange	Die reichweite, in der ein getartntes entity dieses types entdeckt wird.
+-- - MemoryManipulation.Get/SetBuildingTypeDoorPos					Die relative position der tür eines entitytypes.
+-- - MemoryManipulation.Get/SetWorkerTypeRefinerResourceType		Der resourcentyp der von veredlern dieses types abgeholt wird.
+-- - MemoryManipulation.Get/SetWorkerTypeRefinerAmount				Die menge an resourcen die ein veredler dieses types abholt.
+-- - MemoryManipulation.Get/SetBuildingTypeRefinerSupplier			Die entitycategory in dem arbeiter dieses gebäudes unveredlete rohstoffe abholen.
+-- - MemoryManipulation.Get/SetBuildingTypeRefinerResourceType		Der resourcentyp den ein veredelungsgebäude dieses types produziert.
+-- - MemoryManipulation.Get/SetBuildingTypeRefinerAmount			Die menge an resourcen die in einem veredelungsgebäude dieses types produziert wird.
+-- - MemoryManipulation.Get/SetEntityTypeArmorClass					Die armorclass eines settlertypes oder buildingtypes.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -80,6 +92,13 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetBuildingTypeCost(ty, c, ignoreZeroes)	Setzt die Kosten für den bau eines gebäudetypes.
 -- - MemoryManipulation.GetBuildingTypeUpgradeCost(ty)				Die kosten um ein gebäude dieses types auf die nächste stufe auszubauen.
 -- - MemoryManipulation.SetBuildingTypeUpgradeCost(ty, c, ignoreZeroes)		Setzt die Ausbaukosten (Logic.FillBuildingUpgradeCostsTable nicht aktualisiert).
+-- - MemoryManipulation.SetHeroTypeAbilityRechargeTimeNeeded(typ, abilit, sec)	Setzt den cooldown einer heldenfähigkeit dieses entitytypes.
+-- - MemoryManipulation.GetPlayerPaydayStarted(pl)					Gbt zurück, ob der Zahltag bei diesem Spieler gestartet ist.
+-- - MemoryManipulation.SetPlayerPaydayProgress(pl, sec)			Setzt die Zeit bis zum nächsten Zahltag für einen Spieler (<0 für inaktiv).
+-- - MemoryManipulation.SetPaydayFrecuency(pl, sec)					Setzt die Dauer zwischen den Zahltagen für alle Spieler.
+-- - MemoryManipulation.SetLeaderMaxSoldiers(id, maxsol)			Setzt die maximale Soldatenzahl eines leaders.
+-- - MemoryManipulation.SetBuidingMaxEaters(id, eaters)				Setzt die maximalen essensplätze einer Farm/Taverne.
+-- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
@@ -319,7 +338,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 	return objInfo
 end
 
-function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
+function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 	local ret = false
 	if not fieldInfo then
 		fieldInfo = MemoryManipulation.ObjFieldInfo[sv[0]:GetInt()]
@@ -334,89 +353,119 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo)
 				end
 				sv2 = sv2:Offset(i)
 			end
-			if type(fi.check)=="function" then
-				assert(fi.check(objInfo[fi.name], sv))
-			end
-			if type(fi.check)=="table" then
-				assert(IstDrin(objInfo[fi.name], fi.check))
-			end
-			if type(fi.checkAll)=="function" then
-				for k,v in pairs(objInfo[fi.name]) do
-					assert(fi.checkAll(k, v, sv))
-				end
-			end
-			if type(fi.checkAll)=="function" then
-				for k,v in pairs(objInfo[fi.name]) do
-					assert(IstDrin(v, fi.checkAll))
-				end
-			end
-			local val = objInfo[fi.name]
-			if fi.writeConv then
-				val = fi.writeConv(val)
-			end
-			if fi.datatype==MemoryManipulation.DataType.Int then
-				sv2[0]:SetInt(val)
-				ret = true
-			elseif fi.datatype==MemoryManipulation.DataType.Float then
-				sv2[0]:SetFloat(val)
-				ret = true
-			elseif fi.datatype==MemoryManipulation.DataType.Bit then
-				MemoryManipulation.WriteSingleBit(sv2, fi.bitOffset, val)
-				ret = true
-			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
-				if sv2[0]:GetInt()>0 then
-					ret = ret or MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
-				end
-			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
-				local li = MemoryManipulation.MemList.init(sv2, 4)
-				for sv3 in li:iterator() do
-					local vt = sv3[0][0]:GetInt()
-					local vtn = MemoryManipulation.VTableNames[vt]
-					if val[vtn] then
-						ret = ret or MemoryManipulation.WriteObj(sv3[0], val[vtn])
+			local noerr = true
+			if noErrorOnCheck then
+				if type(fi.check)=="function" then
+					if not fi.check(objInfo[fi.name], sv) then
+						noerr = false
 					end
 				end
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
-				ret = ret or MemoryManipulation.WriteObj(sv2, val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
-			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
-				local li = MemoryManipulation.MemList.init(sv2, 4)
-				li:override(table.getn(val))
-				local i=1
-				for sv3 in li:iterator() do
-					sv3[0]:SetInt(val[i])
-					i=i+1
-				end
-				ret = true
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
-				local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
-				li:override(table.getn(val))
-				local i=1
-				for sv3 in li:iterator() do
-					if val[i] then
-						ret = ret or MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+				if type(fi.check)=="table" then
+					if not IstDrin(objInfo[fi.name], fi.check) then
+						noerr = false
 					end
-					i=i+1
 				end
-			elseif fi.datatype==MemoryManipulation.DataType.String then
-				assert(false, "cannot write strings")
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
-				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-				local i=1
-				for sv3 in li:iterator() do
-					if val[i] then
-						sv3[0]:SetFloat(val[i])
-						ret = true
+				if type(fi.checkAll)=="function" then
+					for k,v in pairs(objInfo[fi.name]) do
+						if not fi.checkAll(k, v, sv) then
+							noerr = false
+						end
 					end
-					i=i+1
 				end
-			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
-				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-				local i=1
-				for sv3 in li:iterator() do
-					if val[i] then
-						ret = ret or MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride])
+				if type(fi.checkAll)=="function" then
+					for k,v in pairs(objInfo[fi.name]) do
+						if not IstDrin(v, fi.checkAll) then
+							noerr = false
+						end
 					end
-					i=i+1
+				end
+			else
+				if type(fi.check)=="function" then
+					assert(fi.check(objInfo[fi.name], sv))
+				end
+				if type(fi.check)=="table" then
+					assert(IstDrin(objInfo[fi.name], fi.check))
+				end
+				if type(fi.checkAll)=="function" then
+					for k,v in pairs(objInfo[fi.name]) do
+						assert(fi.checkAll(k, v, sv))
+					end
+				end
+				if type(fi.checkAll)=="function" then
+					for k,v in pairs(objInfo[fi.name]) do
+						assert(IstDrin(v, fi.checkAll))
+					end
+				end
+			end
+			if noerr then
+				local val = objInfo[fi.name]
+				if fi.writeConv then
+					val = fi.writeConv(val)
+				end
+				if fi.datatype==MemoryManipulation.DataType.Int then
+					sv2[0]:SetInt(val)
+					ret = true
+				elseif fi.datatype==MemoryManipulation.DataType.Float then
+					sv2[0]:SetFloat(val)
+					ret = true
+				elseif fi.datatype==MemoryManipulation.DataType.Bit then
+					MemoryManipulation.WriteSingleBit(sv2, fi.bitOffset, val)
+					ret = true
+				elseif fi.datatype==MemoryManipulation.DataType.ObjectPointer then
+					if sv2[0]:GetInt()>0 then
+						ret = MemoryManipulation.WriteObj(sv2[0], val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+					end
+				elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
+					local li = MemoryManipulation.MemList.init(sv2, 4)
+					for sv3 in li:iterator() do
+						local vt = sv3[0][0]:GetInt()
+						local vtn = MemoryManipulation.VTableNames[vt]
+						if val[vtn] then
+							ret = MemoryManipulation.WriteObj(sv3[0], val[vtn], nil, noErrorOnCheck) or ret
+						end
+					end
+				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
+					ret = MemoryManipulation.WriteObj(sv2, val, MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+				elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
+					local li = MemoryManipulation.MemList.init(sv2, 4)
+					li:override(table.getn(val))
+					local i=1
+					for sv3 in li:iterator() do
+						sv3[0]:SetInt(val[i])
+						i=i+1
+					end
+					ret = true
+				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
+					local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
+					li:override(table.getn(val))
+					local i=1
+					for sv3 in li:iterator() do
+						if val[i] then
+							ret = MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+						end
+						i=i+1
+					end
+				elseif fi.datatype==MemoryManipulation.DataType.String then
+					assert(false, "cannot write strings")
+				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
+					local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+					local i=1
+					for sv3 in li:iterator() do
+						if val[i] then
+							sv3[0]:SetFloat(val[i])
+							ret = true
+						end
+						i=i+1
+					end
+				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
+					local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
+					local i=1
+					for sv3 in li:iterator() do
+						if val[i] then
+							ret = MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+						end
+						i=i+1
+					end
 				end
 			end
 		end
@@ -689,6 +738,32 @@ MemoryManipulation.ClassVTable = {
 	
 	GGL_CBarrackBehaviorProperties = tonumber("778B34", 16),
 	GGL_CBarrackBehavior = tonumber("778A68", 16),
+	
+	-- CNetEvents
+	BB_CEvent = tonumber("762114", 16),
+	EGL_CNetEvent2Entities = tonumber("76DD60", 16),
+	EGL_CNetEventEntityAndPos = tonumber("76DD50", 16),
+	EGL_CNetEventEntityAndPosArray = tonumber("770704", 16),
+	GGL_CNetEventExtractResource = tonumber("77061C", 16),
+	GGL_CNetEventTransaction = tonumber("77062C", 16),
+	
+	EGL_CNetEventEntityID = tonumber("766C28", 16),
+	GGL_CNetEventCannonCreator = tonumber("7705EC", 16),
+	GGL_CNetEventEntityIDAndUpgradeCategory = tonumber("77060C", 16),
+	EGL_CNetEventEntityIDAndInteger = tonumber("766C48", 16),
+	GGL_CNetEventTechnologyAndEntityID = tonumber("7705FC", 16),
+	
+	EGL_CNetEventPlayerID = tonumber("766C18", 16),
+	EGL_CNetEventIntegerAndPlayerID = tonumber("7705BC", 16),
+	EGL_CNetEventPlayerIDAndInteger = tonumber("7705CC", 16),
+	EGL_CNetEventEntityIDAndPlayerID = tonumber("766C38", 16),
+	EGL_CNetEventEntityIDAndPlayerIDAndEntityType = tonumber("77057C", 16),
+	GGL_CNetEventEntityIDPlayerIDAndInteger = tonumber("77064C", 16),
+	GGL_CNetEventBuildingCreator = tonumber("770714", 16),
+	
+	EGL_CNetEvent2PlayerIDs = tonumber("7705AC", 16),
+	EGL_CNetEvent2PlayerIDsAndInteger = tonumber("7705DC", 16),
+	GGL_CNetEventPlayerResourceDonation = tonumber("77063C", 16),
 	
 	-- other stuff
 	GGlue_CGlueEntityProps = tonumber("788824", 16),
@@ -1802,6 +1877,146 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="MaximumDistanceWorkerToResidence", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		},
 	},
+	-- CNetEvents
+	markerCNetEvents=nil,
+	[MemoryManipulation.ClassVTable.BB_CEvent] = {
+		vtable = MemoryManipulation.ClassVTable.BB_CEvent,
+		fields = {
+			{name="EventTypeId", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEvent2Entities] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEvent2Entities,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="ActorId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="TargetId", index={3}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityAndPos] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityAndPos,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="Position", index={3}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityAndPosArray] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityAndPosArray,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="PositionList", index={4}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="Position", objectSize=2, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventExtractResource] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventExtractResource,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="ResourceType", index={3}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="TargetPosition", index={4}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventTransaction] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventTransaction,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+			{name="SellType", index={3}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="BuyType", index={4}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="BuyAmount", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityID] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityID,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventCannonCreator] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventCannonCreator,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityID},
+		fields = {
+			{name="BottomType", index={3}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="TopType", index={4}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="Position", index={5}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventEntityIDAndUpgradeCategory] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventEntityIDAndUpgradeCategory,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityID},
+		fields = {
+			{name="UprgadeCategory", index={3}, datatype=MemoryManipulation.DataType.Int, check=UpgradeCategories},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndInteger] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndInteger,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityID},
+		fields = {
+			{name="Int", index={3}, datatype=MemoryManipulation.DataType.Int},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventTechnologyAndEntityID] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventTechnologyAndEntityID,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityID},
+		fields = {
+			{name="Technology", index={3}, datatype=MemoryManipulation.DataType.Int, check=Technologies},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID,
+		inheritsFrom = {MemoryManipulation.ClassVTable.BB_CEvent},
+		fields = {
+			{name="PlayerId", index={2}, datatype=MemoryManipulation.DataType.Int, check={1,2,3,4,5,6,8}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventBuildingCreator] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventBuildingCreator,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID},
+		fields = {
+			{name="UprgadeCategory", index={3}, datatype=MemoryManipulation.DataType.Int, check=UpgradeCategories},
+			{name="Position", index={4}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
+			{name="ListOfSerfs", index={8}, datatype=MemoryManipulation.DataType.ListOfInt, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventIntegerAndPlayerID] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventIntegerAndPlayerID,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID},
+		fields = {
+			{name="Int", index={3}, datatype=MemoryManipulation.DataType.Int},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventPlayerIDAndInteger] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventPlayerIDAndInteger,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID},
+		fields = {
+			{name="Int", index={3}, datatype=MemoryManipulation.DataType.Int},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerID] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerID,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventPlayerID},
+		fields = {
+			{name="EntityId", index={3}, datatype=MemoryManipulation.DataType.Int, check=IsValid},
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerIDAndEntityType] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerIDAndEntityType,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerID},
+		fields = {
+			--{name="EntityType", index={4}, datatype=MemoryManipulation.DataType.Int, check=IsValid},?
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CNetEventEntityIDPlayerIDAndInteger] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CNetEventEntityIDPlayerIDAndInteger,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CNetEventEntityIDAndPlayerID},
+		fields = {
+			--{name="Int", index={4}, datatype=MemoryManipulation.DataType.Int},?
+		},
+	},
+	
 	-- misc stuff (embedded objects, helper tables...)
 	markerMiscStuff=nil,
 	["Technology"] = {
@@ -2151,7 +2366,59 @@ end
 function MemoryManipulation.SetDamageModifier(damageclass, armorclass, factor)
 	local t = MemoryManipulation.ReadObj(MemoryManipulation.GetDamageModifierPointer(), nil, MemoryManipulation.ObjFieldInfo.DamageClassList)
 	t.DamageClasses[damageclass].BonusVsArmorClass[armorclass] = factor
-	return MemoryManipulation.WriteObj(MemoryManipulation.GetDamageModifierPointer(), t, MemoryManipulation.ObjFieldInfo.DamageClassList) -- TODO something not working here
+	return MemoryManipulation.WriteObj(MemoryManipulation.GetDamageModifierPointer(), t, MemoryManipulation.ObjFieldInfo.DamageClassList)
+end
+
+function MemoryManipulation.SetHeroTypeAbilityRechargeTimeNeeded(typ, abilit, sec)
+	local t = {
+		[Abilities.AbilityBuildCannon] = "GGL_CCannonBuilderBehaviorProps",
+		[Abilities.AbilityCamouflage] = "GGL_CCamouflageBehaviorProps",
+		[Abilities.AbilityCircularAttack] = "GGL_CCircularAttackProps",
+		[Abilities.AbilityConvertSettlers] = "GGL_CConvertSettlerAbilityProps",
+		[Abilities.AbilityInflictFear] = "GGL_CInflictFearAbilityProps",
+		[Abilities.AbilityMotivateWorkers] = "GGL_CMotivateWorkersAbilityProps",
+		[Abilities.AbilityPlaceBomb] = "GGL_CHeroAbilityProps",
+		--[Abilities.AbilityPlaceKeg] = "",
+		[Abilities.AbilityRangedEffect] = "GGL_CRangedEffectAbilityProps",
+		--[Abilities.AbilityScoutBinoculars] = "",
+		--[Abilities.AbilityScoutFindResources] = "",
+		--[Abilities.AbilityScoutTorches] = "",
+		[Abilities.AbilitySendHawk] = "GGL_CHeroHawkBehaviorProps",
+		[Abilities.AbilityShuriken] = "GGL_CShurikenAbilityProps",
+		[Abilities.AbilitySniper] = "GGL_CSniperAbilityProps",
+		[Abilities.AbilitySummon] = "GGL_CSummonBehaviorProps",
+	}
+	local adr = "."..t[abilit]..".RechargeTimeSeconds"
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), adr, sec)
+end
+
+function MemoryManipulation.GetPlayerPaydayStarted(pl)
+	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetPlayerStatusPointer(pl), "PlayerAttractionHandler.PaydayStarted")
+end
+
+function MemoryManipulation.SetPlayerPaydayProgress(pl, sec)
+	local w = MemoryManipulation.ConvertToObjInfo("PlayerAttractionHandler.PaydayStartTick", Logic.GetCurrentTurn()-sec*10)
+	MemoryManipulation.ConvertToObjInfo("PlayerAttractionHandler.PaydayStarted", (sec<0) and 0 or 1, w)
+	assert(MemoryManipulation.WriteObj(MemoryManipulation.GetPlayerStatusPointer(pl), w))
+end
+
+function MemoryManipulation.SetPaydayFrecuency(pl, sec)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetPlayerStatusPointer(pl), "PaydayFrequency", sec)
+end
+
+function MemoryManipulation.SetLeaderMaxSoldiers(id, maxsol)
+	assert(MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.BehaviorProps.Attachments")[1].Type=="ATTACHMENT_LEADER_SOLDIER")
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", maxsol)
+end
+
+function MemoryManipulation.SetBuidingMaxEaters(id, eaters)
+	assert(MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.BehaviorProps.Attachments")[1].Type=="ATTACHMENT_WORKER_FARM")
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", eaters)
+end
+
+function MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)
+	assert(MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.BehaviorProps.Attachments")[1].Type=="ATTACHMENT_WORKER_RESIDENCE")
+	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", sleepers)
 end
 
 function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
@@ -2233,8 +2500,32 @@ MemoryManipulation.GetLeaderTypeAutoAttackRange = {LibFuncBase=MemoryManipulatio
 MemoryManipulation.SetLeaderTypeAutoAttackRange = MemoryManipulation.GetLeaderTypeAutoAttackRange
 MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"NumberOfAttractableSettlers"'}
 MemoryManipulation.SetBuildingTypeNumOfAttractableSettlers = MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers
+MemoryManipulation.GetThiefTypeTimeToSteal = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.SecondsNeededToSteal"'}
+MemoryManipulation.SetThiefTypeTimeToSteal = MemoryManipulation.GetThiefTypeTimeToSteal
+MemoryManipulation.GetThiefTypeStealMax = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.MaximumAmountToSteal"'}
+MemoryManipulation.SetThiefTypeStealMax = MemoryManipulation.GetThiefTypeStealMax
+MemoryManipulation.GetThiefTypeStealMin = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.MinimumAmountToSteal"'}
+MemoryManipulation.SetThiefTypeStealMin = MemoryManipulation.GetThiefTypeStealMin
+MemoryManipulation.GetEntityTypeCamouflageDuration = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCamouflageBehaviorProps.DurationSeconds"'}
+MemoryManipulation.SetEntityTypeCamouflageDuration = MemoryManipulation.GetEntityTypeCamouflageDuration
+MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCamouflageBehaviorProps.DiscoveryRange"'}
+MemoryManipulation.SetEntityTypeCamouflageDiscoveryRange = MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange
+MemoryManipulation.GetBuildingTypeDoorPos = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"DoorPos"'}
+MemoryManipulation.SetBuildingTypeDoorPos = MemoryManipulation.GetBuildingTypeDoorPos
+MemoryManipulation.GetWorkerTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CWorkerBehaviorProps.ResourceToRefine"'}
+MemoryManipulation.SetWorkerTypeRefinerResourceType = MemoryManipulation.GetWorkerTypeRefinerResourceType
+MemoryManipulation.GetWorkerTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CWorkerBehaviorProps.TransportAmount"'}
+MemoryManipulation.SetWorkerTypeRefinerAmount = MemoryManipulation.GetWorkerTypeRefinerAmount
+MemoryManipulation.GetBuildingTypeRefinerSupplier = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.SupplierCategory"'}
+MemoryManipulation.SetBuildingTypeRefinerSupplier = MemoryManipulation.GetBuildingTypeRefinerSupplier
+MemoryManipulation.GetBuildingTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.ResourceType"'}
+MemoryManipulation.SetBuildingTypeRefinerResourceType = MemoryManipulation.GetBuildingTypeRefinerResourceType
+MemoryManipulation.GetBuildingTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.InitialFactor"'}
+MemoryManipulation.SetBuildingTypeRefinerAmount = MemoryManipulation.GetBuildingTypeRefinerAmount
+MemoryManipulation.GetEntityTypeArmorClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.ArmorClass"'}
+MemoryManipulation.SetEntityTypeArmorClass = MemoryManipulation.GetEntityTypeArmorClass
 
---
+--GGL_CGLSettlerProps.ArmorClass GGL_CGLBuildingProps.ArmorClass GGL_CBridgeProperties
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
 	for name, desc in pairs(MemoryManipulation) do
@@ -2258,7 +2549,9 @@ function MemoryManipulation.CreateLibFuncs()
 		end
 	end
 	LuaDebugger.Log(tocompile)
-	S5Hook.Eval(tocompile)() -- upvalues dont work, but simply compiling it does ;)
+	local comp = S5Hook.Eval(tocompile) -- upvalues dont work, but simply compiling it does ;)
+	assert(type(comp)=="function", comp)
+	comp()
 	MemoryManipulation.LibFuncsCreated = true
 end
 
