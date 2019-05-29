@@ -400,11 +400,12 @@ end
 function mcbTrigger.ktr.run()
 	local id = Event.GetEntityID2()
 	local dmg = S5Hook.HurtEntityTrigger_GetDamage()
-	if mcbEMan.IsSoldier(id) then
-		id = mcbEMan.GetLeaderOfSoldier(id)
+	if MemoryManipulation.IsSoldier(id) then
+		id = MemoryManipulation.GetLeaderOfSoldier(id)
 	end
 	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>=1 then
-		local solth, solph = mcbEMan.GetLeaderTroopHealth(id)
+		local solth = MemoryManipulation.GetLeaderTroopHealth(id)
+		local solph = MemoryManipulation.GetEntityTypeMaxHealth(Logic.LeaderGetSoldiersType(id))
 		local currSolHealth = solth - ((Logic.LeaderGetNumberOfSoldiers(id)-1) * solph)
 		if currSolHealth <= dmg then
 			mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, mcbTrigger.currentEvent)
