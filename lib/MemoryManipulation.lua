@@ -75,6 +75,9 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetBuildingTypeRefinerResourceType		Der resourcentyp den ein veredelungsgebäude dieses types produziert.
 -- - MemoryManipulation.Get/SetBuildingTypeRefinerAmount			Die menge an resourcen die in einem veredelungsgebäude dieses types produziert wird.
 -- - MemoryManipulation.Get/SetEntityTypeArmorClass					Die armorclass eines settlertypes oder buildingtypes.
+-- - MemoryManipulation.Get/SetEntityTypeBlockingArea				Das blocking eines entitytypes, im Format {{pos1,pos2},{pos11,pos12}...} .
+-- - MemoryManipulation.Get/SetBuildingTypeBuilderSlots				Die BuilderSlots eines entitytypes, im Format {{X,Y,r},{X,Y,r}...} .
+-- - MemoryManipulation.Get/SetBlockingEntityTypeBuildBlock			Das BuildBlocking eines entitytypes, im Format {pos1,pos2}.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -95,7 +98,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetHeroTypeAbilityRechargeTimeNeeded(typ, abilit, sec)	Setzt den cooldown einer heldenfähigkeit dieses entitytypes.
 -- - MemoryManipulation.GetPlayerPaydayStarted(pl)					Gbt zurück, ob der Zahltag bei diesem Spieler gestartet ist.
 -- - MemoryManipulation.SetPlayerPaydayProgress(pl, sec)			Setzt die Zeit bis zum nächsten Zahltag für einen Spieler (<0 für inaktiv).
--- - MemoryManipulation.SetPaydayFrecuency(pl, sec)					Setzt die Dauer zwischen den Zahltagen für alle Spieler.
+-- - MemoryManipulation.SetPaydayFrequency(sec)						Setzt die Dauer zwischen den Zahltagen für alle Spieler.
 -- - MemoryManipulation.SetLeaderMaxSoldiers(id, maxsol)			Setzt die maximale Soldatenzahl eines leaders.
 -- - MemoryManipulation.SetBuidingMaxEaters(id, eaters)				Setzt die maximalen essensplätze einer Farm/Taverne.
 -- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
@@ -1008,8 +1011,7 @@ MemoryManipulation.ObjFieldInfo = {
 		vtable = MemoryManipulation.ClassVTable.GGL_CBuildBlockProperties,
 		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEEntityProps},
 		fields = {
-			{name="TerrainPos1", index={38}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
-			{name="TerrainPos2", index={40}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="BuildBlockArea", index={38}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="AARectangle"},
 		},
 	},
 	[MemoryManipulation.ClassVTable.GGL_CResourceDoodadProperties] = {
@@ -2402,8 +2404,8 @@ function MemoryManipulation.SetPlayerPaydayProgress(pl, sec)
 	assert(MemoryManipulation.WriteObj(MemoryManipulation.GetPlayerStatusPointer(pl), w))
 end
 
-function MemoryManipulation.SetPaydayFrecuency(pl, sec)
-	MemoryManipulation.SetSingleValue(MemoryManipulation.GetPlayerStatusPointer(pl), "PaydayFrequency", sec)
+function MemoryManipulation.SetPaydayFrequency(sec)
+	MemoryManipulation.SetSingleValue(MemoryManipulation.GetPlayerAttractionPropsPointer(), "PaydayFrequency", sec)
 end
 
 function MemoryManipulation.SetLeaderMaxSoldiers(id, maxsol)
@@ -2419,6 +2421,20 @@ end
 function MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)
 	assert(MemoryManipulation.GetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.BehaviorProps.Attachments")[1].Type=="ATTACHMENT_WORKER_RESIDENCE")
 	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", sleepers)
+end
+
+function MemoryManipulation.GetClassAndAllSubClassesAsTable(class)
+	local r = {class}
+	local function f(c)
+		if MemoryManipulation.ObjFieldInfo[c].SubClassList then
+			for _, subc in ipairs(MemoryManipulation.ObjFieldInfo[c].SubClassList) do
+				table.insert(r, IstDrin(subc, MemoryManipulation.ClassVTable))
+				f(subc)
+			end
+		end
+	end
+	f(MemoryManipulation.ClassVTable[class])
+	return r
 end
 
 function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
@@ -2474,7 +2490,7 @@ MemoryManipulation.GetEntityTypeLimitedLifespanSeconds = {LibFuncBase=MemoryMani
 MemoryManipulation.SetEntityTypeLimitedLifespanSeconds = MemoryManipulation.GetEntityTypeLimitedLifespanSeconds
 MemoryManipulation.GetLeaderTypeUpkeepCost = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLeaderBehaviorProps.UpkeepCosts"'}
 MemoryManipulation.SetLeaderTypeUpkeepCost = MemoryManipulation.GetLeaderTypeUpkeepCost
-MemoryManipulation.GetEntityTypeMaxHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"MaxHealth"'}
+MemoryManipulation.GetEntityTypeMaxHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.MaxHealth"'}
 MemoryManipulation.SetEntityTypeMaxHealth = MemoryManipulation.GetEntityTypeMaxHealth
 MemoryManipulation.GetBuildingTypeKegEffectFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"KegEffectFactor"'}
 MemoryManipulation.SetBuildingTypeKegEffectFactor = MemoryManipulation.GetBuildingTypeKegEffectFactor
@@ -2498,7 +2514,7 @@ MemoryManipulation.GetSettlerTypeMinRange = {LibFuncBase=MemoryManipulation.LibF
 MemoryManipulation.SetSettlerTypeMinRange = MemoryManipulation.GetSettlerTypeMinRange
 MemoryManipulation.GetLeaderTypeAutoAttackRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.AutoAttackRange"')}
 MemoryManipulation.SetLeaderTypeAutoAttackRange = MemoryManipulation.GetLeaderTypeAutoAttackRange
-MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"NumberOfAttractableSettlers"'}
+MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.NumberOfAttractableSettlers"'}
 MemoryManipulation.SetBuildingTypeNumOfAttractableSettlers = MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers
 MemoryManipulation.GetThiefTypeTimeToSteal = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.SecondsNeededToSteal"'}
 MemoryManipulation.SetThiefTypeTimeToSteal = MemoryManipulation.GetThiefTypeTimeToSteal
@@ -2510,7 +2526,7 @@ MemoryManipulation.GetEntityTypeCamouflageDuration = {LibFuncBase=MemoryManipula
 MemoryManipulation.SetEntityTypeCamouflageDuration = MemoryManipulation.GetEntityTypeCamouflageDuration
 MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCamouflageBehaviorProps.DiscoveryRange"'}
 MemoryManipulation.SetEntityTypeCamouflageDiscoveryRange = MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange
-MemoryManipulation.GetBuildingTypeDoorPos = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"DoorPos"'}
+MemoryManipulation.GetBuildingTypeDoorPos = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.DoorPos"'}
 MemoryManipulation.SetBuildingTypeDoorPos = MemoryManipulation.GetBuildingTypeDoorPos
 MemoryManipulation.GetWorkerTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CWorkerBehaviorProps.ResourceToRefine"'}
 MemoryManipulation.SetWorkerTypeRefinerResourceType = MemoryManipulation.GetWorkerTypeRefinerResourceType
@@ -2524,8 +2540,13 @@ MemoryManipulation.GetBuildingTypeRefinerAmount = {LibFuncBase=MemoryManipulatio
 MemoryManipulation.SetBuildingTypeRefinerAmount = MemoryManipulation.GetBuildingTypeRefinerAmount
 MemoryManipulation.GetEntityTypeArmorClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.ArmorClass"'}
 MemoryManipulation.SetEntityTypeArmorClass = MemoryManipulation.GetEntityTypeArmorClass
+MemoryManipulation.GetEntityTypeBlockingArea = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.BlockingArea"'}
+MemoryManipulation.SetEntityTypeBlockingArea = MemoryManipulation.GetEntityTypeBlockingArea
+MemoryManipulation.GetBuildingTypeBuilderSlots = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.ConstructionInfo.BuilderSlot"'}
+MemoryManipulation.SetBuildingTypeBuilderSlots = MemoryManipulation.GetBuildingTypeBuilderSlots
+MemoryManipulation.GetBlockingEntityTypeBuildBlock = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.BuildBlockArea"'}
+MemoryManipulation.SetBlockingEntityTypeBuildBlock = MemoryManipulation.GetBlockingEntityTypeBuildBlock
 
---GGL_CGLSettlerProps.ArmorClass GGL_CGLBuildingProps.ArmorClass GGL_CBridgeProperties
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
 	for name, desc in pairs(MemoryManipulation) do
