@@ -244,6 +244,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 	assert(fieldInfo.hasNoVTable or fieldInfo.vtable==sv[0]:GetInt())
 	for _,fi in ipairs(fieldInfo.fields) do
 		if not readFilter or readFilter[fi.name]~=nil then
+			--S5Hook.Log(fi.name)
 			local sv2 = sv
 			for _,i in ipairs(fi.index) do
 				if sv2~=sv then
@@ -349,6 +350,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 	assert(fieldInfo.hasNoVTable or fieldInfo.vtable==sv[0]:GetInt())
 	for _,fi in ipairs(fieldInfo.fields) do
 		if objInfo[fi.name] then
+			--S5Hook.Log(fi.name)
 			local sv2 = sv
 			for _,i in ipairs(fi.index) do
 				if sv2~=sv then
@@ -421,10 +423,12 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 				elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 					local li = MemoryManipulation.MemList.init(sv2, 4)
 					for sv3 in li:iterator() do
-						local vt = sv3[0][0]:GetInt()
-						local vtn = MemoryManipulation.VTableNames[vt]
-						if val[vtn] then
-							ret = MemoryManipulation.WriteObj(sv3[0], val[vtn], nil, noErrorOnCheck) or ret
+						if sv3[0]:GetInt()>0 then
+							local vt = sv3[0][0]:GetInt()
+							local vtn = MemoryManipulation.VTableNames[vt]
+							if val[vtn] then
+								ret = MemoryManipulation.WriteObj(sv3[0], val[vtn], nil, noErrorOnCheck) or ret
+							end
 						end
 					end
 				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObject then
@@ -2423,8 +2427,15 @@ function MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)
 	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", sleepers)
 end
 
-function MemoryManipulation.GetClassAndAllSubClassesAsTable(class)
-	local r = {class}
+function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
+	r = r or {}
+	if type(class)=="table" then
+		for _,c in ipairs(class) do
+			MemoryManipulation.GetClassAndAllSubClassesAsTable(c, r)
+		end
+		return r
+	end
+	table.insert(r, class)
 	local function f(c)
 		if MemoryManipulation.ObjFieldInfo[c].SubClassList then
 			for _, subc in ipairs(MemoryManipulation.ObjFieldInfo[c].SubClassList) do
@@ -2437,19 +2448,21 @@ function MemoryManipulation.GetClassAndAllSubClassesAsTable(class)
 	return r
 end
 
-function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
-	local r = "{"..pre..class..post
-	local function f(c)
-		if MemoryManipulation.ObjFieldInfo[c].SubClassList then
-			for _, subc in ipairs(MemoryManipulation.ObjFieldInfo[c].SubClassList) do
-				r = r..", "..pre..IstDrin(subc, MemoryManipulation.ClassVTable)..post
-				f(subc)
-			end
+function MemoryManipulation.GetClassAndSubClassesAsStringFromTable(pre, t, post)
+	local r = nil
+	for _,c in ipairs(t) do
+		if r==nil then
+			r = "{"
+		else
+			r = r..", "
 		end
+		r = r..pre..c..post
 	end
-	f(MemoryManipulation.ClassVTable[class])
-	r = r.."}"
-	return r
+	return r.."}"
+end
+
+function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
+	return MemoryManipulation.GetClassAndSubClassesAsStringFromTable(pre, MemoryManipulation.GetClassAndAllSubClassesAsTable(class), post)
 end
 
 -- lib funcs
@@ -2502,7 +2515,7 @@ MemoryManipulation.GetLeaderTypeHealingPoints = {LibFuncBase=MemoryManipulation.
 MemoryManipulation.SetLeaderTypeHealingPoints = MemoryManipulation.GetLeaderTypeHealingPoints
 MemoryManipulation.GetLeaderTypeHealingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingSeconds"')}
 MemoryManipulation.SetLeaderTypeHealingSeconds = MemoryManipulation.GetLeaderTypeHealingSeconds
-MemoryManipulation.GetSettlerTypeDamageClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.DamageClass"')}
+MemoryManipulation.GetSettlerTypeDamageClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', {"GGL_CBattleBehaviorProps", "GGL_CAutoCannonBehaviorProps"}, '.DamageClass"')}
 MemoryManipulation.SetSettlerTypeDamageClass = MemoryManipulation.GetSettlerTypeDamageClass
 MemoryManipulation.GetSettlerTypeBattleWaitUntil = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.BattleWaitUntil"')}
 MemoryManipulation.SetSettlerTypeBattleWaitUntil = MemoryManipulation.GetSettlerTypeBattleWaitUntil
@@ -2569,7 +2582,7 @@ function MemoryManipulation.CreateLibFuncs()
 			end
 		end
 	end
-	LuaDebugger.Log(tocompile)
+	--LuaDebugger.Log(tocompile)
 	local comp = S5Hook.Eval(tocompile) -- upvalues dont work, but simply compiling it does ;)
 	assert(type(comp)=="function", comp)
 	comp()
