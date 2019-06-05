@@ -561,13 +561,17 @@ end
 function MemoryManipulation.HasEntityBehavior(id, beh)
 	local vtn = MemoryManipulation.VTableNames[beh]
 	assert(vtn)
-	return MemoryManipulation.GetSingleValue(id, "BehaviorList."..vtn..".BehaviorIndex")~=true
+	local objInfo, t, n = MemoryManipulation.ConvertToObjInfo("BehaviorList."..vtn..".BehaviorIndex", true)
+	MemoryManipulation.ReadObj(S5Hook.GetEntityMem(id), objInfo, nil, objInfo)
+	return t[n]~=true
 end
 
 function MemoryManipulation.HasEntityTypeBehavior(ety, beh)
 	local vtn = MemoryManipulation.VTableNames[beh]
 	assert(vtn)
-	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ety), "BehaviorProps."..vtn..".BehaviorIndex")~=true
+	local objInfo, t, n = MemoryManipulation.ConvertToObjInfo("BehaviorProps."..vtn..".BehaviorIndex", true)
+	MemoryManipulation.ReadObj(MemoryManipulation.GetETypePointer(ety), objInfo, nil, objInfo)
+	return t[n]~=true
 end
 
 function MemoryManipulation.GetETypePointer(ety)
