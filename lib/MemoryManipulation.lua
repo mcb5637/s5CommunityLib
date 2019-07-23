@@ -78,6 +78,8 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeBlockingArea				Das blocking eines entitytypes, im Format {{pos1,pos2},{pos11,pos12}...} .
 -- - MemoryManipulation.Get/SetBuildingTypeBuilderSlots				Die BuilderSlots eines entitytypes, im Format {{X,Y,r},{X,Y,r}...} .
 -- - MemoryManipulation.Get/SetBlockingEntityTypeBuildBlock			Das BuildBlocking eines entitytypes, im Format {pos1,pos2}.
+-- - MemoryManipulation.Get/SetEntityTypeModel						Das Model, das normalerweise für entities dieses types genutzt wird.
+-- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der Schaden den Helden dieses types mit einer CircularAttack verursachen.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -102,6 +104,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetLeaderMaxSoldiers(id, maxsol)			Setzt die maximale Soldatenzahl eines leaders.
 -- - MemoryManipulation.SetBuidingMaxEaters(id, eaters)				Setzt die maximalen essensplätze einer Farm/Taverne.
 -- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
+-- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
@@ -643,6 +646,7 @@ MemoryManipulation.ClassVTable = {
 	-- behaviors
 	EGL_CGLEBehaviorProps = tonumber("772A2C", 16),
 	GGL_CBehaviorWalkCommand = tonumber("7736A4", 16),
+	EGL_GLEBehaviorMultiSubAnims = tonumber("785EEC", 16),
 	
 	GGL_CHeroBehaviorProps = tonumber("7767F4", 16),
 	GGL_CHeroBehavior = tonumber("77677C", 16),
@@ -795,6 +799,11 @@ MemoryManipulation.ClassVTable = {
 	GGL_CPlayerAttractionProps = tonumber("770834", 16),
 	GGL_CPlayerAttractionHandler = tonumber("770868", 16),
 	
+	-- effects
+	EGL_CEffect = tonumber("784B28", 16),
+	EGL_CFlyingEffect = tonumber("7775E4", 16),
+	GGL_CCannonBallEffect = tonumber("777690", 16),
+	GGL_CArrowEffect = tonumber("778E24", 16),
 }
 MemoryManipulation.VTableNames = {}
 for k,v in pairs(MemoryManipulation.ClassVTable) do
@@ -1828,6 +1837,17 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="AutoFillActive", index={4}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={0,1}},
 		},
 	},
+	[MemoryManipulation.ClassVTable.EGL_GLEBehaviorMultiSubAnims] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_GLEBehaviorMultiSubAnims,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="LastUpdateTurn", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="AnimSlot0", index={6}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="BehMultiSubAnimsSlot"},
+			{name="AnimSlot1", index={11}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="BehMultiSubAnimsSlot"},
+			{name="AnimSlot2", index={16}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="BehMultiSubAnimsSlot"},
+			{name="AnimSlot3", index={21}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="BehMultiSubAnimsSlot"},
+		},
+	},
 	-- display props
 	markerDisplayProps=nil,
 	[MemoryManipulation.ClassVTable.ED_CDisplayEntityProps] = {
@@ -2026,7 +2046,67 @@ MemoryManipulation.ObjFieldInfo = {
 			--{name="Int", index={4}, datatype=MemoryManipulation.DataType.Int},?
 		},
 	},
-	
+	-- effects
+	markerEffects=nil,
+	[MemoryManipulation.ClassVTable.EGL_CEffect] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CEffect,
+		fields = {
+			--{name="", index={1}, datatype=MemoryManipulation.DataType.Int}, vtable? 784B0C EGL::IEffectDisplay
+			--{name="", index={2}, datatype=MemoryManipulation.DataType.Int}, vtable? 784AE4 EGL::TGLEAttachable<class EGL::CEffect,class EGL::CEffectAttachmentProxy>
+			--{name="", index={3}, datatype=MemoryManipulation.DataType.Int}, 599981640
+			--{name="", index={4}, datatype=MemoryManipulation.DataType.Int}, 893374368
+			--{name="", index={5}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={6}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={7}, datatype=MemoryManipulation.DataType.Int}, 893375408
+			--{name="", index={8}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={9}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={10}, datatype=MemoryManipulation.DataType.Int}, 893374208
+			--{name="", index={11}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={12}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={13}, datatype=MemoryManipulation.DataType.Int}, 893374648
+			--{name="", index={14}, datatype=MemoryManipulation.DataType.Int}, 0
+			--{name="", index={15}, datatype=MemoryManipulation.DataType.Int}, 0
+			{name="Position", index={16}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="SpawnedTurn", index={18}, datatype=MemoryManipulation.DataType.Int, check={}},
+			--{name="", index={19}, datatype=MemoryManipulation.DataType.Int}, -1
+			{name="EffectType", index={20}, datatype=MemoryManipulation.DataType.Int, check={}},
+			--{name="", index={21}, datatype=MemoryManipulation.DataType.Int}, 1 player?
+			--{name="", index={22}, datatype=MemoryManipulation.DataType.Int}, 1 player?
+			{name="EffectID", index={23}, datatype=MemoryManipulation.DataType.Int, check={}},
+			--{name="", index={30}, datatype=MemoryManipulation.DataType.Int}, vtable? 76AF54 GD::CBuildingBehavior
+		},
+	},
+	[MemoryManipulation.ClassVTable.EGL_CFlyingEffect] = {
+		vtable = MemoryManipulation.ClassVTable.EGL_CFlyingEffect,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CEffect},
+		fields = {
+			{name="SpawnedTurnAgain", index={30}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="GravityFactor", index={31}, datatype=MemoryManipulation.DataType.Float, check={}},
+			{name="StartPosition", index={34}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="TargetPosition", index={36}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="CurrentPosition", index={38}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="NextPosition", index={40}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="Position"},
+			{name="StrangeFloat", index={43}, datatype=MemoryManipulation.DataType.Float, check=nil},
+			{name="AttackerID", index={47}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CArrowEffect] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CArrowEffect,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CFlyingEffect},
+		fields = {
+			{name="TargetID", index={48}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="DamageAmount", index={49}, datatype=MemoryManipulation.DataType.Int, check={}},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CCannonBallEffect] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CCannonBallEffect,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CFlyingEffect},
+		fields = {
+			{name="DamageAmount", index={50}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="AoERange", index={51}, datatype=MemoryManipulation.DataType.Float, check={}},
+			{name="SourcePlayer", index={53}, datatype=MemoryManipulation.DataType.Int, check=nil}, --??
+		},
+	},
 	-- misc stuff (embedded objects, helper tables...)
 	markerMiscStuff=nil,
 	["Technology"] = {
@@ -2227,6 +2307,18 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="AnimID", index={0}, datatype=MemoryManipulation.DataType.Int, check=nil},
 			{name="Frequency", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		}
+	},
+	BehMultiSubAnimsSlot = {
+		hasNoVTable = true,
+		fields = {
+			{name="Active", index={0}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
+			{name="PlayBackwards", index={0}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
+			{name="IsLooped", index={0}, datatype=MemoryManipulation.DataType.Bit, bitOffset=2, check={1,0}},
+			{name="AnimID", index={1}, datatype=MemoryManipulation.DataType.Int, check=nil},
+			{name="StartTurn", index={2}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Duration", index={3}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="Speed", index={5}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		}
 	},
 }
@@ -2431,6 +2523,14 @@ function MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)
 	MemoryManipulation.SetSingleValue(id, "BehaviorList.GGL_CLimitedAttachmentBehavior.Attachment1.Limit", sleepers)
 end
 
+function MemoryManipulation.GetEntityModel(id)
+	local mod = MemoryManipulation.GetSingleValue(id, "ModelOverride")
+	if mod > 0 then
+		return mod
+	end
+	return MemoryManipulation.GetEntityTypeModel(Logic.GetEntityType(id))
+end
+
 function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
 	r = r or {}
 	if type(class)=="table" then
@@ -2563,6 +2663,10 @@ MemoryManipulation.GetBuildingTypeBuilderSlots = {LibFuncBase=MemoryManipulation
 MemoryManipulation.SetBuildingTypeBuilderSlots = MemoryManipulation.GetBuildingTypeBuilderSlots
 MemoryManipulation.GetBlockingEntityTypeBuildBlock = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.BuildBlockArea"'}
 MemoryManipulation.SetBlockingEntityTypeBuildBlock = MemoryManipulation.GetBlockingEntityTypeBuildBlock
+MemoryManipulation.GetEntityTypeModel = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"DisplayProps.Model"'}
+MemoryManipulation.SetEntityTypeModel = MemoryManipulation.GetEntityTypeModel
+MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
+MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
