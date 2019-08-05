@@ -21,16 +21,40 @@ end --mcbPacker.ignore
 -- - S5Hook (neueste version mit hurt-callback)
 -- - ArmorClasses
 -- - MemoryManipulation
-HurtProjectileFix = {projectileMem={}, lastProjectile={}}
+HurtProjectileFix = {projectileMem={}, lastProjectile={}, projectilesToAdd={}}
 
 function HurtProjectileFix.OnEffectCreated(effectType, playerId, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, radius, creatorType, effectId, isHookCreated)
 	if creatorType == 7816856 then
 		if IsValid(attackerId) and isHookCreated==0 then
+			HurtProjectileFix.projectilesToAdd[effectId] = attackerId
+		end
+	end
+end
+
+function HurtProjectileFix.AddOnTick()
+	for effectId, attackerId in pairs(HurtProjectileFix.projectilesToAdd) do
+		HurtProjectileFix.AddProjectileToFix(effectId,
+			Logic.GetEntityDamage(attackerId), -- modified by hero auras and techs
+			MemoryManipulation.GetSettlerTypeDamageClass(Logic.GetEntityType(attackerId))
+		)
+	end
+	HurtProjectileFix.projectilesToAdd = {}
+end
+
+function HurtProjectileFix.AddOnDestroy()
+	local id = Event.GetEntityID()
+	local effs = {}
+	for effectId, attackerId in pairs(HurtProjectileFix.projectilesToAdd) do
+		if id==attackerId then
 			HurtProjectileFix.AddProjectileToFix(effectId,
 				Logic.GetEntityDamage(attackerId), -- modified by hero auras and techs
 				MemoryManipulation.GetSettlerTypeDamageClass(Logic.GetEntityType(attackerId))
 			)
 		end
+		table.insert(effs, effectId)
+	end
+	for _,eid in ipairs(effs) do
+		HurtProjectileFix.projectilesToAdd[eid] = nil
 	end
 end
 
@@ -64,6 +88,8 @@ end
 
 function HurtProjectileFix.Init()
 	mcbTriggerExtHurtEntity.addEffectCreatedCb(HurtProjectileFix.OnEffectCreated)
+	Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_DESTROYED, nil, "HurtProjectileFix.AddOnDestroy", 1)
+	Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, nil, "HurtProjectileFix.AddOnTick", 1)
 	mcbTriggerExtHurtEntity.addProjectileHitCb(HurtProjectileFix.OnProjectileHit)
 	Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "HurtProjectileFix.OnHit", 1)
 end

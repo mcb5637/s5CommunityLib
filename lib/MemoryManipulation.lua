@@ -2112,7 +2112,7 @@ MemoryManipulation.ObjFieldInfo = {
 	["Technology"] = {
 		hasNoVTable = true,
 		fields = {
-			{name="t", index={0}},
+			{name="t", index={0}}, -- 0 techcategory
 			{name="TimeToResearch", index={1}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="ResourceCosts", index={3}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="costInfo"},
 			{name="RequiredTecConditions", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
