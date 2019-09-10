@@ -80,6 +80,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetBlockingEntityTypeBuildBlock			Das BuildBlocking eines entitytypes, im Format {pos1,pos2}.
 -- - MemoryManipulation.Get/SetEntityTypeModel						Das Model, das normalerweise für entities dieses types genutzt wird.
 -- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der Schaden den Helden dieses types mit einer CircularAttack verursachen.
+-- - MemoryManipulation.GetSettlerCurrentAnimation					Die aktuelle Animation eines entities. (mcbAnim zum setzen nutzen).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2667,6 +2668,8 @@ MemoryManipulation.GetEntityTypeModel = {LibFuncBase=MemoryManipulation.LibFuncB
 MemoryManipulation.SetEntityTypeModel = MemoryManipulation.GetEntityTypeModel
 MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
 MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
+MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CGLBehaviorAnimationEx.Animation"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""

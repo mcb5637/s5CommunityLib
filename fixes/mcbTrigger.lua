@@ -15,7 +15,7 @@
 --   StartSimpleLowPriorityJob
 --   LowPriorityJobs werden sehr unregelmäßig aufgerufen, solange es mehrere von ihnen gibt
 --	Fügt Events.OnEntityKillsEntity hinzu, funktioniert nur mit S5Hook.HurtEntityTrigger_GetDamage,
---		Event wie normaler Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, ids stimmen nicht unbedingt bei leader/soldier
+--		Event wie normaler Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, ids der soldiers sind austauschbar (da die sterbereihenfolge nicht nbedingt klar ist)
 --
 -- mcbTrigger.protectedCall(func, ...)	Ruft eine Funktion geschützt auf, und leitet Fehler an mcbTrigger.err
 -- mcbTrigger.err(txt)					Standard - Fehlerausgabe (über DebugWindow)
@@ -121,6 +121,9 @@ function mcbTrigger.fireTriggerDebugger(event, cev)
 	local rtime = XGUIEng.GetSystemTime()-mcbTrigger.currStartTime
 	if rtime > 0.03 and IstDrin then
 		Message("@color:255,0,0 Trigger "..IstDrin(event, Events).." runtime too long: "..rtime)
+		if mcbTrigger.breakOnRuntimeAlert then
+			LuaDebugger.Break()
+		end
 	end
 end
 
@@ -266,6 +269,16 @@ function mcbTrigger.protectedCall(func, ...)
 	return unpack(r)
 end
 
+function mcbTrigger.checkTriggerRuntime()
+	local ct = nil
+	for _,t in pairs(mcbTrigger.idToTrigger) do
+		if not ct or ct.time < t.time then
+			ct = t
+		end
+	end
+	return ct
+end
+
 function mcbTrigger.init()
 	mcbTrigger_action = mcbTrigger["fireTrigger"..mcbTrigger_mode]
 	mcbTrigger.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
@@ -406,14 +419,35 @@ function mcbTrigger.ktr.run()
 	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>=1 then
 		local solth = MemoryManipulation.GetLeaderTroopHealth(id)
 		local solph = MemoryManipulation.GetEntityTypeMaxHealth(Logic.LeaderGetSoldiersType(id))
-		local currSolHealth = solth - ((Logic.LeaderGetNumberOfSoldiers(id)-1) * solph)
-		if currSolHealth <= dmg then
-			mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, mcbTrigger.currentEvent)
+		if solth == -1 then
+			solth = (Logic.LeaderGetNumberOfSoldiers(id)) * solph
 		end
-		return
+		local sols = {Logic.GetSoldiersAttachedToLeader(id)}
+		table.remove(sols, 1)
+		local newsolh = solth - dmg
+		for i,sid in ipairs(sols) do
+			if ((Logic.LeaderGetNumberOfSoldiers(id)-i) * solph) > newsolh then
+				local t = {}
+				for k,v in pairs(mcbTrigger.event) do
+					t[k] = 0
+				end
+				t.GetEntityID1 = Event.GetEntityID1()
+				t.GetEntityID2 = sid
+				mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, t)
+			else
+				break
+			end
+		end
+		dmg = math.max(0, -newsolh)
 	end
 	if Logic.GetEntityHealth(id) <= dmg then
-		mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, mcbTrigger.currentEvent)
+		local t = {}
+		for k,v in pairs(mcbTrigger.event) do
+			t[k] = 0
+		end
+		t.GetEntityID1 = Event.GetEntityID1()
+		t.GetEntityID2 = id
+		mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, t)
 	end
 end
 mcbTrigger.ktr.init()

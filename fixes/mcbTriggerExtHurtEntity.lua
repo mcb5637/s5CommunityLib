@@ -1,6 +1,7 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
 
 --- author:mcb		currentMaintainer:mcb		v1.0
@@ -19,6 +20,7 @@ end --mcbPacker.ignore
 -- 														{
 -- 															effectType,
 -- 															playerId,
+-- 															attackerPlayer,
 -- 															startPos,
 -- 															targetPos,
 -- 															attackerId,
@@ -34,6 +36,7 @@ end --mcbPacker.ignore
 -- 														{
 --															tick,
 --															attackerId,
+--															attackerPlayer,
 --															attackerType,
 --														}
 -- 														
@@ -50,6 +53,7 @@ function mcbTriggerExtHurtEntity.projectileCreated(effectType, playerId, startPo
 		mcbTriggerExtHurtEntity.projectiles[effectId] = {
 			effectType = effectType,
 			playerId = playerId,
+			attackerPlayer = GetPlayer(attackerId),
 			startPos = {X=startPosX, Y=startPosY},
 			targetPos = {X=targetPosX,Y=targetPosY},
 			attackerId = attackerId,
@@ -141,10 +145,12 @@ end
 function mcbTriggerExtHurtEntity.destroyedTrigger()
 	local id = Event.GetEntityID()
 	local ty = Logic.GetEntityType(id)
-	if ty==Entities.XD_Bomb1 or ty==Entities.XD_Keg1 then -- TODO check behaviors with memorymanipulation
+	if MemoryManipulation.HasEntityBehavior(id, MemoryManipulation.ClassVTable.GGL_CBombBehavior)
+	or MemoryManipulation.HasEntityBehavior(id, MemoryManipulation.ClassVTable.GGL_CKegBehavior) then
 		mcbTriggerExtHurtEntity.currentEntity = {
 			tick = Logic.GetTimeMs(),
 			attackerId = id,
+			attackerPlayer = GetPlayer(id),
 			attackerType = ty,
 		}
 		if mcbTriggerExtHurtEntity.currentEntity.tick==mcbTriggerExtHurtEntity.currentProjectile.tick then

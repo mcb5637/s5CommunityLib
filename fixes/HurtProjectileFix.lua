@@ -66,6 +66,13 @@ function HurtProjectileFix.AddProjectileToFix(effectId, baseDamage, damageClass)
 end
 
 function HurtProjectileFix.OnProjectileHit(effectType, startPosX, startPosY, targetPosX, targetPosY, attackerId, targetId, damage, aoeRange, effectId)
+	if HurtProjectileFix.projectilesToAdd[effectId] then
+		HurtProjectileFix.AddProjectileToFix(effectId,
+			Logic.GetEntityDamage(HurtProjectileFix.projectilesToAdd[effectId]), -- modified by hero auras and techs
+			MemoryManipulation.GetSettlerTypeDamageClass(Logic.GetEntityType(HurtProjectileFix.projectilesToAdd[effectId]))
+		)
+		HurtProjectileFix.projectilesToAdd[effectId] = nil
+	end
 	HurtProjectileFix.lastProjectile = HurtProjectileFix.projectileMem[effectId]
 	HurtProjectileFix.projectileMem[effectId] = nil
 end
@@ -77,8 +84,9 @@ function HurtProjectileFix.OnHit()
 		local at = Event.GetEntityID1()
 		local def = Event.GetEntityID2()
 		local dmod = HurtProjectileFix.GetDamageMod(MemoryManipulation.GetEntityTypeArmorClass(Logic.GetEntityType(def)), HurtProjectileFix.lastProjectile.damageClass)
-		local dmg = HurtProjectileFix.lastProjectile.baseDamage * dmod - Logic.GetEntityArmor(def)
-		S5Hook.HurtEntityTrigger_SetDamage(dmg)
+		local distmod = (pinf.radius - GetDistance(def, pinf.targetPos)) / pinf.radius
+		local dmg = HurtProjectileFix.lastProjectile.baseDamage * dmod * distmod - Logic.GetEntityArmor(def)
+		S5Hook.HurtEntityTrigger_SetDamage(math.max(dmg, 1))
 	end
 end
 
