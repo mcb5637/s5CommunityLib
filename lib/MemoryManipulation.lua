@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/KeyOf")
-mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
 mcbPacker.require("s5CommunityLib/comfort/number/round")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
@@ -108,7 +108,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
--- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit s5HookLoader).
+-- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit S5HookLoader).
 -- - MemoryManipulation.CreateLibFuncs()							Erstellt die LibFuncs, wird aus OnLoadMap aufgerufen, kann aber auch selbst aufgerufen werden.
 -- 
 -- Hauptfunktionen:
@@ -137,7 +137,7 @@ end --mcbPacker.ignore
 -- 
 -- Benötigt:
 -- - S5Hook
--- - s5HookLoader
+-- - S5HookLoader
 -- - framework2
 -- - IsEntityOfType
 -- - ArmorClasses
@@ -2344,7 +2344,7 @@ do
 end
 
 table.insert(framework2.map.endCallback, MemoryManipulation.OnLeaveMap)
-table.insert(s5HookLoader.cb, 1, MemoryManipulation.OnLoadMap)
+table.insert(S5HookLoader.cb, 1, MemoryManipulation.OnLoadMap)
 
 function MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
 	local w = {}

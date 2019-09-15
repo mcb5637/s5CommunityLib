@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
-mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
 
@@ -137,7 +137,7 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - S5Hook
 -- - MemoryManipulation
--- - s5HookLoader
+-- - S5HookLoader
 -- - mcbTrigger
 -- 
 CNetEventCallbacks = {cbs = {}}
@@ -178,7 +178,7 @@ function CNetEventCallbacks.DoCB(sv, id)
 	end
 end
 
-table.insert(s5HookLoader.cb, function()
+table.insert(S5HookLoader.cb, function()
 	S5Hook.SetNetEventTrigger(CNetEventCallbacks.DoCB)
 end)
 

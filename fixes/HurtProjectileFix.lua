@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
-mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/mcbTriggerExtHurtEntity")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")

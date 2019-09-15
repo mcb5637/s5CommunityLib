@@ -1,5 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
@@ -43,7 +43,7 @@ end --mcbPacker.ignore
 -- 
 -- Benötigt:
 -- - S5Hook (neuester, mit hurt callback)
--- - s5HookLoader
+-- - S5HookLoader
 -- - mcbTrigger
 -- 
 mcbTriggerExtHurtEntity = {projectiles={}, currentProjectile={}, createdCbs={}, hitCbs={}, currentEntity={}}
@@ -169,4 +169,4 @@ function mcbTriggerExtHurtEntity.init()
 	end
 end
 
-table.insert(s5HookLoader.cb, mcbTriggerExtHurtEntity.init)
+table.insert(S5HookLoader.cb, mcbTriggerExtHurtEntity.init)

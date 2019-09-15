@@ -1,5 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
+mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v1.0
