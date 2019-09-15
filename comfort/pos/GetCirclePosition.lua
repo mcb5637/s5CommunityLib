@@ -1,7 +1,7 @@
 
 --- author:???		current maintainer:mcb		v1.0
 -- Berechnet eine Position auf einer Kreisbahn.
-function KreisPosition(_position, _range, _angle)
+function GetCirclePosition(_position, _range, _angle)
     assert(type(_position) == "table")
     local angle = math.rad(_angle)
     assert(type(angle) == "number")
