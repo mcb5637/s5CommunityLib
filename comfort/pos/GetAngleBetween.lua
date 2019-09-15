@@ -1,7 +1,7 @@
 
 --- author:???		current maintainer:mcb		v1.0
--- Berechnet einen Winkel zwischen 2 positionen.
-function Winkel(_Pos1,_Pos2)
+-- Berechnet einen winkel zwischen 2 positionen.
+function GetAngleBetween(_Pos1,_Pos2)
 	local delta_X = 0;
 	local delta_Y = 0;
 	local alpha   = 0
