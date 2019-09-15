@@ -7,34 +7,34 @@ end --mcbPacker.ignore
 -- Ermöglicht es, beliebige Lua-Ausdrücke auf allen verbundenen PCs zu parsen und synchron auszuführen.
 -- Wird das Script im SP geladen, wird keines Synchronisierung durchgeführt.
 -- 
--- mcbMPSyncer.init(player)								Aus der GameCallback_OnGameStart aufrufen, bei player werden Tribute zur Synchronisierung erstellt.
+-- MPSyncer.Init(player)								Aus der GameCallback_OnGameStart aufrufen, bei player werden Tribute zur Synchronisierung erstellt.
 -- 
--- mcbMPSyncer.executeSynced(vname, ...)				Ruft die Virtuelle Funktion vname synchron auf allen PCs mit den übergebenen Argumenten arg auf.
+-- MPSyncer.ExecuteSynced(vname, ...)				Ruft die Virtuelle Funktion vname synchron auf allen PCs mit den übergebenen Argumenten arg auf.
 -- 
--- mcbMPSyncer.executeUnsyncedAtSingle(pl, vname, ...)	Ruft die virtuelle Funktion vname auf dem PC von pl auf (nicht synchron, im sp immer eigener pc).
+-- MPSyncer.ExecuteUnsyncedAtSingle(pl, vname, ...)	Ruft die virtuelle Funktion vname auf dem PC von pl auf (nicht synchron, im sp immer eigener pc).
 -- 
--- mcbMPSyncer.executeUnsyncedAtAll(vname, ...)			Ruft die virtuelle Funktion vname asynchron auf allen PCs auf.
+-- MPSyncer.ExecuteUnsyncedAtAll(vname, ...)			Ruft die virtuelle Funktion vname asynchron auf allen PCs auf.
 -- 
--- mcbMPSyncer.allConnected								Gibt an, ob schon alle PCs gestartet sind. Wenn nicht, sind keine synchronisierungen möglich.
+-- MPSyncer.allConnected								Gibt an, ob schon alle PCs gestartet sind. Wenn nicht, sind keine synchronisierungen möglich.
 -- 
--- mcbMPSyncer.virtualFuncs.create(func, vname, ...)
+-- MPSyncer.VirtualFuncs.Create(func, vname, ...)
 -- 														Erstellt eine virtuelle Funktion vname, mit den virtuellen Argumenttypen arg,
 -- 														die func mit den übergebenen Argumenten aufruft.
 -- 
--- mcbMPSyncer.virtualFuncs.argumentTypeInt()			Gibt den Argumenttyp für Lua-number zurück.
--- mcbMPSyncer.virtualFuncs.argumentTypeString()		Gibt den Argumenttyp für Lua-string zurück.
--- mcbMPSyncer.virtualFuncs.argumentTypeSimpleTable()	Gibt den Argumenttyp für einfache Lua-tables zurück (tables die nur numbers/strings als key/value haben).
+-- MPSyncer.VirtualFuncs.ArgumentTypeInt()			Gibt den Argumenttyp für Lua-number zurück.
+-- MPSyncer.VirtualFuncs.ArgumentTypeString()		Gibt den Argumenttyp für Lua-string zurück.
+-- MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()	Gibt den Argumenttyp für einfache Lua-tables zurück (tables die nur numbers/strings als key/value haben).
 -- 
--- mcbMPSyncer.virtualFuncs.patchLuaFunc(fname, ...)
+-- MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
 -- 														Schnelle Möglichkeit, eine Funktion zu synchronisieren. Ersetzt _G[fname] mit einer Funktion, die
 -- 														automatisch Synchronisiert. arg sind die Argumenttypen number/string.
 -- 
--- mcbMPSyncer.addChatRecievedCB(cb)					Speichert einen Callback, die beim erhalt einer normalen Chat-Message zusätzlich aufgerufen wird.
--- mcbMPSyncer.removeChatRecievedCb(cb)					Entfernt eine Chat-Message Callback wieder.
+-- MPSyncer.AddChatRecievedCB(cb)					Speichert einen Callback, die beim erhalt einer normalen Chat-Message zusätzlich aufgerufen wird.
+-- MPSyncer.RemoveChatRecievedCb(cb)					Entfernt eine Chat-Message Callback wieder.
 -- 
--- mcbMPSyncer.getHost()								Gibt die playerid des hosts zurück. (immer GUI.GetPlayerID() in SP)
+-- MPSyncer.GetHost()								Gibt die playerid des hosts zurück. (immer GUI.GetPlayerID() in SP)
 -- 
--- mcbMPSyncer.isMP()									Gibt zurück, ob die Map im MP-Modus gestartet ist. (false-SP, 2-UBI, 1-LAN, 3-Kimichuras)
+-- MPSyncer.IsMP()									Gibt zurück, ob die Map im MP-Modus gestartet ist. (false-SP, 2-UBI, 1-LAN, 3-Kimichuras)
 -- 
 -- Anmerkungen:
 -- vname: Darf nur aus Buchstaben bestehen, keine Zahlen/Sonderzeichen.
@@ -60,23 +60,23 @@ end --mcbPacker.ignore
 -- 		end
 -- 	
 -- 	FMA:
--- 		mcbMPSyncer.init(8)
--- 		mcbMPSyncer.virtualFuncs.patchLuaFunc("foo", "string", "number")
+-- 		MPSyncer.Init(8)
+-- 		MPSyncer.VirtualFuncs.PatchLuaFunc("foo", "string", "number")
 -- 	
 -- 	Aufruf:
 -- 		foo("bar", 5)
 -- 
 -- Beispiel 2:
 -- 	FMA:
--- 		mcbMPSyncer.init(8)
--- 		mcbMPSyncer.virtualFuncs.create(function(s, n)
+-- 		MPSyncer.Init(8)
+-- 		MPSyncer.VirtualFuncs.Create(function(s, n)
 -- 				for i=1,n do
 -- 				 		Message(s)
 -- 			 	end
--- 			end, "foo", mcbMPSyncer.virtualFuncs.argumentTypeString(), mcbMPSyncer.virtualFuncs.argumentTypeInt())
+-- 			end, "foo", MPSyncer.VirtualFuncs.ArgumentTypeString(), MPSyncer.VirtualFuncs.ArgumentTypeInt())
 -- 	
 -- 	Aufruf:
--- 		mcbMPSyncer.executeSynced("foo", "bar", 5)
+-- 		MPSyncer.ExecuteSynced("foo", "bar", 5)
 -- 
 -- Beide Beispiele fürhren zum exakt selben Ergebniss. Nr1 ist einfacher für Anfänger und leichter in bestehende SP-Scripte einbaubar,
 -- 		Nr2 ist deutlich Flexibler.
@@ -85,75 +85,75 @@ end --mcbPacker.ignore
 -- - S5Hook (Logging)
 -- - unpack-fix
 -- 
-mcbMPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}}
-function mcbMPSyncer.init(player)
-	if not mcbMPSyncer.isMP() then
-		mcbMPSyncer.allConnected = true
-		for _,cb in ipairs(mcbMPSyncer.initCbs) do
+MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}}
+function MPSyncer.Init(player)
+	if not MPSyncer.IsMP() then
+		MPSyncer.allConnected = true
+		for _,cb in ipairs(MPSyncer.InitCbs) do
 			cb()
 		end
 		return
 	end
-	mcbMPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage = MPGame_ApplicationCallback_ReceivedChatMessage
+	MPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage = MPGame_ApplicationCallback_ReceivedChatMessage
 	MPGame_ApplicationCallback_ReceivedChatMessage = function(msgo, allied, sender)
-		mcbMPSyncer.log("recieved message from "..sender.." to "..(allied==1 and "allied" or "all")..": "..msgo)
+		MPSyncer.Log("recieved message from "..sender.." to "..(allied==1 and "allied" or "all")..": "..msgo)
 		local msg = msgo
-		if mcbMPSyncer.isMP()==3 then -- remove name/color codes added by kimichuras server
+		if MPSyncer.IsMP()==3 then -- remove name/color codes added by kimichuras server
 			local _=nil
 			_,_,msg = string.find(msg, "^"..UserTool_GetPlayerName(sender)..">  @color:255,255,255,255: (.*) @color:255,255,255,255: $")
 		end
 		local start = string.sub(msg, 1, 3)
 		local en = string.sub(msg, 4)
 		if start=="@sf" then
-			mcbMPSyncer.recievedFunc(en, sender)
+			MPSyncer.recievedFunc(en, sender)
 		elseif start=="@af" then
-			mcbMPSyncer.recievedSingleFunc(en, sender)
+			MPSyncer.recievedSingleFunc(en, sender)
 		elseif start=="@sa" then
-			mcbMPSyncer.recievedAck(en, sender)
+			MPSyncer.recievedAck(en, sender)
 		elseif start=="@wa" then
-			if not mcbMPSyncer.warningRepeat then
-				table.insert(mcbMPSyncer.warnings, en)
+			if not MPSyncer.warningRepeat then
+				table.insert(MPSyncer.warnings, en)
 				GUI.AddStaticNote(en)
-				mcbMPSyncer.log("warning recieved: "..en)
+				MPSyncer.Log("warning recieved: "..en)
 			end
 		elseif start=="@in" then
-			mcbMPSyncer.recievedInit(en)
+			MPSyncer.recievedInit(en)
 		elseif start=="@st" then
-			if not mcbMPSyncer.allConnected then
-				mcbMPSyncer.allConnected = true
-				for _,cb in ipairs(mcbMPSyncer.initCbs) do
+			if not MPSyncer.allConnected then
+				MPSyncer.allConnected = true
+				for _,cb in ipairs(MPSyncer.InitCbs) do
 					cb()
 				end
-				mcbMPSyncer.log("player "..sender.." finished loading first, all connected, ready to play")
+				MPSyncer.Log("player "..sender.." finished loading first, all connected, ready to play")
 			end
 		else -- normal message
-			--mcbMPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage(msg, allied, sender)
-			for _,cb in ipairs(mcbMPSyncer.chatRecievedCbs) do
+			--MPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage(msg, allied, sender)
+			for _,cb in ipairs(MPSyncer.chatRecievedCbs) do
 				cb(msgo, allied, sender)
 			end
 		end
 	end
-	mcbMPSyncer.nextTribute = GUI.GetPlayerID()
-	mcbMPSyncer.player = player
+	MPSyncer.nextTribute = GUI.GetPlayerID()
+	MPSyncer.player = player
 	GameCallback_FulfillTribute = function() return 1 end
 	if LuaDebugger.Log then
 		XNetwork.Chat_SendMessageToAll("@waWarning: Player "..GUI.GetPlayerID().." ("..XNetwork.GameInformation_GetLogicPlayerUserName(GUI.GetPlayerID())..") startet this map with active Debugger!")
 	end
-	if mcbMPSyncer.isMP()==3 then -- kimichuras server
-		CNetwork.SetNetworkHandler("mcbMPSyncer_recieved_syncedCall", function(name, str)
-			mcbMPSyncer.log("client mode: synced executing from Network "..str)
-			mcbMPSyncer.virtualFuncs.execute(mcbMPSyncer.virtualFuncs.deserialize(str))
+	if MPSyncer.IsMP()==3 then -- kimichuras server
+		CNetwork.SetNetworkHandler("MPSyncer_recieved_syncedCall", function(name, str)
+			MPSyncer.Log("client mode: synced executing from Network "..str)
+			MPSyncer.VirtualFuncs.execute(MPSyncer.VirtualFuncs.deserialize(str))
 		end)
-		mcbMPSyncer.allConnected = true
-		for _,cb in ipairs(mcbMPSyncer.initCbs) do
+		MPSyncer.allConnected = true
+		for _,cb in ipairs(MPSyncer.InitCbs) do
 			cb()
 		end
-		mcbMPSyncer.log("kimichuras server dont need to wait for init, ready to play")
-		mcbMPSyncer.addChatRecievedCB(mcbMPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage)
+		MPSyncer.Log("kimichuras server dont need to wait for init, ready to play")
+		MPSyncer.AddChatRecievedCB(MPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage)
 	else
 		XNetwork.Chat_SendMessageToAll("@in"..GUI.GetPlayerID())
-		mcbMPSyncer.addChatRecievedCB(function(msg, allied, sender)
-			local msg2, sound, feedbs = mcbMPSyncer.formatChatMsg(msg, sender)
+		MPSyncer.AddChatRecievedCB(function(msg, allied, sender)
+			local msg2, sound, feedbs = MPSyncer.FormatChatMsg(msg, sender)
 			GUI.AddNote(msg2)
 			if sound then
 				Sound.PlayGUISound(sound, 0)
@@ -165,7 +165,7 @@ function mcbMPSyncer.init(player)
 	end	
 end
 
-mcbMPSyncer.formatChatMsgDatabase = {
+MPSyncer.FormatChatMsgDatabase = {
 	["#01"] = {
 		sound = Sounds.VoicesMentor_MP_TauntYes,
 		sttk="VoicesMentor/MP_TauntYes",
@@ -247,61 +247,61 @@ mcbMPSyncer.formatChatMsgDatabase = {
 		sttk="VoicesMentor/MP_TauntFunny05",
 	},
 }
-function mcbMPSyncer.formatChatMsg(msg, sender)
+function MPSyncer.FormatChatMsg(msg, sender)
 	local sound = Sounds.Misc_Chat
-	if mcbMPSyncer.formatChatMsgDatabase[msg] then
-		sound = mcbMPSyncer.formatChatMsgDatabase[msg].sound
-		msg = mcbMPSyncer.getPlayerNameString(sender)..XGUIEng.GetStringTableText(mcbMPSyncer.formatChatMsgDatabase[msg].sttk)
+	if MPSyncer.FormatChatMsgDatabase[msg] then
+		sound = MPSyncer.FormatChatMsgDatabase[msg].sound
+		msg = MPSyncer.GetPlayerNameString(sender)..XGUIEng.GetStringTableText(MPSyncer.FormatChatMsgDatabase[msg].sttk)
 		return msg, nil, sound
 	end
 	return msg, sound, nil
 end
 
-function mcbMPSyncer.getPlayerNameString(pl)
+function MPSyncer.GetPlayerNameString(pl)
 	local r,g,b = GUI.GetPlayerColor(pl)
 	return " @color:"..r..","..g..","..b.." "..UserTool_GetPlayerName(pl).." @color:255,255,255 > "
 end
 
-function mcbMPSyncer.addChatRecievedCB(cb)
-	table.insert(mcbMPSyncer.chatRecievedCbs, cb)
+function MPSyncer.AddChatRecievedCB(cb)
+	table.insert(MPSyncer.chatRecievedCbs, cb)
 end
 
-function mcbMPSyncer.removeChatRecievedCb(cb)
-	for i=table.getn(mcbMPSyncer.chatRecievedCbs),1,-1 do
-		if mcbMPSyncer.chatRecievedCbs[i]==cb then
-			table.remove(mcbMPSyncer.chatRecievedCbs, i)
+function MPSyncer.RemoveChatRecievedCb(cb)
+	for i=table.getn(MPSyncer.chatRecievedCbs),1,-1 do
+		if MPSyncer.chatRecievedCbs[i]==cb then
+			table.remove(MPSyncer.chatRecievedCbs, i)
 		end
 	end
 end
 
-function mcbMPSyncer.addInitCB(cb)
-	table.insert(mcbMPSyncer.initCbs, cb)
-	if mcbMPSyncer.allConnected then
+function MPSyncer.AddInitCB(cb)
+	table.insert(MPSyncer.InitCbs, cb)
+	if MPSyncer.allConnected then
 		cb()
 	end
 end
 
-function mcbMPSyncer.log(txt)
+function MPSyncer.Log(txt)
 	if LuaDebugger.Log then
 		LuaDebugger.Log(txt)
 	end
 	if S5Hook then
-		S5Hook.Log("mcbMPSyncer: "..txt)
+		S5Hook.Log("MPSyncer: "..txt)
 	end
 end
 
-function mcbMPSyncer.executeSynced(f, ...)
-	if not mcbMPSyncer.isMP() then
-		mcbMPSyncer.log("SP mode, direct executing")
-		mcbMPSyncer.virtualFuncs.funcs[f].func(unpack(arg))
+function MPSyncer.ExecuteSynced(f, ...)
+	if not MPSyncer.IsMP() then
+		MPSyncer.Log("SP mode, direct executing")
+		MPSyncer.VirtualFuncs.funcs[f].func(unpack(arg))
 		return
 	end
-	assert(mcbMPSyncer.allConnected)
-	if mcbMPSyncer.isMP()==3 then -- kimichuras modserver
-		f = mcbMPSyncer.virtualFuncs.serialize(f, unpack(arg))
-		assert(mcbMPSyncer.virtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
-		mcbMPSyncer.log("host mode: sended CNetwork call for "..f)
-		CNetwork.send_command("mcbMPSyncer_recieved_syncedCall", f)
+	assert(MPSyncer.allConnected)
+	if MPSyncer.IsMP()==3 then -- kimichuras modserver
+		f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
+		assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
+		MPSyncer.Log("host mode: sended CNetwork call for "..f)
+		CNetwork.send_command("MPSyncer_recieved_syncedCall", f)
 		return
 	end
 	local cntxt = {}
@@ -310,120 +310,120 @@ function mcbMPSyncer.executeSynced(f, ...)
 			cntxt[i] = "needAck"
 		end
 	end
-	local tId = mcbMPSyncer.nextTribute
-	mcbMPSyncer.nextTribute = mcbMPSyncer.nextTribute + 8
-	mcbMPSyncer.playerAck[tId] = cntxt
-	f = mcbMPSyncer.virtualFuncs.serialize(f, unpack(arg))
-	assert(mcbMPSyncer.virtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
-	mcbMPSyncer.log("host mode: sended tribute "..tId.." for call "..f)
+	local tId = MPSyncer.nextTribute
+	MPSyncer.nextTribute = MPSyncer.nextTribute + 8
+	MPSyncer.playerAck[tId] = cntxt
+	f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
+	assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
+	MPSyncer.Log("host mode: sended tribute "..tId.." for call "..f)
 	XNetwork.Chat_SendMessageToAll("@sf"..tId..":"..f)
 end
 
-function mcbMPSyncer.recievedFunc(f, sender)
+function MPSyncer.recievedFunc(f, sender)
 	local st, en = string.find(f, "^%d+:")
 	local id = string.sub(f, st, en-1)
 	local toEval = string.sub(f, en+1)
-	local func = mcbMPSyncer.virtualFuncs.deserialize(toEval)
+	local func = MPSyncer.VirtualFuncs.deserialize(toEval)
 	local trib = {
 		Tribute = tonumber(id),
-		pId = mcbMPSyncer.player,
+		pId = MPSyncer.player,
 		func = func,
 		Callback = function(t)
-			mcbMPSyncer.log("client mode: synced executing "..t.Tribute)
+			MPSyncer.Log("client mode: synced executing "..t.Tribute)
 			--t.func()
-			mcbMPSyncer.virtualFuncs.execute(t.func)
+			MPSyncer.VirtualFuncs.execute(t.func)
 		end,
 	}
-	Logic.AddTribute(mcbMPSyncer.player, trib.Tribute, 0, 0, "", ResourceType.Gold, 0)
+	Logic.AddTribute(MPSyncer.player, trib.Tribute, 0, 0, "", ResourceType.Gold, 0)
 	SetupTributePaid(trib)
-	mcbMPSyncer.log((sender==GUI.GetPlayerID() and "host mode: " or "client mode: ").."recieved tribute "..id.." from "..sender.." for "..toEval)
+	MPSyncer.Log((sender==GUI.GetPlayerID() and "host mode: " or "client mode: ").."recieved tribute "..id.." from "..sender.." for "..toEval)
 	XNetwork.Chat_SendMessageToAll("@sa"..id)
 end
 
-function mcbMPSyncer.recievedAck(a, sender)
+function MPSyncer.recievedAck(a, sender)
 	a = tonumber(a)
-	if mcbMPSyncer.playerAck[a] then
-		mcbMPSyncer.playerAck[a][sender] = "acked"
-		mcbMPSyncer.log("host mode: ack recieved for "..a.." from "..sender)
-		mcbMPSyncer.checkAcks(a)
+	if MPSyncer.playerAck[a] then
+		MPSyncer.playerAck[a][sender] = "acked"
+		MPSyncer.Log("host mode: ack recieved for "..a.." from "..sender)
+		MPSyncer.checkAcks(a)
 	else
-		mcbMPSyncer.log("client mode: dropped ack for "..a.." from "..sender..", not for me")
+		MPSyncer.Log("client mode: dropped ack for "..a.." from "..sender..", not for me")
 	end
 end
 
-function mcbMPSyncer.checkAcks(id)
-	local cntxt = mcbMPSyncer.playerAck[id]
+function MPSyncer.checkAcks(id)
+	local cntxt = MPSyncer.playerAck[id]
 	for i=1,XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer() do
 		if cntxt[i] == "needAck" then
-			mcbMPSyncer.log("host mode: waiting for more acks to execute "..id)
+			MPSyncer.Log("host mode: waiting for more acks to execute "..id)
 			return
 		end
 	end
-	mcbMPSyncer.log("host mode: started synced execution "..id)
-	GUI.PayTribute(mcbMPSyncer.player, id)
-	mcbMPSyncer.playerAck[id] = nil
+	MPSyncer.Log("host mode: started synced execution "..id)
+	GUI.PayTribute(MPSyncer.player, id)
+	MPSyncer.playerAck[id] = nil
 end
 
-function mcbMPSyncer.recievedInit(player)
+function MPSyncer.recievedInit(player)
 	local p = tonumber(player)
-	mcbMPSyncer.log("init recieved from "..p)
+	MPSyncer.Log("init recieved from "..p)
 	if p~=GUI.GetPlayerID() then
-		mcbMPSyncer.warningRepeat = true
-		for _,s in ipairs(mcbMPSyncer.warnings) do
+		MPSyncer.warningRepeat = true
+		for _,s in ipairs(MPSyncer.warnings) do
 			XNetwork.Chat_SendMessageToAll("@wa"..s)
 		end
-		mcbMPSyncer.warningRepeat = nil
+		MPSyncer.warningRepeat = nil
 	end
-	mcbMPSyncer.connected[p] = true
+	MPSyncer.connected[p] = true
 	for i=1,XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer() do
-		if XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)==1 and not mcbMPSyncer.connected[i] then
+		if XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)==1 and not MPSyncer.connected[i] then
 			return
 		end
 	end
-	mcbMPSyncer.log("got all inits, sending start")
+	MPSyncer.Log("got all inits, sending start")
 	XNetwork.Chat_SendMessageToAll("@st")
 end
 
-function mcbMPSyncer.executeUnsyncedAtSingle(pl, f, ...)
-	if not mcbMPSyncer.isMP() then
-		mcbMPSyncer.log("SP mode, direct executing")
-		mcbMPSyncer.virtualFuncs.funcs[f].func(unpack(arg))
+function MPSyncer.ExecuteUnsyncedAtSingle(pl, f, ...)
+	if not MPSyncer.IsMP() then
+		MPSyncer.Log("SP mode, direct executing")
+		MPSyncer.VirtualFuncs.funcs[f].func(unpack(arg))
 		return
 	end
-	assert(mcbMPSyncer.allConnected)
-	f = mcbMPSyncer.virtualFuncs.serialize(f, unpack(arg))
-	assert(mcbMPSyncer.virtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
-	mcbMPSyncer.log("host mode: sended single call to machine "..pl.." "..f)
+	assert(MPSyncer.allConnected)
+	f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
+	assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
+	MPSyncer.Log("host mode: sended single call to machine "..pl.." "..f)
 	XNetwork.Chat_SendMessageToAll("@af"..pl..":"..f)
 end
 
-function mcbMPSyncer.executeUnsyncedAtAll(f, ...)
-	if not mcbMPSyncer.isMP() then
-		mcbMPSyncer.log("SP mode, direct executing")
-		mcbMPSyncer.virtualFuncs.funcs[f].func(unpack(arg))
+function MPSyncer.ExecuteUnsyncedAtAll(f, ...)
+	if not MPSyncer.IsMP() then
+		MPSyncer.Log("SP mode, direct executing")
+		MPSyncer.VirtualFuncs.funcs[f].func(unpack(arg))
 		return
 	end
-	assert(mcbMPSyncer.allConnected)
-	f = mcbMPSyncer.virtualFuncs.serialize(f, unpack(arg))
-	assert(mcbMPSyncer.virtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
-	mcbMPSyncer.log("host mode: sended single call to machine all "..f)
+	assert(MPSyncer.allConnected)
+	f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
+	assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
+	MPSyncer.Log("host mode: sended single call to machine all "..f)
 	XNetwork.Chat_SendMessageToAll("@af-1:"..f)
 end
 
-function mcbMPSyncer.recievedSingleFunc(f, sender)
+function MPSyncer.recievedSingleFunc(f, sender)
 	local st, en = string.find(f, "^%-?%d+:")
 	local id = string.sub(f, st, en-1)
 	local toEval = string.sub(f, en+1)
 	if tonumber(id)~=GUI.GetPlayerID() and id~="-1" then
-		mcbMPSyncer.log("client mode: dropped single call for "..id..", not for me")
+		MPSyncer.Log("client mode: dropped single call for "..id..", not for me")
 		return
 	end
-	local func = mcbMPSyncer.virtualFuncs.deserialize(toEval)
-	mcbMPSyncer.log("client mode: executing single call "..toEval)
-	mcbMPSyncer.virtualFuncs.execute(func)
+	local func = MPSyncer.VirtualFuncs.deserialize(toEval)
+	MPSyncer.Log("client mode: executing single call "..toEval)
+	MPSyncer.VirtualFuncs.execute(func)
 end
 
-function mcbMPSyncer.isMP()
+function MPSyncer.IsMP()
 	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetworkWrapper then -- kimichuras server (better detection method?)
 		return 3
 	elseif XNetworkUbiCom.Manager_DoesExist()==1 then
@@ -435,8 +435,8 @@ function mcbMPSyncer.isMP()
 	end
 end
 
-function mcbMPSyncer.getHost()
-	local mpmode = mcbMPSyncer.isMP()
+function MPSyncer.GetHost()
+	local mpmode = MPSyncer.IsMP()
 	if not mpmode then
 		return GUI.GetPlayerID()
 	end
@@ -452,9 +452,9 @@ function mcbMPSyncer.getHost()
 	return XNetwork.GameInformation_GetPlayerIDByNetworkAddress(XNetwork.Host_UserInSession_GetHostNetworkAddress())
 end
 
-mcbMPSyncer.virtualFuncs = {funcs={}}
+MPSyncer.VirtualFuncs = {funcs={}}
 
-function mcbMPSyncer.virtualFuncs.create(func, vname, ...)
+function MPSyncer.VirtualFuncs.Create(func, vname, ...)
 	assert(string.find(vname, "^%w+$"))
 	local pattern = "^"..vname.."%("
 	local serializer = {}
@@ -466,15 +466,15 @@ function mcbMPSyncer.virtualFuncs.create(func, vname, ...)
 	end
 	pattern = pattern.."%)$"
 	local t = {pattern = pattern, serializer = serializer, deserializer = deserializer, func = func}
-	mcbMPSyncer.virtualFuncs.funcs[vname] = t
+	MPSyncer.VirtualFuncs.funcs[vname] = t
 	return t
 end
 
-function mcbMPSyncer.virtualFuncs.argumentTypeInt()
+function MPSyncer.VirtualFuncs.ArgumentTypeInt()
 	return {pattern="(%-?%d+%.?%d*)", serialize=tostring, deserialize = tonumber}
 end
 
-function mcbMPSyncer.virtualFuncs.argumentTypeString()
+function MPSyncer.VirtualFuncs.ArgumentTypeString()
 	return {pattern = "\"(%w*)\"",
 		serialize = function(s)
 		return '"'..s..'"'
@@ -483,7 +483,7 @@ function mcbMPSyncer.virtualFuncs.argumentTypeString()
 	end}
 end
 
-function mcbMPSyncer.virtualFuncs.argumentTypeSimpleTable()
+function MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()
 	return {pattern = "\{([%w%.%-%[%]\"=,]*)}",
 		serialize = function(t)
 		local s = "{"
@@ -564,7 +564,7 @@ function mcbMPSyncer.virtualFuncs.argumentTypeSimpleTable()
 	end}
 end
 
-function mcbMPSyncer.virtualFuncs.parse(vfunc, str)
+function MPSyncer.VirtualFuncs.parse(vfunc, str)
 	local t = {string.find(str, vfunc.pattern)}
 	if not t[1] then
 		return
@@ -578,17 +578,17 @@ function mcbMPSyncer.virtualFuncs.parse(vfunc, str)
 	return context
 end
 
-function mcbMPSyncer.virtualFuncs.deserialize(string)
-	for vname, vfunc in pairs(mcbMPSyncer.virtualFuncs.funcs) do
-		local r = mcbMPSyncer.virtualFuncs.parse(vfunc, string)
+function MPSyncer.VirtualFuncs.deserialize(string)
+	for vname, vfunc in pairs(MPSyncer.VirtualFuncs.funcs) do
+		local r = MPSyncer.VirtualFuncs.parse(vfunc, string)
 		if r then
 			return r
 		end
 	end
 end
 
-function mcbMPSyncer.virtualFuncs.serialize(vname, ...)
-	local vfunc = mcbMPSyncer.virtualFuncs.funcs[vname]
+function MPSyncer.VirtualFuncs.serialize(vname, ...)
+	local vfunc = MPSyncer.VirtualFuncs.funcs[vname]
 	local str = vname.."("
 	for i=1, table.getn(vfunc.serializer) do
 		local a = arg[i]
@@ -599,7 +599,7 @@ function mcbMPSyncer.virtualFuncs.serialize(vname, ...)
 	return str
 end
 
-function mcbMPSyncer.virtualFuncs.execute(context)
+function MPSyncer.VirtualFuncs.execute(context)
 	local fnc = table.remove(context, 1)
 	if LuaDebugger.Log then
 		fnc(unpack(context))
@@ -612,8 +612,8 @@ function mcbMPSyncer.virtualFuncs.execute(context)
 	end
 end
 
-function mcbMPSyncer.virtualFuncs.patchLuaFunc(fname, ...)
-	if not mcbMPSyncer.isMP() then
+function MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
+	if not MPSyncer.IsMP() then
 		return
 	end
 	local f = _G[fname]
@@ -623,19 +623,19 @@ function mcbMPSyncer.virtualFuncs.patchLuaFunc(fname, ...)
 	local varg = {}
 	for _, atyp in ipairs(arg) do
 		if atyp=="string" then
-			table.insert(varg, mcbMPSyncer.virtualFuncs.argumentTypeString())
+			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeString())
 		elseif atyp=="number" then
-			table.insert(varg, mcbMPSyncer.virtualFuncs.argumentTypeInt())
+			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeInt())
 		end
 	end
-	mcbMPSyncer.virtualFuncs.create(f, vname, unpack(varg))
+	MPSyncer.VirtualFuncs.Create(f, vname, unpack(varg))
 	_G[fname] = function(...)
-		mcbMPSyncer.executeSynced(vname, unpack(arg)) -- uses upvalue vname. never use this in SP!
+		MPSyncer.ExecuteSynced(vname, unpack(arg)) -- uses upvalue vname. never use this in SP!
 	end
 end
 
-function mcbMPSyncer.virtualFuncs.debug_createEval()
-	mcbMPSyncer.virtualFuncs.create(function(s)
+function MPSyncer.VirtualFuncs.debug_createEval()
+	MPSyncer.VirtualFuncs.Create(function(s)
 		S5Hook.Eval(s)()
 	end, "Eval", {pattern = "\"(.*)\"",		-- . is greedy, takes as much as possible.
 		serialize = function(s)
@@ -646,31 +646,31 @@ function mcbMPSyncer.virtualFuncs.debug_createEval()
 	})
 end
 
-mcbMPSyncer.virtualFuncsWithReturn = {nextIndex=0, returnList={}, spFuncs={}}
+MPSyncer.VirtualFuncsWithReturn = {nextIndex=0, returnList={}, spFuncs={}}
 
-function mcbMPSyncer.virtualFuncsWithReturn.create(func, vname, argListCall, argListReturn)
-	table.insert(argListCall, 1, mcbMPSyncer.virtualFuncs.argumentTypeInt())
-	table.insert(argListCall, 1, mcbMPSyncer.virtualFuncs.argumentTypeInt())
-	table.insert(argListReturn, 1, mcbMPSyncer.virtualFuncs.argumentTypeInt())
-	mcbMPSyncer.virtualFuncs.create(function(index, returnPlayer, ...)
+function MPSyncer.VirtualFuncsWithReturn.Create(func, vname, argListCall, argListReturn)
+	table.insert(argListCall, 1, MPSyncer.VirtualFuncs.ArgumentTypeInt())
+	table.insert(argListCall, 1, MPSyncer.VirtualFuncs.ArgumentTypeInt())
+	table.insert(argListReturn, 1, MPSyncer.VirtualFuncs.ArgumentTypeInt())
+	MPSyncer.VirtualFuncs.Create(function(index, returnPlayer, ...)
 		local r = {func(unpack(arg))}
-		mcbMPSyncer.executeUnsyncedAtSingle(returnPlayer, vname.."Return", index, unpack(r))
+		MPSyncer.ExecuteUnsyncedAtSingle(returnPlayer, vname.."Return", index, unpack(r))
 	end, vname.."Call", unpack(argListCall))
-	mcbMPSyncer.virtualFuncs.create(function(index, ...)
-		local rf = mcbMPSyncer.virtualFuncsWithReturn.returnList[index]
+	MPSyncer.VirtualFuncs.Create(function(index, ...)
+		local rf = MPSyncer.VirtualFuncsWithReturn.returnList[index]
 		rf(unpack(arg))
 	end, vname.."Return", unpack(argListReturn))
-	mcbMPSyncer.virtualFuncsWithReturn.spFuncs[vname] = func
+	MPSyncer.VirtualFuncsWithReturn.spFuncs[vname] = func
 end
 
-function mcbMPSyncer.virtualFuncsWithReturn.callUnsynced(pl, vname, returnFunc, ...)
-	if not mcbMPSyncer.isMP() then
-		mcbMPSyncer.log("SP mode, direct executing")
-		returnFunc(mcbMPSyncer.virtualFuncsWithReturn.spFuncs[vname](unpack(arg)))
+function MPSyncer.VirtualFuncsWithReturn.CallUnsynced(pl, vname, returnFunc, ...)
+	if not MPSyncer.IsMP() then
+		MPSyncer.Log("SP mode, direct executing")
+		returnFunc(MPSyncer.VirtualFuncsWithReturn.spFuncs[vname](unpack(arg)))
 		return
 	end
-	local ind = mcbMPSyncer.virtualFuncsWithReturn.nextIndex
-	mcbMPSyncer.virtualFuncsWithReturn.nextIndex = mcbMPSyncer.virtualFuncsWithReturn.nextIndex + 1
-	mcbMPSyncer.virtualFuncsWithReturn.returnList[ind] = returnFunc
-	mcbMPSyncer.executeUnsyncedAtSingle(pl, vname.."Call", ind, GUI.GetPlayerID(), unpack(arg))
+	local ind = MPSyncer.VirtualFuncsWithReturn.nextIndex
+	MPSyncer.VirtualFuncsWithReturn.nextIndex = MPSyncer.VirtualFuncsWithReturn.nextIndex + 1
+	MPSyncer.VirtualFuncsWithReturn.returnList[ind] = returnFunc
+	MPSyncer.ExecuteUnsyncedAtSingle(pl, vname.."Call", ind, GUI.GetPlayerID(), unpack(arg))
 end
