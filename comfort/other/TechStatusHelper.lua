@@ -37,7 +37,7 @@ function TechStatusHelper.RebuildRequirementCache()
 end
 
 function TechStatusHelper.GetTechName(t)
-	return " @stt:names/"..IstDrin(t, Technologies).." "
+	return " @stt:names/"..KeyOf(t, Technologies).." "
 end
 
 function TechStatusHelper.GetColoredTechName(t, p)

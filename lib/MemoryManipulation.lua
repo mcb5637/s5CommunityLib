@@ -1,5 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/table/IstDrin")
+mcbPacker.require("s5CommunityLib/comfort/table/KeyOf")
 mcbPacker.require("s5CommunityLib/comfort/other/s5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
 mcbPacker.require("s5CommunityLib/comfort/number/round")
@@ -142,7 +142,7 @@ end --mcbPacker.ignore
 -- - IsEntityOfType
 -- - ArmorClasses
 -- - round
--- - IstDrin
+-- - KeyOf
 -- - CopyTable
 MemoryManipulation = {}
 
@@ -274,7 +274,7 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 					if sv3[0]:GetInt()>0 then
 						local vt = sv3[0][0]:GetInt()
 						local vtn = MemoryManipulation.VTableNames[vt]
-						--LuaDebugger.Log(vt..(IstDrin(vt, MemoryManipulation.ClassVTable) or "nil"))
+						--LuaDebugger.Log(vt..(KeyOf(vt, MemoryManipulation.ClassVTable) or "nil"))
 						if (not readFilter or readFilter[fi.name][vtn]~=nil) and MemoryManipulation.ObjFieldInfo[vt] then
 							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn] and val[vtn]~=true and val[vtn], nil, readFilter and readFilter[fi.name]~=true and readFilter[fi.name][vtn]~=true and readFilter[fi.name][vtn])
 						end
@@ -370,7 +370,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 					end
 				end
 				if type(fi.check)=="table" then
-					if not IstDrin(objInfo[fi.name], fi.check) then
+					if not KeyOf(objInfo[fi.name], fi.check) then
 						noerr = false
 					end
 				end
@@ -383,7 +383,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 				end
 				if type(fi.checkAll)=="function" then
 					for k,v in pairs(objInfo[fi.name]) do
-						if not IstDrin(v, fi.checkAll) then
+						if not KeyOf(v, fi.checkAll) then
 							noerr = false
 						end
 					end
@@ -393,7 +393,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 					assert(fi.check(objInfo[fi.name], sv))
 				end
 				if type(fi.check)=="table" then
-					assert(IstDrin(objInfo[fi.name], fi.check))
+					assert(KeyOf(objInfo[fi.name], fi.check))
 				end
 				if type(fi.checkAll)=="function" then
 					for k,v in pairs(objInfo[fi.name]) do
@@ -402,7 +402,7 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 				end
 				if type(fi.checkAll)=="function" then
 					for k,v in pairs(objInfo[fi.name]) do
-						assert(IstDrin(v, fi.checkAll))
+						assert(KeyOf(v, fi.checkAll))
 					end
 				end
 			end
@@ -823,7 +823,7 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="EntityId", index={2}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="EntityType", index={4}, datatype=MemoryManipulation.DataType.Int, check={}},
-			{name="ModelOverride", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a==0 or IstDrin(a, Models) end}, -- 0 for use entitytype model
+			{name="ModelOverride", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a==0 or KeyOf(a, Models) end}, -- 0 for use entitytype model
 			{name="PlayerId", index={6}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="Position", index={22}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="PositionWithRotation"},
 			{name="Scale", index={25}, datatype=MemoryManipulation.DataType.Float},
@@ -2544,7 +2544,7 @@ function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
 	local function f(c)
 		if MemoryManipulation.ObjFieldInfo[c].SubClassList then
 			for _, subc in ipairs(MemoryManipulation.ObjFieldInfo[c].SubClassList) do
-				table.insert(r, IstDrin(subc, MemoryManipulation.ClassVTable))
+				table.insert(r, KeyOf(subc, MemoryManipulation.ClassVTable))
 				f(subc)
 			end
 		end

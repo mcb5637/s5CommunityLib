@@ -119,8 +119,8 @@ function mcbTrigger.fireTriggerDebugger(event, cev)
 		f(event)
 	end
 	local rtime = XGUIEng.GetSystemTime()-mcbTrigger.currStartTime
-	if rtime > 0.03 and IstDrin then
-		Message("@color:255,0,0 Trigger "..IstDrin(event, Events).." runtime too long: "..rtime)
+	if rtime > 0.03 and KeyOf then
+		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
 		if mcbTrigger.breakOnRuntimeAlert then
 			LuaDebugger.Break()
 		end
@@ -160,8 +160,8 @@ function mcbTrigger.fireTriggerXpcall(event, cev)
 		f(event)
 	end
 	local rtime = XGUIEng.GetSystemTime()-mcbTrigger.currStartTime
-	if rtime > 0.03 and mcbTrigger.xpcallTimeMsg and IstDrin then
-		Message("@color:255,0,0 Trigger "..IstDrin(event, Events).." runtime too long: "..rtime)
+	if rtime > 0.03 and mcbTrigger.xpcallTimeMsg and KeyOf then
+		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
 	end
 end
 
