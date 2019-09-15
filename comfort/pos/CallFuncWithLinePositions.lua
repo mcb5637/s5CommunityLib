@@ -4,10 +4,10 @@
 -- Führt eine Funktion auf erzeugten Positionen zwischen a und b in ungefähr periode Abstand aus.
 -- (neudefinition mit Vektoren)
 -- 
--- FuncInLinePos(GetPosition(id1), GetPosition(id1), function(p)
+-- CallFuncWithLinePositions(GetPosition(id1), GetPosition(id1), function(p)
 -- 		Logic.CreateEffect(GGL_Effects.FXChopTree, p.X, p.Y, nil)
 -- end, 100)
-function FuncInLinePos(a, b, func, periode)
+function CallFuncWithLinePositions(a, b, func, periode)
     local ax = a.X
 	local ay = a.Y
 	local bx = b.X
