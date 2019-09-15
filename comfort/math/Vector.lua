@@ -7,49 +7,49 @@ end --mcbPacker.ignore
 --- author:mcb		current maintainer:mcb		v1.0
 -- Einfache lua Vektorimplementierung mittels OOP.
 -- 
--- vector.new(d)					Erzeugt einen neuen Vektor mit dem table d als Elemente.
--- vector:size()					Gibt zurück, wie lang der Vektor ist.
--- vector:add(v)					Addiert 2 Vektoren.
--- vector:mulSkalar(s)				Skalarmultiplikation.
--- vector:dot(v)					Skalarprodukt.
--- vector:makeSavegameCompatible()	Macht diesen Vektor über den metatable fix Savegamesicher.
+-- Vector.New(d)					Erzeugt einen neuen Vektor mit dem table d als Elemente.
+-- Vector:Size()					Gibt zurück, wie lang der Vektor ist.
+-- Vector:Add(v)					Addiert 2 Vektoren.
+-- Vector:SkalarMultiplication(s)	Skalarmultiplikation.
+-- Vector:Dot(v)					Skalarprodukt.
+-- Vector:MakeSavegameCompatible()	Macht diesen Vektor über den metatable fix Savegamesicher.
 -- 
 -- Über metatable definiert:		*, -, +, .x, .y, .z
 -- 
 -- Benötigt:
 -- - CopyTable
 -- - metatable-fix (nur wenn vektoren gespeichert werden sollen)
-vector = {}
+Vector = {}
 
-function vector.new(d)
-	local t = CopyTable(vector)
+function Vector.New(d)
+	local t = CopyTable(Vector)
 	t.data = d
-	setmetatable(t, vector.mt)
+	setmetatable(t, Vector.mt)
 	return t
 end
 
-function vector:size()
+function Vector:Size()
 	return table.getn(self.data)
 end
 
-function vector:add(v)
+function Vector:Add(v)
 	assert(self:size()==v:size())
 	local newd = {}
 	for i,d in ipairs(self.data) do
 		newd[i] = d + v.data[i]
 	end
-	return vector.new(newd)
+	return Vector.New(newd)
 end
 
-function vector:mulSkalar(s)
+function Vector:SkalarMultiplication(s)
 	local newd = {}
 	for i,d in ipairs(self.data) do
 		newd[i] = d * s
 	end
-	return vector.new(newd)
+	return Vector.New(newd)
 end
 
-function vector:dot(v)
+function Vector:Dot(v)
 	assert(self:size()==v:size())
 	local newd = 0
 	for i,d in ipairs(self.data) do
@@ -58,12 +58,12 @@ function vector:dot(v)
 	return newd
 end
 
-function vector:makeSavegameCompatible()
+function Vector:MakeSavegameCompatible()
 	setmetatable(self, nil)
-	metatable.set(self, vector.mt)
+	metatable.set(self, Vector.mt)
 end
 
-vector.mt = {
+Vector.mt = {
 	__add = function(a, b)
 		return a:add(b)
 	end,
@@ -73,7 +73,7 @@ vector.mt = {
 		elseif type(b)=="table" and type(a)=="number" then
 			return b:mulSkalar(a)
 		else
-			assert(false, "vector-vector multiplocation not implemented!")
+			assert(false, "Vector-Vector multiplocation not implemented!")
 		end
 	end,
 	__sub = function(a, b)
