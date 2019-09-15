@@ -5,10 +5,10 @@ mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 -- Führt eine Funktion in einem Kreis um _pos aus, mit _spacing Abstand zwischen den Punkten.
 -- Übergeben wird ein erweitertes Positionstable mit zusätzlicher Rotation r.
 -- 
--- FuncInCirclePos(GetPosition(id), 1000, 100, function(p)
+-- CallFuncWithCirclePositions(GetPosition(id), 1000, 100, function(p)
 -- 		Logic.CreateEffect(GGL_Effects.FXChopTree, p.X, p.Y, nil)
 -- end)
-function FuncInCirclePos(_pos, _range, _spacing, _func)
+function CallFuncWithCirclePositions(_pos, _range, _spacing, _func)
 	-- Validate input
 	if type(_pos) == "string" or type(_pos) == "number" then
 		_pos = GetPosition(_pos);
