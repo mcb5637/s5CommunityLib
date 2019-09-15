@@ -1,7 +1,7 @@
 --- author:mcb/Kantelo		current maintainer:mcb		v1.0
 -- table aller Aimationen eines entities.  
 -- Abfrage: animTable[etypName][animname]  
--- Setzen nur über MemoryManipulation/mcbAnim
+-- Setzen nur über MemoryManipulation/AnimateEntity
 -- 
 -- Table erstellt aus Kantelos Animations.xls
 animTable = {

@@ -25,7 +25,7 @@ end --mcbPacker.ignore
 -- - Trigger-Fix
 -- - MemoryManipulation
 -- - animTable (empfohlen)
-function mcbAnim(id, anim, speed, back, funcs, dead, escape, ...)
+function AnimateEntity(id, anim, speed, back, funcs, dead, escape, ...)
 	assert(IsValid(id))
 	local id = GetID(id)
 	local sv = S5Hook.GetEntityMem(id)
