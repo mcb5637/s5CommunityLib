@@ -1,7 +1,7 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("S5Hook")
 mcbPacker.require("s5CommunityLib/fixes/metatable")
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("Umlaute")
 end --mcbPacker.ignore
 

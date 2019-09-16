@@ -1,5 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("lib/mcbBrief")

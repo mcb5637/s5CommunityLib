@@ -1,7 +1,7 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/fixes/mcbTriggerExtHurtEntity")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFixExtHurtEntity")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
@@ -16,8 +16,8 @@ end --mcbPacker.ignore
 -- Ich empfehle weiterhin die damageclasses von PV_Cannon2 und PV_Cannon3 zu tauschen, damit die tatsächlichen stärken und schwächen der kanonen wie in den tooltips beschrieben sind.
 -- 
 -- Benötigt:
--- - mcbTrigger
--- - mcbTriggerExtHurtEntity
+-- - TriggerFix
+-- - TriggerFixExtHurtEntity
 -- - S5Hook (neueste version mit hurt-callback)
 -- - ArmorClasses
 -- - MemoryManipulation
@@ -79,7 +79,7 @@ end
 
 function HurtProjectileFix.OnHit()
 	local so = S5Hook.HurtEntityTrigger_GetSource()
-	local pinf = mcbTriggerExtHurtEntity.getProjectileInfo()
+	local pinf = TriggerFixExtHurtEntity.HurtTrigger_GetProjectileInfo()
 	if so == S5HookHurtEntitySources.CannonProjectile and pinf and HurtProjectileFix.lastProjectile then
 		local at = Event.GetEntityID1()
 		local def = Event.GetEntityID2()
@@ -95,9 +95,9 @@ function HurtProjectileFix.GetDamageMod(ac, dc)
 end
 
 function HurtProjectileFix.Init()
-	mcbTriggerExtHurtEntity.addEffectCreatedCb(HurtProjectileFix.OnEffectCreated)
+	TriggerFixExtHurtEntity.AddEffectCreatedCallback(HurtProjectileFix.OnEffectCreated)
 	Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_DESTROYED, nil, "HurtProjectileFix.AddOnDestroy", 1)
 	Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, nil, "HurtProjectileFix.AddOnTick", 1)
-	mcbTriggerExtHurtEntity.addProjectileHitCb(HurtProjectileFix.OnProjectileHit)
+	TriggerFixExtHurtEntity.AddProjectileHitCb(HurtProjectileFix.OnProjectileHit)
 	Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "HurtProjectileFix.OnHit", 1)
 end

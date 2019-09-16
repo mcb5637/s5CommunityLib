@@ -1,12 +1,12 @@
 
---- author:mcb		current maintainer:mcb		v2.3b                           Dank an Chromix
+--- author:mcb		current maintainer:mcb		v3.0b                           Dank an Chromix
 -- Funktionen anstelle von Funktionsnamen als Trigger
 -- Tableindexierung in Funktionsanamen (sowas wie "foo.bar")
 -- tables als Trigger-Argumente
 -- Trigger-Argumente bei StarteSimpleJob, StartSimpleHiResJob, StartJob, StartHiResJob
 -- error-handling (Trigger werden nicht gelöscht!)
 -- Warnung, wenn Trigger / HiRes-Trigger zusammen länger als 0.03 sec brauchen (ab da ruckelts!)
--- Fügt Events.LowPriorityJob hinzu, für Jobs die komplizierte Berechnungen durchführen, länger brauchen oder unwichtig sind
+-- Fügt Events.SCRIPT_EVENT_LOW_PRIORITY hinzu, für Jobs die komplizierte Berechnungen durchführen, länger brauchen oder unwichtig sind
 --   condition bestimmt, ob action diesen tick weiter ausgeführt wird
 --   return 		Zeitprüfung, fortgesetzt wenn wieder Rechenzeit zur Verfügung steht
 --   return -1 		diesen Job erst nächsten Tick weiter ausführen
@@ -14,65 +14,65 @@
 --   beenden über return true! / EndJob
 --   StartSimpleLowPriorityJob
 --   LowPriorityJobs werden sehr unregelmäßig aufgerufen, solange es mehrere von ihnen gibt
---	Fügt Events.OnEntityKillsEntity hinzu, funktioniert nur mit S5Hook.HurtEntityTrigger_GetDamage,
---		Event wie normaler Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, ids der soldiers sind austauschbar (da die sterbereihenfolge nicht nbedingt klar ist)
+--	Fügt Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY hinzu, funktioniert nur mit S5Hook.HurtEntityTrigger_GetDamage,
+--		Event wie normaler Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, ids der soldiers sind austauschbar (da die sterbereihenfolge nicht unbedingt klar ist)
 --
--- mcbTrigger.protectedCall(func, ...)	Ruft eine Funktion geschützt auf, und leitet Fehler an mcbTrigger.err
--- mcbTrigger.err(txt)					Standard - Fehlerausgabe (über DebugWindow)
+-- TriggerFix.ProtectedCall(func, ...)	Ruft eine Funktion geschützt auf, und leitet Fehler an TriggerFix.ShowErrorMessage
+-- TriggerFix.ShowErrorMessage(txt)		Standard - Fehlerausgabe (über DebugWindow)
 --
 -- Für Debugger optimiert:
 --   Wenn der Debugger aktiv ist, werden Fehler nicht abgefangen, sondern an den Debugger weitergeleitet
 --   Im Debugger-Modus werden weitere Trigger nicht aufgerufen, wenn einer einen Fehler wirft
 --
 -- Benötigt:
--- 	- S5Hook (nur Events.OnEntityKillsEntity)
+-- 	- S5Hook (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
-mcbTrigger = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, errtext={}, xpcallTimeMsg=false, currentEvent=nil}
-mcbTrigger_mode = mcbTrigger_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
+TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, errtext={}, xpcallTimeMsg=false, currentEvent=nil}
+TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
 
-function mcbTrigger.add(event, con, act, active, acon, aact, comm)
-	if not mcbTrigger.triggers[event] then
-		mcbTrigger.triggers[event] = {}
+function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
+	if not TriggerFix.triggers[event] then
+		TriggerFix.triggers[event] = {}
 	end
-	local tid = mcbTrigger.nId
-	mcbTrigger.nId = mcbTrigger.nId + 1
+	local tid = TriggerFix.nId
+	TriggerFix.nId = TriggerFix.nId + 1
 	if con == "" then
 		con = nil
 	end
 	if type(con)=="string" then
-		con = mcbTrigger.splitString(con)
+		con = TriggerFix.SplitTableIndexPath(con)
 	end
 	if type(act)=="string" then
-		act = mcbTrigger.splitString(act)
+		act = TriggerFix.SplitTableIndexPath(act)
 	end
 	local t = {event=event, con=con, act=act, active=active, acon=acon or {}, aact=aact or {}, tid=tid, err=nil, time=0, comm=comm}
-	table.insert(mcbTrigger.triggers[event], t)
-	mcbTrigger.idToTrigger[tid] = t
+	table.insert(TriggerFix.triggers[event], t)
+	TriggerFix.idToTrigger[tid] = t
 	return tid
 end
 
-function mcbTrigger.remove(tid)
-	local t = mcbTrigger.idToTrigger[tid]
-	local ev = mcbTrigger.triggers[t.event]
+function TriggerFix.RemoveTrigger(tid)
+	local t = TriggerFix.idToTrigger[tid]
+	local ev = TriggerFix.triggers[t.event]
 	for i=table.getn(ev),1,-1 do
 		if ev[i]==t then
 			table.remove(ev, i)
 		end
 	end
-	mcbTrigger.idToTrigger[tid] = nil
+	TriggerFix.idToTrigger[tid] = nil
 end
 
-function mcbTrigger.fireSingleFunc(t)
+function TriggerFix.ExecuteSingleTrigger(t)
 	if t.con then
-		local ret = mcbTrigger.getFunc(t.con)(unpack(t.acon))
+		local ret = TriggerFix.GetTriggerFunc(t.con)(unpack(t.acon))
 		if not ret or ret==0 then
 			return nil, true
 		end
 	end
-	return mcbTrigger.getFunc(t.act)(unpack(t.aact))
+	return TriggerFix.GetTriggerFunc(t.act)(unpack(t.aact))
 end
 
-function mcbTrigger.getFunc(f)
+function TriggerFix.GetTriggerFunc(f)
 	local t = type(f)
 	if t=="function" then
 		return f
@@ -89,21 +89,21 @@ function mcbTrigger.getFunc(f)
 	end
 end
 
-function mcbTrigger.fireTriggerDebugger(event, cev)
-	mcbTrigger.currStartTime = XGUIEng.GetSystemTime()
+function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
+	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = {}
-		for k,v in pairs(mcbTrigger.event) do
+		for k,v in pairs(TriggerFix.event) do
 			cev[k] = v()
 		end
 	end
-	local ev = mcbTrigger.triggers[event]
+	local ev = TriggerFix.triggers[event]
 	local rem, remi = {}, 1
 	for _, t in ipairs(ev) do
 		if t.active and t.active~=0 then
 			local tim = XGUIEng.GetSystemTime()
-			mcbTrigger.currentEvent = cev
-			local r = mcbTrigger.fireSingleFunc(t)
+			TriggerFix.currentEvent = cev
+			local r = TriggerFix.ExecuteSingleTrigger(t)
 			t.time=XGUIEng.GetSystemTime()-tim
 			if r and r~=0 then
 				rem[remi] = t.tid
@@ -112,39 +112,39 @@ function mcbTrigger.fireTriggerDebugger(event, cev)
 		end
 	end
 	for _,tid in ipairs(rem) do
-		mcbTrigger.remove(tid)
+		TriggerFix.RemoveTrigger(tid)
 	end
-	for _,f in ipairs(mcbTrigger.afterTriggerCB) do
-		mcbTrigger.currentEvent = cev
+	for _,f in ipairs(TriggerFix.afterTriggerCB) do
+		TriggerFix.currentEvent = cev
 		f(event)
 	end
-	local rtime = XGUIEng.GetSystemTime()-mcbTrigger.currStartTime
+	local rtime = XGUIEng.GetSystemTime()-TriggerFix.currStartTime
 	if rtime > 0.03 and KeyOf then
 		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
-		if mcbTrigger.breakOnRuntimeAlert then
+		if TriggerFix.breakOnRuntimeAlert then
 			LuaDebugger.Break()
 		end
 	end
 end
 
-function mcbTrigger.fireTriggerXpcall(event, cev)
-	mcbTrigger.currStartTime = XGUIEng.GetSystemTime()
+function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
+	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = {}
-		for k,v in pairs(mcbTrigger.event) do
+		for k,v in pairs(TriggerFix.event) do
 			cev[k] = v()
 		end
 	end
-	local ev = mcbTrigger.triggers[event]
+	local ev = TriggerFix.triggers[event]
 	local rem, remi = {}, 1
 	for _, t in ipairs(ev) do
 		if t.active and t.active~=0 then
 			local tim = XGUIEng.GetSystemTime()
 			local r = nil
-			mcbTrigger.currentEvent = cev
+			TriggerFix.currentEvent = cev
 			xpcall(function()
-				r = mcbTrigger.fireSingleFunc(t)
-			end, mcbTrigger.err)
+				r = TriggerFix.ExecuteSingleTrigger(t)
+			end, TriggerFix.ShowErrorMessage)
 			t.time=XGUIEng.GetSystemTime()-tim
 			if r then
 				rem[remi] = t.tid
@@ -153,39 +153,39 @@ function mcbTrigger.fireTriggerXpcall(event, cev)
 		end
 	end
 	for _,tid in ipairs(rem) do
-		mcbTrigger.remove(tid)
+		TriggerFix.RemoveTrigger(tid)
 	end
-	for _,f in ipairs(mcbTrigger.afterTriggerCB) do
-		mcbTrigger.currentEvent = cev
+	for _,f in ipairs(TriggerFix.afterTriggerCB) do
+		TriggerFix.currentEvent = cev
 		f(event)
 	end
-	local rtime = XGUIEng.GetSystemTime()-mcbTrigger.currStartTime
-	if rtime > 0.03 and mcbTrigger.xpcallTimeMsg and KeyOf then
+	local rtime = XGUIEng.GetSystemTime()-TriggerFix.currStartTime
+	if rtime > 0.03 and TriggerFix.xpcallTimeMsg and KeyOf then
 		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
 	end
 end
 
-function mcbTrigger.err(txt)
+function TriggerFix.ShowErrorMessage(txt)
 	if S5Hook then
-		S5Hook.Log("mcbTrigger error catched: "..txt)
+		S5Hook.Log("TriggerFix error catched: "..txt)
 	end
 	Message("@color:255,0,0 Err:")
 	Message(txt)
-	table.insert(mcbTrigger.errtext, txt)
-	if table.getn(mcbTrigger.errtext) > 15 then
-		table.remove(mcbTrigger.errtext)
+	table.insert(TriggerFix.ShowErrorMessagetext, txt)
+	if table.getn(TriggerFix.ShowErrorMessagetext) > 15 then
+		table.remove(TriggerFix.ShowErrorMessagetext)
 	end
 	XGUIEng.ShowWidget("DebugWindow", 1)
 end
 GUIUpdate_UpdateDebugInfo = function()
 	local txt = ""
-	for k,v in ipairs(mcbTrigger.errtext) do
+	for k,v in ipairs(TriggerFix.ShowErrorMessagetext) do
 		txt = txt.." @color:255,0,0 "..v.." @cr "
 	end
 	XGUIEng.SetText("DebugWindow", txt)
 end
 
-function mcbTrigger.splitString(s)
+function TriggerFix.SplitTableIndexPath(s)
 	if not string.find(s, ".", nil, true) then
 		return s
 	end
@@ -202,7 +202,7 @@ function mcbTrigger.splitString(s)
 end
 
 
-function mcbTrigger.hackTrigger()
+function TriggerFix.HackTrigger()
 	if not unpack{true} then
 		unpack = function(t, i)
 			i = i or 1
@@ -211,52 +211,52 @@ function mcbTrigger.hackTrigger()
 			end
 		end
 	end
-	mcbTrigger.RequestTrigger = Trigger.RequestTrigger
+	TriggerFix.RequestTrigger = Trigger.RequestTrigger
 	Trigger.RequestTrigger = function(typ, con, act, active, acon, aact)
-		return mcbTrigger.add(typ, con, act, active, acon, aact)
+		return TriggerFix.AddTrigger(typ, con, act, active, acon, aact)
 	end
-	mcbTrigger.UnrequestTrigger = Trigger.UnrequestTrigger
+	TriggerFix.UnrequestTrigger = Trigger.UnrequestTrigger
 	Trigger.UnrequestTrigger = function(tid)
-		if mcbTrigger.idToTrigger[tid] then
-			return mcbTrigger.remove(tid)
+		if TriggerFix.idToTrigger[tid] then
+			return TriggerFix.RemoveTrigger(tid)
 		end
 	end
-	mcbTrigger.DisableTrigger = Trigger.DisableTrigger
+	TriggerFix.DisableTrigger = Trigger.DisableTrigger
 	Trigger.DisableTrigger = function(tid)
-		if mcbTrigger.idToTrigger[tid] then
-			mcbTrigger.idToTrigger[tid].active = 0
+		if TriggerFix.idToTrigger[tid] then
+			TriggerFix.idToTrigger[tid].active = 0
 			return true
 		end
 	end
-	mcbTrigger.EnableTrigger = Trigger.EnableTrigger
+	TriggerFix.EnableTrigger = Trigger.EnableTrigger
 	Trigger.EnableTrigger = function(tid)
-		if mcbTrigger.idToTrigger[tid] then
-			mcbTrigger.idToTrigger[tid].active = 1
+		if TriggerFix.idToTrigger[tid] then
+			TriggerFix.idToTrigger[tid].active = 1
 			return true
 		end
 	end
-	mcbTrigger.IsTriggerEnabled = Trigger.IsTriggerEnabled
+	TriggerFix.IsTriggerEnabled = Trigger.IsTriggerEnabled
 	Trigger.IsTriggerEnabled = function(tid)
-		if mcbTrigger.idToTrigger[tid] then
-			return mcbTrigger.idToTrigger[tid].active
+		if TriggerFix.idToTrigger[tid] then
+			return TriggerFix.idToTrigger[tid].active
 		end
 	end
-	mcbTrigger.event = {}
+	TriggerFix.event = {}
 	for k,v in pairs(Event) do
-		mcbTrigger.event[k] = v
+		TriggerFix.event[k] = v
 	end
-	for k,v in pairs(mcbTrigger.event) do
+	for k,v in pairs(TriggerFix.event) do
 		local name = k	-- upvalue, muss aber sowieso nach jedem laden neu initialisiert werden
 		Event[name] = function()
-			return mcbTrigger.currentEvent[name]
+			return TriggerFix.currentEvent[name]
 		end
 	end
-	for _,f in ipairs(mcbTrigger.onHackTrigger) do
+	for _,f in ipairs(TriggerFix.onHackTrigger) do
 		f()
 	end
 end
 
-function mcbTrigger.protectedCall(func, ...)
+function TriggerFix.ProtectedCall(func, ...)
 	if LuaDebugger.Log then
 		return func(unpack(arg))
 	end
@@ -264,14 +264,14 @@ function mcbTrigger.protectedCall(func, ...)
 	xpcall(function()
 		r = {func(unpack(arg))}
 	end, function(err)
-		mcbTrigger.err("protectedCall: "..err)
+		TriggerFix.ShowErrorMessage("protectedCall: "..err)
 	end)
 	return unpack(r)
 end
 
-function mcbTrigger.checkTriggerRuntime()
+function TriggerFix.CheckTriggerRuntime()
 	local ct = nil
-	for _,t in pairs(mcbTrigger.idToTrigger) do
+	for _,t in pairs(TriggerFix.idToTrigger) do
 		if not ct or ct.time < t.time then
 			ct = t
 		end
@@ -279,29 +279,29 @@ function mcbTrigger.checkTriggerRuntime()
 	return ct
 end
 
-function mcbTrigger.init()
-	mcbTrigger_action = mcbTrigger["fireTrigger"..mcbTrigger_mode]
-	mcbTrigger.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
+function TriggerFix.Init()
+	TriggerFix_action = TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode]
+	TriggerFix.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
 	Mission_OnSaveGameLoaded = function()
-		mcbTrigger.hackTrigger()
-		mcbTrigger.Mission_OnSaveGameLoaded()
+		TriggerFix.HackTrigger()
+		TriggerFix.Mission_OnSaveGameLoaded()
 	end
-	mcbTrigger.hackTrigger()
+	TriggerFix.HackTrigger()
 	for _,event in ipairs{
 		Events.LOGIC_EVENT_DIPLOMACY_CHANGED, Events.LOGIC_EVENT_ENTITY_CREATED, Events.LOGIC_EVENT_ENTITY_DESTROYED,
 		Events.LOGIC_EVENT_ENTITY_IN_RANGE_OF_ENTITY,
 		Events.LOGIC_EVENT_EVERY_SECOND, Events.LOGIC_EVENT_EVERY_TURN, Events.LOGIC_EVENT_GOODS_TRADED,
 		Events.LOGIC_EVENT_RESEARCH_DONE, Events.LOGIC_EVENT_TRIBUTE_PAID, Events.LOGIC_EVENT_WEATHER_STATE_CHANGED,
 	} do
-		if not mcbTrigger.triggers[event] then
-			mcbTrigger.triggers[event] = {}
+		if not TriggerFix.triggers[event] then
+			TriggerFix.triggers[event] = {}
 		end
-		mcbTrigger.RequestTrigger(event, nil, "mcbTrigger_action", 1, nil, {event})
+		TriggerFix.RequestTrigger(event, nil, "TriggerFix_action", 1, nil, {event})
 	end
-	if not mcbTrigger.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] then
-		mcbTrigger.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] = {}
+	if not TriggerFix.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] then
+		TriggerFix.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] = {}
 	end
-	mcbTrigger.entityHurtEntityBaseTriggerId = mcbTrigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "mcbTrigger_action", 1, nil, {Events.LOGIC_EVENT_ENTITY_HURT_ENTITY})
+	TriggerFix.entityHurtEntityBaseTriggerId = TriggerFix.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "TriggerFix_action", 1, nil, {Events.LOGIC_EVENT_ENTITY_HURT_ENTITY})
 	StartSimpleJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, nil, f, 1, nil, arg)
 	end
@@ -315,16 +315,16 @@ function mcbTrigger.init()
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, "Condition_"..f, "Action_"..f, 1, arg, arg)
 	end
 end
-mcbTrigger.init()
+TriggerFix.Init()
 
 
-mcbTrigger.lpj = {next = 1}
-function mcbTrigger.lpj.runTrigger(t)
+TriggerFix.LowPriorityJob = {next = 1}
+function TriggerFix.LowPriorityJob.RunTrigger(t)
 	while true do
-		if XGUIEng.GetSystemTime()-mcbTrigger.currStartTime >= (0.03 - (t.needTime or 0.005)) then
+		if XGUIEng.GetSystemTime()-TriggerFix.currStartTime >= (0.03 - (t.needTime or 0.005)) then
 			return true
 		end
-		local r, c = mcbTrigger.fireSingleFunc(t)
+		local r, c = TriggerFix.ExecuteSingleTrigger(t)
 		if not r and c then
 			return
 		end
@@ -334,17 +334,17 @@ function mcbTrigger.lpj.runTrigger(t)
 	end
 end
 
-function mcbTrigger.lpj.run()
-	local ev = mcbTrigger.triggers[Events.LowPriorityJob]
+function TriggerFix.LowPriorityJob.Run()
+	local ev = TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY]
 	while true do
-		local t = ev[mcbTrigger.lpj.next]
+		local t = ev[TriggerFix.LowPriorityJob.next]
 		if not t then
-			mcbTrigger.lpj.next = 1
+			TriggerFix.LowPriorityJob.next = 1
 			return
 		end
-		local nt, r = mcbTrigger.lpj.runTrigger(t)
+		local nt, r = TriggerFix.LowPriorityJob.RunTrigger(t)
 		if r==-1 then
-			mcbTrigger.lpj.next = mcbTrigger.lpj.next + 1
+			TriggerFix.LowPriorityJob.next = TriggerFix.LowPriorityJob.next + 1
 			r = nil
 		end
 		if type(r)=="number" then
@@ -352,65 +352,65 @@ function mcbTrigger.lpj.run()
 			r = nil
 		end
 		if r then
-			mcbTrigger.remove(t.tid)
+			TriggerFix.RemoveTrigger(t.tid)
 		end
 		if nt then
-			mcbTrigger.lpj.next = 1
+			TriggerFix.LowPriorityJob.next = 1
 			return
 		end
 	end
 end
 
-function mcbTrigger.lpj.init()
-	Events.LowPriorityJob = "mcb_lpj"
-	if not mcbTrigger.triggers[Events.LowPriorityJob] then
-		mcbTrigger.triggers[Events.LowPriorityJob] = {}
+function TriggerFix.LowPriorityJob.Init()
+	Events.SCRIPT_EVENT_LOW_PRIORITY = "mcb_lpj"
+	if not TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY] then
+		TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY] = {}
 	end
-	table.insert(mcbTrigger.afterTriggerCB, function(event)
+	table.insert(TriggerFix.afterTriggerCB, function(event)
 		if event ~= Events.LOGIC_EVENT_EVERY_TURN then
 			return
 		end
-		if not mcbTrigger.triggers[Events.LowPriorityJob][1] then
+		if not TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY][1] then
 			return
 		end
-		mcbTrigger.lpj.run()
+		TriggerFix.LowPriorityJob.Run()
 	end)
-	table.insert(mcbTrigger.onHackTrigger, function()
-		Events.LowPriorityJob = "mcb_lpj"
+	table.insert(TriggerFix.onHackTrigger, function()
+		Events.SCRIPT_EVENT_LOW_PRIORITY = "mcb_lpj"
 	end)
 	StartSimpleLowPriorityJob = function(f, ...)
-		return Trigger.RequestTrigger(Events.LowPriorityJob, nil, f, 1, nil, arg)
+		return Trigger.RequestTrigger(Events.SCRIPT_EVENT_LOW_PRIORITY, nil, f, 1, nil, arg)
 	end
 end
-mcbTrigger.lpj.init()
+TriggerFix.LowPriorityJob.Init()
 
-mcbTrigger.ktr = {}
+TriggerFix.KillTrigger = {}
 
-function mcbTrigger.ktr.init()
-	Events.OnEntityKillsEntity = "mcb_kill"
-	if not mcbTrigger.triggers[Events.OnEntityKillsEntity] then
-		mcbTrigger.triggers[Events.OnEntityKillsEntity] = {}
+function TriggerFix.KillTrigger.Init()
+	Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY = "mcb_kill"
+	if not TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY] then
+		TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY] = {}
 	end
-	table.insert(mcbTrigger.afterTriggerCB, function(event)
+	table.insert(TriggerFix.afterTriggerCB, function(event)
 		if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
 			return
 		end
 		if not S5Hook or not S5Hook.HurtEntityTrigger_GetDamage then
 			return
 		end
-		if not mcbTrigger.triggers[Events.OnEntityKillsEntity][1] then
+		if not TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY][1] then
 			S5Hook.HurtEntityTrigger_Reset()
 			return
 		end
-		mcbTrigger.ktr.run()
+		TriggerFix.KillTrigger.Run()
 		S5Hook.HurtEntityTrigger_Reset()
 	end)
-	table.insert(mcbTrigger.onHackTrigger, function()
-		Events.OnEntityKillsEntity = "mcb_kill"
+	table.insert(TriggerFix.onHackTrigger, function()
+		Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY = "mcb_kill"
 	end)
 end
 
-function mcbTrigger.ktr.run()
+function TriggerFix.KillTrigger.Run()
 	local id = Event.GetEntityID2()
 	local dmg = S5Hook.HurtEntityTrigger_GetDamage()
 	if MemoryManipulation.IsSoldier(id) then
@@ -428,12 +428,12 @@ function mcbTrigger.ktr.run()
 		for i,sid in ipairs(sols) do
 			if ((Logic.LeaderGetNumberOfSoldiers(id)-i) * solph) > newsolh then
 				local t = {}
-				for k,v in pairs(mcbTrigger.event) do
+				for k,v in pairs(TriggerFix.event) do
 					t[k] = 0
 				end
 				t.GetEntityID1 = Event.GetEntityID1()
 				t.GetEntityID2 = sid
-				mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, t)
+				TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode](Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
 			else
 				break
 			end
@@ -442,12 +442,12 @@ function mcbTrigger.ktr.run()
 	end
 	if Logic.GetEntityHealth(id) <= dmg then
 		local t = {}
-		for k,v in pairs(mcbTrigger.event) do
+		for k,v in pairs(TriggerFix.event) do
 			t[k] = 0
 		end
 		t.GetEntityID1 = Event.GetEntityID1()
 		t.GetEntityID2 = id
-		mcbTrigger["fireTrigger"..mcbTrigger_mode](Events.OnEntityKillsEntity, t)
+		TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode](Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
 	end
 end
-mcbTrigger.ktr.init()
+TriggerFix.KillTrigger.Init()

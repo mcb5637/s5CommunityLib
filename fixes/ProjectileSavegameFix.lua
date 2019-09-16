@@ -1,7 +1,7 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
-mcbPacker.require("s5CommunityLib/fixes/mcbTriggerExtHurtEntity")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFixExtHurtEntity")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
 
@@ -11,7 +11,7 @@ ProjectileSavegameFix = {idToSaveData={}, data2={}}
 
 function ProjectileSavegameFix.PreSavegameCreated()
 	ProjectileSavegameFix.idToSaveData = {}
-	for id,_ in pairs(mcbTriggerExtHurtEntity.projectiles) do
+	for id,_ in pairs(TriggerFixExtHurtEntity.projectiles) do
 		local t = {
 			TargetPosition = true,
 			NextPosition = true,

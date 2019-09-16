@@ -1,5 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
@@ -138,7 +138,7 @@ end --mcbPacker.ignore
 -- - S5Hook
 -- - MemoryManipulation
 -- - S5HookLoader
--- - mcbTrigger
+-- - TriggerFix
 -- 
 CNetEventCallbacks = {cbs = {}}
 

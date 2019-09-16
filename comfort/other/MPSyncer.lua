@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/fixes/mcbTrigger")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v3.0b
