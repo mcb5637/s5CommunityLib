@@ -4,6 +4,9 @@
 -- Setzen nur über MemoryManipulation/AnimateEntity
 -- 
 -- Table erstellt aus Kantelos Animations.xls
+-- 
+-- 
+-- veraltet, S5Hook verwenden!
 animTable = {
 	CU_AfraidAlchemist = {
 		walk = 183,
