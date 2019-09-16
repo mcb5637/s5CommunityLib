@@ -40,7 +40,7 @@ function Polygon:GetDistanceToPoint(p)
 	for i=1,table.getn(self.points) do
 		local a = self.points[i]
 		local b = self.points[i+1] or self.points[1]
-		local d2 = self:getLinePointDistance(a, b, p)
+		local d2 = self:GetLinePointDistance(a, b, p)
 		if (not d) or d>d2 then
 			d = d2
 			ind = i
@@ -54,7 +54,7 @@ function Polygon:IsPointInside(p)
 	for i=1,table.getn(self.points) do
 		local a = self.points[i]
 		local b = self.points[i+1] or self.points[1]
-		t = t * self:isPointInsideDotTest(p, a, b)
+		t = t * self:IsPointInsideDotTest(p, a, b)
 		if t==0 then
 			return 0
 		end
@@ -67,8 +67,8 @@ function Polygon:Reverse()
 end
 
 function Polygon:GetModifiedDistance(p)
-	local d, ind = self:getDistanceToPoint(p)
-	return d * self:isPointInside(p) * -1, ind
+	local d, ind = self:GetDistanceToPoint(p)
+	return d * self:IsPointInside(p) * -1, ind
 end
 
 function Polygon:GetLinePointDistance(p1, p2, p)

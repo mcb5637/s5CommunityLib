@@ -33,7 +33,7 @@ function Vector:Size()
 end
 
 function Vector:Add(v)
-	assert(self:size()==v:size())
+	assert(self:Size()==v:Size())
 	local newd = {}
 	for i,d in ipairs(self.data) do
 		newd[i] = d + v.data[i]
@@ -50,7 +50,7 @@ function Vector:SkalarMultiplication(s)
 end
 
 function Vector:Dot(v)
-	assert(self:size()==v:size())
+	assert(self:Size()==v:Size())
 	local newd = 0
 	for i,d in ipairs(self.data) do
 		newd = newd + d * v.data[i]
@@ -65,13 +65,13 @@ end
 
 Vector.mt = {
 	__add = function(a, b)
-		return a:add(b)
+		return a:Add(b)
 	end,
 	__mul = function(a, b)
 		if type(a)=="table" and type(b)=="number" then
-			return a:mulSkalar(b)
+			return a:SkalarMultiplication(b)
 		elseif type(b)=="table" and type(a)=="number" then
-			return b:mulSkalar(a)
+			return b:SkalarMultiplication(a)
 		else
 			assert(false, "Vector-Vector multiplocation not implemented!")
 		end

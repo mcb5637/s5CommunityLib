@@ -89,7 +89,7 @@ MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnect
 function MPSyncer.Init(player)
 	if not MPSyncer.IsMP() then
 		MPSyncer.allConnected = true
-		for _,cb in ipairs(MPSyncer.InitCbs) do
+		for _,cb in ipairs(MPSyncer.initCbs) do
 			cb()
 		end
 		return
@@ -121,7 +121,7 @@ function MPSyncer.Init(player)
 		elseif start=="@st" then
 			if not MPSyncer.allConnected then
 				MPSyncer.allConnected = true
-				for _,cb in ipairs(MPSyncer.InitCbs) do
+				for _,cb in ipairs(MPSyncer.initCbs) do
 					cb()
 				end
 				MPSyncer.Log("player "..sender.." finished loading first, all connected, ready to play")
@@ -145,7 +145,7 @@ function MPSyncer.Init(player)
 			MPSyncer.VirtualFuncs.execute(MPSyncer.VirtualFuncs.deserialize(str))
 		end)
 		MPSyncer.allConnected = true
-		for _,cb in ipairs(MPSyncer.InitCbs) do
+		for _,cb in ipairs(MPSyncer.initCbs) do
 			cb()
 		end
 		MPSyncer.Log("kimichuras server dont need to wait for init, ready to play")
@@ -275,7 +275,7 @@ function MPSyncer.RemoveChatRecievedCb(cb)
 end
 
 function MPSyncer.AddInitCB(cb)
-	table.insert(MPSyncer.InitCbs, cb)
+	table.insert(MPSyncer.initCbs, cb)
 	if MPSyncer.allConnected then
 		cb()
 	end
