@@ -2113,13 +2113,21 @@ MemoryManipulation.ObjFieldInfo = {
 	["Technology"] = {
 		hasNoVTable = true,
 		fields = {
-			{name="t", index={0}}, -- 0 techcategory
 			{name="TimeToResearch", index={1}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="ResourceCosts", index={3}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="costInfo"},
 			{name="RequiredTecConditions", index={21}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="TecConditions", index={23}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqTechnology"},
 			{name="RequiredEntityConditions", index={26}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="EntityConditions", index={28}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqBuilding"},
+			{name="ExplorationModifier", index={48}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
+			{name="SpeedModifier", index={56}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
+			-- 64 Hitpoint, DamageBonus, MinRange modifier
+			{name="DamageModifier", index={72}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
+			-- 80 Hitpoint, DamageBonus, MinRange modifier
+			{name="RangeModifier", index={88}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
+			-- 96 Hitpoint, DamageBonus, MinRange modifier
+			{name="ArmorModifier", index={104}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
+			-- 112 & 120 groupStrength & dodge modifier
 		},
 	},
 	["TechnologyReqBuilding"] = {
@@ -2134,6 +2142,13 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="TecType", index={0}, datatype=MemoryManipulation.DataType.Int, check=Entities},
 			{name="TecCategoryType", index={1}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	["TechnologyModifier"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="Value", index={0}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="Operator", index={2}, datatype=MemoryManipulation.DataType.Int, check={42,43,45,47,35}, readConv=function(i) return bit32.band(i, 65535) end},
 		},
 	},
 	["DamageClassList"] = {

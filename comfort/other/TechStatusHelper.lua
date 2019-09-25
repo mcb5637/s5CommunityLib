@@ -98,7 +98,35 @@ function TechStatusHelper.GetTechTooltip(t, p)
 	local s = title.." @cr "..requires.." @cr "..requiredfor
 	return s
 end
---TechStatusHelper.GetEntityTypeTechBoni(Entities.PU_LeaderBow1, "ModifyDamage", bonusKey)
-function TechStatusHelper.GetEntityTypeTechBoni(ety, techListKey, bonusKey)
-	
+--TechStatusHelper.GetEntityTypeTechBoni(Entities.PU_LeaderBow1, 1, "ModifyDamage", "DamageModifier")
+function TechStatusHelper.GetEntityTypeTechBoni(ety, player, techListKey, bonusKey)
+	local techlist = MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ety), "LogicProps."..techListKey)
+	local s = ""
+	for _,t in pairs(techlist.TechList) do
+		local techmod = MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(t), nil, MemoryManipulation.ObjFieldInfo.Technology, {
+			[bonusKey] = true,
+		})[bonusKey]
+		s = s..TechStatusHelper.GetColoredTechName(t, player).." @color:255,255,255 "..string.char(techmod.Operator).." "..techmod.Value.." @cr "
+	end
+	return s
+end
+
+function TechStatusHelper.GetEntityTypeDamageTechBoni(ety, player)
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyDamage", "DamageModifier")
+end
+
+function TechStatusHelper.GetEntityTypeArmorTechBoni(ety, player)
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyArmor", "ArmorModifier")
+end
+
+function TechStatusHelper.GetEntityTypeRangeTechBoni(ety, player)
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyMaxRange", "RangeModifier")
+end
+
+function TechStatusHelper.GetEntityTypeExplorationTechBoni(ety, player)
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyExploration", "ExplorationModifier")
+end
+
+function TechStatusHelper.GetEntityTypeSpeedTechBoni(ety, player)
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifySpeed", "SpeedModifier")
 end
