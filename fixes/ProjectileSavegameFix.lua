@@ -44,7 +44,7 @@ function ProjectileSavegameFix.AfterSavegameLoaded()
 end
 
 function ProjectileSavegameFix.Init()
-	table.insert(framework2.save.preSaveCallback, ProjectileSavegameFix.PreSavegameCreated)
+	table.insert(FrameworkWrapper.Savegame.PreSaveCallback, ProjectileSavegameFix.PreSavegameCreated)
 	ProjectileSavegameFix.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
 	function Mission_OnSaveGameLoaded()
 		ProjectileSavegameFix.Mission_OnSaveGameLoaded()

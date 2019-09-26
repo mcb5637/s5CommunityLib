@@ -5,7 +5,7 @@ mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
 mcbPacker.require("s5CommunityLib/comfort/number/round")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
-mcbPacker.require("comfort/framework2")
+mcbPacker.require("comfort/FrameworkWrapper")
 end --mcbPacker.ignore
 
 --MemoryManipulation.ReadObj(S5Hook.GetEntityMem(132339))
@@ -107,7 +107,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
 -- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
 -- 
--- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit framework2).
+-- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit FrameworkWrapper).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit S5HookLoader).
 -- - MemoryManipulation.CreateLibFuncs()							Erstellt die LibFuncs, wird aus OnLoadMap aufgerufen, kann aber auch selbst aufgerufen werden.
 -- 
@@ -138,7 +138,7 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - S5Hook
 -- - S5HookLoader
--- - framework2
+-- - FrameworkWrapper
 -- - IsEntityOfType
 -- - ArmorClasses
 -- - round
@@ -2386,7 +2386,7 @@ do
 	end
 end
 
-table.insert(framework2.map.endCallback, MemoryManipulation.OnLeaveMap)
+table.insert(FrameworkWrapper.Mapfile.LeaveMapCallback, MemoryManipulation.OnLeaveMap)
 table.insert(S5HookLoader.cb, 1, MemoryManipulation.OnLoadMap)
 
 function MemoryManipulation.CostTableToWritable(c, ignoreZeroes)
