@@ -3,7 +3,7 @@ mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
---- author:mcb		current maintainer:mcb		v3.0b
+--- author:mcb		current maintainer:mcb		v3.1
 -- Ermöglicht es, beliebige Lua-Ausdrücke auf allen verbundenen PCs zu parsen und synchron auszuführen.
 -- Wird das Script im SP geladen, wird keines Synchronisierung durchgeführt.
 -- 
@@ -24,6 +24,11 @@ end --mcbPacker.ignore
 -- MPSyncer.VirtualFuncs.ArgumentTypeInt()			Gibt den Argumenttyp für Lua-number zurück.
 -- MPSyncer.VirtualFuncs.ArgumentTypeString()		Gibt den Argumenttyp für Lua-string zurück.
 -- MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()	Gibt den Argumenttyp für einfache Lua-tables zurück (tables die nur numbers/strings als key/value haben).
+-- MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity()Gibt den Argumenttyp für ein Entity (id) zurück.
+-- MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()Gibt den Argumenttyp für einen player zurück.
+-- 
+-- MPSyncer.VirtualFuncs.SetInsertNameAsParamForFunc(vname, paramnum)
+-- 													Für die seltenen Fälle, das ArgumentTypeCheckedEntity und ArgumentTypeCheckedPlayer nicht ausreichen kann hiermit der name des aufrufenden spielers (oder false) als beliebiger parameter eingesetzt werden.
 -- 
 -- MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
 -- 														Schnelle Möglichkeit, eine Funktion zu synchronisieren. Ersetzt _G[fname] mit einer Funktion, die
@@ -40,8 +45,9 @@ end --mcbPacker.ignore
 -- vname: Darf nur aus Buchstaben bestehen, keine Zahlen/Sonderzeichen.
 -- patchLuaFunc: Die zu patchende Funktion muss über einen tablezugriff aus _G erreichbar sein, Außerdem darf der Funktionsname keine Zahlen/Sonderzeichen enthalten.
 -- Positionen als Argumente: Eine Position p ist nur ein table mit X und Y Eintragen. Einfach p.X und p.Y als einzelne number-Argumente übertragen und in der Funktion mit p = {X=X, Y=Y} wieder zusammenbauen.
--- Entitys als Argumente: Ich empfehle, die id als number zu übertragen.
+-- Entitys als Argumente: Die id als MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity (wenn dem entity ein befehl gegeben wird) oder MPSyncer.VirtualFuncs.ArgumentTypeInt (wenn es ein ziel ist) übertragen.
 -- Aufruf Synchronisierter Funktionen: Die Synchronisierungs-Funktionen müssen immer aus einem asynchronen Status ausgeführt werden, sonst wird der Aufruf vervielfältigt (Notfalls per Vergleich mit GUI.GetPlayerID() sicherstellen).
+-- MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity und MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer: sollten verwendet werden, um entities und player zu übertragen. Wenn das script über Kimichuras server läuft, wird dann geprüft, ob der aufrufende Spieler das entity/den spieler kontrollieren darf.
 -- 
 -- Kimichuras Server:
 -- executeSynced wird gespeichert, executeUnsyncedAtSingle und executeUnsyncedAtAll nicht.
@@ -142,7 +148,7 @@ function MPSyncer.Init(player)
 	if MPSyncer.IsMP()==3 then -- kimichuras server
 		CNetwork.SetNetworkHandler("MPSyncer_recieved_syncedCall", function(name, str)
 			MPSyncer.Log("client mode: synced executing from Network "..str)
-			MPSyncer.VirtualFuncs.execute(MPSyncer.VirtualFuncs.deserialize(str))
+			MPSyncer.VirtualFuncs.execute(MPSyncer.VirtualFuncs.deserialize(str), name)
 		end)
 		MPSyncer.allConnected = true
 		for _,cb in ipairs(MPSyncer.initCbs) do
@@ -292,8 +298,10 @@ end
 
 function MPSyncer.ExecuteSynced(f, ...)
 	if not MPSyncer.IsMP() then
-		MPSyncer.Log("SP mode, direct executing")
-		MPSyncer.VirtualFuncs.funcs[f].func(unpack(arg))
+		--MPSyncer.VirtualFuncs.funcs[f].func(unpack(arg))
+		f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
+		MPSyncer.Log("SP mode, direct executing: "..f)
+		MPSyncer.VirtualFuncs.execute(MPSyncer.VirtualFuncs.deserialize(f))
 		return
 	end
 	assert(MPSyncer.allConnected)
@@ -459,13 +467,15 @@ function MPSyncer.VirtualFuncs.Create(func, vname, ...)
 	local pattern = "^"..vname.."%("
 	local serializer = {}
 	local deserializer = {}
+	local check = {}
 	for i,a in ipairs(arg) do
 		pattern = pattern..a.pattern..", "
 		table.insert(serializer, a.serialize)
 		table.insert(deserializer, a.deserialize)
+		check[i] = a.check
 	end
 	pattern = pattern.."%)$"
-	local t = {pattern = pattern, serializer = serializer, deserializer = deserializer, func = func}
+	local t = {pattern = pattern, serializer = serializer, deserializer = deserializer, checks = check, func = func}
 	MPSyncer.VirtualFuncs.funcs[vname] = t
 	return t
 end
@@ -481,6 +491,22 @@ function MPSyncer.VirtualFuncs.ArgumentTypeString()
 	end, deserialize = function(s)
 		return s
 	end}
+end
+
+function MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity()
+	local t = MPSyncer.VirtualFuncs.ArgumentTypeInt()
+	t.check = function(id, name)
+		return IsValid(id) and CNetwork.isAllowedToManipulatePlayer(name, GetPlayer(id))
+	end
+	return t
+end
+
+function MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()
+	local t = MPSyncer.VirtualFuncs.ArgumentTypeInt()
+	t.check = function(pl, name)
+		return CNetwork.isAllowedToManipulatePlayer(name, pl)
+	end
+	return t
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()
@@ -569,11 +595,12 @@ function MPSyncer.VirtualFuncs.parse(vfunc, str)
 	if not t[1] then
 		return
 	end
-	local context = {vfunc.func}
+	local context = {func=vfunc.func, checks={}, insertNameAsParam=vfunc.insertNameAsParam}
 	for i=1, table.getn(vfunc.deserializer) do
-		local dsr = vfunc.deserializer[i]
+		local dsr, check = vfunc.deserializer[i], vfunc.checks[i]
 		local ar = t[i+2]
-		context[i+1] = dsr(ar)
+		context[i] = dsr(ar)
+		context.checks[i] = check
 	end
 	return context
 end
@@ -599,8 +626,19 @@ function MPSyncer.VirtualFuncs.serialize(vname, ...)
 	return str
 end
 
-function MPSyncer.VirtualFuncs.execute(context)
-	local fnc = table.remove(context, 1)
+function MPSyncer.VirtualFuncs.execute(context, name)
+	local fnc = context.func
+	if name then
+		for i,p in ipairs(context) do
+			if context.checks[i] and not context.checks[i](p, name) then
+				XNetwork.Chat_SendMessageToAll("Check failed at player "..GUI.GetPlayerID())
+				return
+			end
+		end
+	end
+	if context.insertNameAsParam then
+		table.insert(context, context.insertNameAsParam, name or false)
+	end
 	if LuaDebugger.Log then
 		fnc(unpack(context))
 	else
@@ -610,6 +648,11 @@ function MPSyncer.VirtualFuncs.execute(context)
 			XNetwork.Chat_SendMessageToAll("Lua Error at player "..GUI.GetPlayerID()..": "..e)
 		end)
 	end
+end
+
+function MPSyncer.VirtualFuncs.SetInsertNameAsParamForFunc(vname, paramnum)
+	local vfunc = MPSyncer.VirtualFuncs.funcs[vname]
+	vfunc.insertNameAsParam = paramnum
 end
 
 function MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
@@ -626,6 +669,10 @@ function MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
 			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeString())
 		elseif atyp=="number" then
 			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeInt())
+		elseif atyp=="entity" then
+			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity())
+		elseif atyp=="player" then
+			table.insert(varg, MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer())
 		end
 	end
 	MPSyncer.VirtualFuncs.Create(f, vname, unpack(varg))
