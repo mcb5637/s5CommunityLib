@@ -1,7 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
-mcbPacker.require("s5CommunityLib/tables/animTable")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v2.0
@@ -11,7 +10,7 @@ end --mcbPacker.ignore
 -- 
 -- Parameter:
 -- - id: EntityId des zu animierenden Ziels
--- - anim: Animation, animTable.EntityTypeString.Anim (nicht geprüft)
+-- - anim: Animation id, am besten per hook besorgen
 -- - speed: Animationsgeschwindigkeit als Float, 1.0 normal
 -- - back: Rückwärtsabspielen der Animation true/false
 -- - funcs: table mit "Animationspunkten" t[x] wird x Ticks nach dem Start der Animation aufgerufen (id, tick, unpack(arg)).
@@ -24,7 +23,6 @@ end --mcbPacker.ignore
 -- - S5Hook
 -- - Trigger-Fix
 -- - MemoryManipulation
--- - animTable (empfohlen)
 function AnimateEntity(id, anim, speed, back, funcs, dead, escape, ...)
 	assert(IsValid(id))
 	local id = GetID(id)

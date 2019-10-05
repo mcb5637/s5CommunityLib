@@ -1,3 +1,4 @@
+--mcbPacker.deprecated
 --- author:mcb/Kantelo		current maintainer:mcb		v1.0
 -- table aller Aimationen eines entities.  
 -- Abfrage: animTable[etypName][animname]  
