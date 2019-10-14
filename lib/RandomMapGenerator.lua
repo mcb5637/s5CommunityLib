@@ -397,7 +397,7 @@ function RandomMapGenerator.GenerateMap(generationData, generateAsLPJ, finishedC
 	generationData.currentResource = {1,1,1,1}
 
 	if generateAsLPJ then
-		StartSimpleLowPriorityJob("RandomMapGenerator.GeneratorJob", generationData, finishedCB)
+		return StartSimpleLowPriorityJob("RandomMapGenerator.GeneratorJob", generationData, finishedCB)
 	else
 		while true do
 			if RandomMapGenerator.GeneratorJob(generationData)==true then
