@@ -81,6 +81,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeModel						Das Model, das normalerweise für entities dieses types genutzt wird.
 -- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der Schaden den Helden dieses types mit einer CircularAttack verursachen.
 -- - MemoryManipulation.GetSettlerCurrentAnimation					Die aktuelle Animation eines entities. (AnimateEntity zum setzen nutzen).
+-- - MemoryManipulation.Get/SetSettlerTaskListIndex					Der Index der aktuellen Tasklist eines Siedlers.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -106,6 +107,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetBuidingMaxEaters(id, eaters)				Setzt die maximalen essensplätze einer Farm/Taverne.
 -- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
 -- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
+-- - MemoryManipulation.SetMovingEntityTargetRotation(id, rot)		Setzt die Zielrotation eines entities.
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit FrameworkWrapper).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit S5HookLoader).
@@ -837,7 +839,7 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="CurrentState", index={34}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="EntityStateBehaviors", index={35}, datatype=MemoryManipulation.DataType.Int, check={}},
 			{name="TaskListId", index={36}, datatype=MemoryManipulation.DataType.Int, check={}}, -- use logic to set
-			{name="TaskIndex", index={37}, datatype=MemoryManipulation.DataType.Int, check={}}, -- where in the task list is the entity
+			{name="TaskIndex", index={37}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end}, -- where in the task list is the entity
 			{name="CurrentHealth", index={50}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="ScriptName", index={51}, datatype=MemoryManipulation.DataType.String},
 			{name="ScriptCommandLine", index={52}, datatype=MemoryManipulation.DataType.String}, -- i think this is script executed when the entity is created, used by mapeditor
@@ -2575,6 +2577,13 @@ function MemoryManipulation.GetEntityModel(id)
 	return MemoryManipulation.GetEntityTypeModel(Logic.GetEntityType(id))
 end
 
+function MemoryManipulation.SetMovingEntityTargetRotation(id, rot)
+	assert(IsValid(id))
+	local w = MemoryManipulation.ConvertToObjInfo("TargetRotationValid", 1)
+	MemoryManipulation.ConvertToObjInfo("TargetRotation", rot or 1, w)
+	assert(MemoryManipulation.WriteObj(S5Hook.GetEntityMem(id), w))
+end
+
 function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
 	r = r or {}
 	if type(class)=="table" then
@@ -2712,7 +2721,8 @@ MemoryManipulation.SetEntityTypeModel = MemoryManipulation.GetEntityTypeModel
 MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
 MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
 MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CGLBehaviorAnimationEx.Animation"', check="\tassert(Logic.IsSettler(id)==1)\n"}
-
+MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TaskIndex"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""

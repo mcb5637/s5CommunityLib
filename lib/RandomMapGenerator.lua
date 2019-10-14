@@ -4,6 +4,7 @@ if mcbPacker then --mcbPacker.ignore
 	mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 	mcbPacker.require("s5CommunityLib/comfort/math/SimplexNoise")
 	mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
+	mcbPacker.require("s5CommunityLib/tables/TerrainTypes")
 	mcbPacker.require("comfort/GetRandom")
 end --mcbPacker.ignore
 
@@ -27,6 +28,7 @@ end --mcbPacker.ignore
 -- - SimplexNoise
 -- - Trigger-Fix
 -- - GetRandom
+-- - TerrainTypes
 RandomMapGenerator = {}
 
 RandomMapGenerator.DefaultGeneratorData = {
@@ -196,17 +198,63 @@ RandomMapGenerator.DefaultGeneratorData = {
 			},
 		},
 	},
-	TerrainTypes = { -- TODO define landscape sets, define global texture table
-		Mountain={12,12,12,12, 28,28,28, 30,30, 14},
-		Rocky={14},
-		Forest={22, 23, 24, 25,25,25,25, 26,26,26,26, 4, 36, 13, 52},
-		DarkMeadow={6, 4,4,4,4,4,4, 36,36,36,36, 13, 52},
-		BrightMeadow={8, 1,1,1,1, 32,32, 34,34},
-		BrightEarth={7,7,7,7, 38,38, 8,8},
-		River={22, 23,23, 24,24},
-		DarkEarth={6,6,6,6, 41,41, 42,42}, -- lehm
-		NorthSand={111, 113}, -- schwefel
-		DarkMud={9,9,9,9, 43,43,43, 45,45,45, 48,48, 50,50}, -- eisen
+	TerrainTypes = { -- TODO define landscape sets
+		Mountain={
+			TerrainTypes.RockDark01B_AT,TerrainTypes.RockDark01B_AT,TerrainTypes.RockDark01B_AT,TerrainTypes.RockDark01B_AT,
+			TerrainTypes.RockDark02_AT,TerrainTypes.RockDark02_AT,TerrainTypes.RockDark02_AT,
+			TerrainTypes.RockDark03_AT,TerrainTypes.RockDark03_AT,
+			TerrainTypes.EarthRocky01B_AT,
+		},
+		Rocky={TerrainTypes.EarthRocky01B_AT},
+		Forest={TerrainTypes.EarthFir01_AT,
+			TerrainTypes.EarthFir02_AT,
+			TerrainTypes.EarthFir03_AT,
+			TerrainTypes.EarthMoss01_AT,TerrainTypes.EarthMoss01_AT,TerrainTypes.EarthMoss01_AT,TerrainTypes.EarthMoss01_AT,
+			TerrainTypes.EarthMoss02_AT,TerrainTypes.EarthMoss02_AT,TerrainTypes.EarthMoss02_AT,TerrainTypes.EarthMoss02_AT,
+			TerrainTypes.GrassDark01B_AT,
+			TerrainTypes.GrassDark02_AT,
+			TerrainTypes.GrassDarkLeaf01B_CT,
+			TerrainTypes.GrassDarkLeaf02_CT,
+		},
+		DarkMeadow={
+			TerrainTypes.EarthDark01B_AT,
+			TerrainTypes.GrassDark01B_AT,TerrainTypes.GrassDark01B_AT,TerrainTypes.GrassDark01B_AT,TerrainTypes.GrassDark01B_AT,TerrainTypes.GrassDark01B_AT,TerrainTypes.GrassDark01B_AT,
+			TerrainTypes.GrassDark02_AT,TerrainTypes.GrassDark02_AT,TerrainTypes.GrassDark02_AT,TerrainTypes.GrassDark02_AT,
+			TerrainTypes.GrassDarkLeaf01B_CT,
+			TerrainTypes.GrassDarkLeaf02_CT,
+		},
+		BrightMeadow={
+			TerrainTypes.EarthBrStones01B_AT,
+			TerrainTypes.GrassBright01B_AT,TerrainTypes.GrassBright01B_AT,TerrainTypes.GrassBright01B_AT,TerrainTypes.GrassBright01B_AT,
+			TerrainTypes.GrassBright02_AT,TerrainTypes.GrassBright02_AT,
+			TerrainTypes.GrassBright03_AT,TerrainTypes.GrassBright03_AT,
+		},
+		BrightEarth={
+			TerrainTypes.EarthBright01B_AT,TerrainTypes.EarthBright01B_AT,TerrainTypes.EarthBright01B_AT,TerrainTypes.EarthBright01B_AT,
+			TerrainTypes.EarthBright02_AT,TerrainTypes.EarthBright02_AT,
+			TerrainTypes.EarthBrStones01B_AT,TerrainTypes.EarthBrStones01B_AT,
+		},
+		River={
+			TerrainTypes.EarthFir01_AT,
+			TerrainTypes.EarthFir02_AT,TerrainTypes.EarthFir02_AT,
+			TerrainTypes.EarthFir03_AT,TerrainTypes.EarthFir03_AT,
+		},
+		DarkEarth={
+			TerrainTypes.EarthDark01B_AT,TerrainTypes.EarthDark01B_AT,TerrainTypes.EarthDark01B_AT,TerrainTypes.EarthDark01B_AT,
+			TerrainTypes.EarthDark02_AT,TerrainTypes.EarthDark02_AT,
+			TerrainTypes.EarthDark03_AT,TerrainTypes.EarthDark03_AT,
+		}, -- lehm
+		NorthSand={
+			TerrainTypes.SandRockyNorth01_AT_HP,
+			TerrainTypes.SandEarthNorth01_AT_HP,
+		}, -- schwefel
+		DarkMud={
+			TerrainTypes.MudDark01B_AT,TerrainTypes.MudDark01B_AT,TerrainTypes.MudDark01B_AT,TerrainTypes.MudDark01B_AT,
+			TerrainTypes.MudDark02B_AT,TerrainTypes.MudDark02B_AT,TerrainTypes.MudDark02B_AT,
+			TerrainTypes.MudDark03_AT,TerrainTypes.MudDark03_AT,
+			TerrainTypes.MudDark04_AT,TerrainTypes.MudDark04_AT,
+			TerrainTypes.MudDark05_AT,TerrainTypes.MudDark05_AT,
+		}, -- eisen
 	},
 	EntityArray={
 		Rocky = {
@@ -337,6 +385,7 @@ function RandomMapGenerator.GenerateMap(generationData, generateAsLPJ, finishedC
     
 	SimplexNoise.seedP(generationData.Seed)
 	math.randomseed(generationData.Seed)
+	gvRandomseed = true -- prevent GetRandom from reseeding
 
 	local mapsize = Logic.WorldGetSize()/100
 
@@ -484,14 +533,14 @@ function RandomMapGenerator.ApplyNoise(generationData)
 	local noise
 	local height
 
-	RandomMapGenerator.StatusCallback("Applying Noise")
+	local mapsize = Logic.WorldGetSize()/100
 
 	for x = 0, Logic.WorldGetSize()/100 do
 		if not generationData.TerrainHeights[x] then
 			generationData.TerrainHeights[x] = {}
 		end
 
-		for y = 0, Logic.WorldGetSize()/100 do
+		for y = generationData.currentY, math.min(generationData.currentY + generationData.Steps - 1, mapsize) do
 			noise = generationData.Noise[x][y]
 
 			if noise > 0 then
@@ -505,7 +554,14 @@ function RandomMapGenerator.ApplyNoise(generationData)
 			Logic.SetTerrainNodeHeight(x, y, height)
 		end
 	end
-	return true
+	
+	RandomMapGenerator.StatusCallback("Setting Terrain Height: "..math.floor((generationData.currentY + generationData.Steps) / (mapsize / 100)).."%")
+	
+	generationData.currentY = generationData.currentY + generationData.Steps
+	if generationData.currentY > mapsize then
+		generationData.currentY = 0
+		return true
+	end
 end
 
 function RandomMapGenerator.GetBiomeKey(noise) -- this way, we can use the same biome logic for terrain and entities
@@ -534,17 +590,22 @@ function RandomMapGenerator.DrawTextures(generationData)
 	local mapSize = Logic.WorldGetSize()/100
 	local mapCenter = mapSize / 2
 
-	RandomMapGenerator.StatusCallback("Drawing Textures")
-
 	for x = 0, mapSize, 4 do
-		for y = 0, mapSize, 4 do
+		for y = generationData.currentY, math.min(generationData.currentY + generationData.Steps*4 - 1, mapSize), 4 do
 			if math.sqrt((x - mapCenter)^2 + (y - mapCenter)^2) < mapCenter then
 				noise = generationData.Noise[x][y]
 				RandomMapGenerator.SetRandomTexture(x, y, generationData.TerrainTypes[RandomMapGenerator.GetBiomeKey(noise)])
 			end
 		end
 	end
-	return true
+	
+	RandomMapGenerator.StatusCallback("Setting Terrain textures: "..math.floor((generationData.currentY + generationData.Steps) / (mapSize / 100)).."%")
+	
+	generationData.currentY = generationData.currentY + generationData.Steps*4
+	if generationData.currentY > mapSize then
+		generationData.currentY = 0
+		return true
+	end
 end
 
 function RandomMapGenerator.SetRandomTexture(nodeX, nodeY, textures)
@@ -552,23 +613,33 @@ function RandomMapGenerator.SetRandomTexture(nodeX, nodeY, textures)
 end
 
 function RandomMapGenerator.CreateEnvironment(generationData)
-	RandomMapGenerator.StatusCallback("Creating Environment ...")
 	local noise
 	local limit = Logic.WorldGetSize() - 100
 	local center = Logic.WorldGetSize() / 2
+	local centersq = center^2
+
+	if generationData.currentY<=100 then
+		generationData.currentY = 100
+	end
 
 	for x = 100, limit, 300 do
-		for y = 100, limit, 300 do
-			if math.sqrt((x - center)^2 + (y - center)^2) < center then
-				noise = generationData.Noise[x/100][y/100]
-				local entitytable = generationData.EntityArray[RandomMapGenerator.GetBiomeKey(noise)]
-				if entitytable then
-					RandomMapGenerator.CreateRandomEntity(x, y, entitytable)
-				end
+		local y = generationData.currentY
+		if ((x - center)^2 + (y - center)^2) < centersq then
+			noise = generationData.Noise[x/100][y/100]
+			local entitytable = generationData.EntityArray[RandomMapGenerator.GetBiomeKey(noise)]
+			if entitytable then
+				RandomMapGenerator.CreateRandomEntity(x, y, entitytable)
 			end
 		end
 	end
-	return true
+	
+	RandomMapGenerator.StatusCallback("Createing Entities: "..math.floor((generationData.currentY + 300) / (limit / 100)).."%")
+	
+	generationData.currentY = generationData.currentY + 300
+	if generationData.currentY > limit then
+		generationData.currentY = 0
+		return true
+	end
 end
 
 function RandomMapGenerator.CreateRandomEntity(posX, posY, entities)
