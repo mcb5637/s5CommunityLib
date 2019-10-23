@@ -11,7 +11,7 @@ function SubFromPlayersResources( _id, _gold, _clay, _wood, _stone, _iron, _sulf
 		_stone = _id[ResourceType.Stone]
 		_iron = _id[ResourceType.Iron]
 		_sulfur = _id[ResourceType.Sulfur]
-		_id = GUI.GetPlayerID()
+		_id = _wood or GUI.GetPlayerID()
 	end
 	local goldmissing,claymissing,woodmissing,stonemissing,ironmissing,sulfurmissing = 0,0,0,0,0,0;
     _gold = _gold or 0

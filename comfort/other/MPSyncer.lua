@@ -28,7 +28,7 @@ end --mcbPacker.ignore
 -- MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()Gibt den Argumenttyp für einen player zurück.
 -- 
 -- MPSyncer.VirtualFuncs.SetInsertNameAsParamForFunc(vname, paramnum)
--- 													Für die seltenen Fälle, das ArgumentTypeCheckedEntity und ArgumentTypeCheckedPlayer nicht ausreichen kann hiermit der name des aufrufenden spielers (oder false) als beliebiger parameter eingesetzt werden.
+-- 													Für die seltenen Fälle, das ArgumentTypeCheckedEntity und ArgumentTypeCheckedPlayer nicht ausreichen kann hiermit der name/die playerid des aufrufenden spielers (oder false) als beliebiger parameter eingesetzt werden.
 -- 
 -- MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
 -- 														Schnelle Möglichkeit, eine Funktion zu synchronisieren. Ersetzt _G[fname] mit einer Funktion, die
@@ -47,7 +47,7 @@ end --mcbPacker.ignore
 -- Positionen als Argumente: Eine Position p ist nur ein table mit X und Y Eintragen. Einfach p.X und p.Y als einzelne number-Argumente übertragen und in der Funktion mit p = {X=X, Y=Y} wieder zusammenbauen.
 -- Entitys als Argumente: Die id als MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity (wenn dem entity ein befehl gegeben wird) oder MPSyncer.VirtualFuncs.ArgumentTypeInt (wenn es ein ziel ist) übertragen.
 -- Aufruf Synchronisierter Funktionen: Die Synchronisierungs-Funktionen müssen immer aus einem asynchronen Status ausgeführt werden, sonst wird der Aufruf vervielfältigt (Notfalls per Vergleich mit GUI.GetPlayerID() sicherstellen).
--- MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity und MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer: sollten verwendet werden, um entities und player zu übertragen. Wenn das script über Kimichuras server läuft, wird dann geprüft, ob der aufrufende Spieler das entity/den spieler kontrollieren darf.
+-- MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity und MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer: Hier wird geprüft, ob der aufrufende Spieler das entity/den spieler kontrollieren darf. Keine Fehlermeldung wenn entity destroyed ist.
 -- 
 -- Kimichuras Server:
 -- executeSynced wird gespeichert, executeUnsyncedAtSingle und executeUnsyncedAtAll nicht.
@@ -91,13 +91,14 @@ end --mcbPacker.ignore
 -- - S5Hook (Logging)
 -- - unpack-fix
 -- 
-MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}}
+MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}, NoJingleForTribute={}}
 function MPSyncer.Init(player)
 	if not MPSyncer.IsMP() then
 		MPSyncer.allConnected = true
 		for _,cb in ipairs(MPSyncer.initCbs) do
 			cb()
 		end
+		MPSyncer.Log("sp dont need to wait for init, ready to play")
 		return
 	end
 	MPSyncer.MPGame_ApplicationCallback_ReceivedChatMessage = MPGame_ApplicationCallback_ReceivedChatMessage
@@ -168,6 +169,15 @@ function MPSyncer.Init(player)
 				Sound.PlayFeedbackSound(feedbs, 0)
 			end
 		end)
+		TributeJingleCondition = function()
+			local tid = Event.GetTributeUniqueID()
+			if MPSyncer.NoJingleForTribute[tid] then
+				MPSyncer.NoJingleForTribute[tid] = nil
+				return false
+			end
+			return Event.GetPlayerID()==GUI.GetPlayerID()
+		end
+		MPSyncer.Log("local initialization done, waiting for all players to load into game")
 	end	
 end
 
@@ -294,6 +304,9 @@ function MPSyncer.Log(txt)
 	if S5Hook then
 		S5Hook.Log("MPSyncer: "..txt)
 	end
+	if CLogger then
+		CLogger.Log("MPSyncer: "..txt)
+	end
 end
 
 function MPSyncer.ExecuteSynced(f, ...)
@@ -331,19 +344,15 @@ function MPSyncer.recievedFunc(f, sender)
 	local st, en = string.find(f, "^%d+:")
 	local id = string.sub(f, st, en-1)
 	local toEval = string.sub(f, en+1)
-	local func = MPSyncer.VirtualFuncs.deserialize(toEval)
-	local trib = {
-		Tribute = tonumber(id),
-		pId = MPSyncer.player,
-		func = func,
-		Callback = function(t)
-			MPSyncer.Log("client mode: synced executing "..t.Tribute)
-			--t.func()
-			MPSyncer.VirtualFuncs.execute(t.func)
-		end,
-	}
-	Logic.AddTribute(MPSyncer.player, trib.Tribute, 0, 0, "", ResourceType.Gold, 0)
-	SetupTributePaid(trib)
+	local func = MPSyncer.VirtualFuncs.deserialize(toEval, sender)
+	local tid = tonumber(id)
+	Logic.AddTribute(MPSyncer.player, tid, 0, 0, "syncer tribute, do not pay!", ResourceType.Gold, 0)
+	Trigger.RequestTrigger(Events.LOGIC_EVENT_TRIBUTE_PAID, nil, function(trib, callback) -- custom trigger does not leave data in a global table
+		if Event.GetTributeUniqueID()==trib then
+			MPSyncer.Log("client mode: synced executing "..trib)
+			MPSyncer.VirtualFuncs.execute(callback)
+		end
+	end, 1, nil, {tid, func})
 	MPSyncer.Log((sender==GUI.GetPlayerID() and "host mode: " or "client mode: ").."recieved tribute "..id.." from "..sender.." for "..toEval)
 	XNetwork.Chat_SendMessageToAll("@sa"..id)
 end
@@ -426,7 +435,7 @@ function MPSyncer.recievedSingleFunc(f, sender)
 		MPSyncer.Log("client mode: dropped single call for "..id..", not for me")
 		return
 	end
-	local func = MPSyncer.VirtualFuncs.deserialize(toEval)
+	local func = MPSyncer.VirtualFuncs.deserialize(toEval, sender)
 	MPSyncer.Log("client mode: executing single call "..toEval)
 	MPSyncer.VirtualFuncs.execute(func)
 end
@@ -458,6 +467,21 @@ function MPSyncer.GetHost()
 		return hostname
 	end
 	return XNetwork.GameInformation_GetPlayerIDByNetworkAddress(XNetwork.Host_UserInSession_GetHostNetworkAddress())
+end
+
+function MPSyncer.IsPlayerAllowedToManipulatePlayer(pl, name)
+	if MPSyncer.IsMP()==3 then
+		return CNetwork.isAllowedToManipulatePlayer(name, pl)
+	else
+		return name==pl
+	end
+end
+
+function MPSyncer.IsPlayerAllowedToManipulateEntity(id, name)
+	if IsDestroyed(id) then
+		return
+	end
+	return MPSyncer.IsPlayerAllowedToManipulatePlayer(GetPlayer(id), name)
 end
 
 MPSyncer.VirtualFuncs = {funcs={}}
@@ -495,17 +519,13 @@ end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity()
 	local t = MPSyncer.VirtualFuncs.ArgumentTypeInt()
-	t.check = function(id, name)
-		return IsValid(id) and CNetwork.isAllowedToManipulatePlayer(name, GetPlayer(id))
-	end
+	t.check = MPSyncer.IsPlayerAllowedToManipulateEntity
 	return t
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()
 	local t = MPSyncer.VirtualFuncs.ArgumentTypeInt()
-	t.check = function(pl, name)
-		return CNetwork.isAllowedToManipulatePlayer(name, pl)
-	end
+	t.check = MPSyncer.IsPlayerAllowedToManipulatePlayer
 	return t
 end
 
@@ -605,10 +625,12 @@ function MPSyncer.VirtualFuncs.parse(vfunc, str)
 	return context
 end
 
-function MPSyncer.VirtualFuncs.deserialize(string)
+function MPSyncer.VirtualFuncs.deserialize(string, sender)
 	for vname, vfunc in pairs(MPSyncer.VirtualFuncs.funcs) do
 		local r = MPSyncer.VirtualFuncs.parse(vfunc, string)
 		if r then
+			r.sender = sender
+			r.string = string
 			return r
 		end
 	end
@@ -628,11 +650,23 @@ end
 
 function MPSyncer.VirtualFuncs.execute(context, name)
 	local fnc = context.func
+	if not name and context.sender then
+		name = context.sender
+	end
 	if name then
 		for i,p in ipairs(context) do
-			if context.checks[i] and not context.checks[i](p, name) then
-				XNetwork.Chat_SendMessageToAll("Check failed at player "..GUI.GetPlayerID())
-				return
+			if context.checks[i] then
+				local c = context.checks[i](p, name)
+				if not c then
+					if c == false then
+						local errmsg = "Check failed at player "..GUI.GetPlayerID().." for: "..context.string
+						XNetwork.Chat_SendMessageToAll(errmsg)
+						MPSyncer.Log(errmsg)
+						return
+					end
+					MPSyncer.Log("Invalid Entity at player "..GUI.GetPlayerID().." for: "..context.string)
+					return
+				end
 			end
 		end
 	end
@@ -645,7 +679,9 @@ function MPSyncer.VirtualFuncs.execute(context, name)
 		xpcall(function()
 			fnc(unpack(context))
 		end, function(e)
-			XNetwork.Chat_SendMessageToAll("Lua Error at player "..GUI.GetPlayerID()..": "..e)
+			local errmsg = "Lua Error at player "..GUI.GetPlayerID()..": "..e
+			XNetwork.Chat_SendMessageToAll(errmsg)
+			MPSyncer.Log(errmsg)
 		end)
 	end
 end
