@@ -5,13 +5,14 @@ function SubFromPlayersResources( _id, _gold, _clay, _wood, _stone, _iron, _sulf
     if type(_id)=="table" then
 		_onlyCheck = _clay
 		_noMessage = _gold
+		local p = _wood or GUI.GetPlayerID()
 		_gold = _id[ResourceType.Gold]
 		_clay = _id[ResourceType.Clay]
 		_wood = _id[ResourceType.Wood]
 		_stone = _id[ResourceType.Stone]
 		_iron = _id[ResourceType.Iron]
 		_sulfur = _id[ResourceType.Sulfur]
-		_id = _wood or GUI.GetPlayerID()
+		_id = p
 	end
 	local goldmissing,claymissing,woodmissing,stonemissing,ironmissing,sulfurmissing = 0,0,0,0,0,0;
     _gold = _gold or 0

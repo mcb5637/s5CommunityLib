@@ -11,13 +11,16 @@ end --mcbPacker.ignore
 -- - EntityAttachments.AttachmentTypes						Table aller bekannten attachment types.
 -- 
 -- Benötigt:
--- - S5Hook
+-- - S5Hook oder CEntity.dll
 EntityAttachments = {}
 
 function EntityAttachments.ReadAttachmentsFromEntity(id)
 	if type(id)=="string" then
 		id = GetID(id)
-	end -- TODO check if kimichuras dll variant is available and use it
+	end
+	if CEntity and CEntity.GetAttachedEntities then
+		return CEntity.GetAttachedEntities(id)
+	end
 	id = S5Hook.GetEntityMem(id)
 	local data = {}
 	local cache = {}
