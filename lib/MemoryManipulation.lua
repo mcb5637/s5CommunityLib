@@ -2121,6 +2121,8 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="TecConditions", index={23}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqTechnology"},
 			{name="RequiredEntityConditions", index={26}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="EntityConditions", index={28}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqBuilding"},
+			{name="RequiredUpgradeCategoryConditions", index={36}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="UpgradeCategoryConditions", index={38}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, objectSize=2, vtableOverride="TechnologyReqUpgradeCategory"},
 			{name="ExplorationModifier", index={48}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
 			{name="SpeedModifier", index={56}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="TechnologyModifier"},
 			-- 64 Hitpoint, DamageBonus, MinRange modifier
@@ -2144,6 +2146,13 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="TecType", index={0}, datatype=MemoryManipulation.DataType.Int, check=Entities},
 			{name="TecCategoryType", index={1}, datatype=MemoryManipulation.DataType.Int, check=nil},
+		},
+	},
+	["TechnologyReqUpgradeCategory"] = {
+		hasNoVTable = true,
+		fields = {
+			{name="UpgradeCategory", index={0}, datatype=MemoryManipulation.DataType.Int, check=UpgradeCategories},
+			{name="Amount", index={1}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
 	["TechnologyModifier"] = {

@@ -55,6 +55,19 @@ function TechStatusHelper.GetColoredEntityTypeName(ety, am, pl)
 	return r
 end
 
+function TechStatusHelper.GetColoredUpgradeCategoryTypeName(ucat, am, pl)
+	local num = 0
+	for id in S5Hook.EntityIterator(Predicate.OfPlayer(pl), Predicate.OfUpgradeCategory(ucat)) do
+		num = num + 1
+	end
+	local r = " @color:gruen "
+	if num<am then
+		r = " @color:gelb "
+	end
+	r = r..am.." @stt:names/"..Logic.GetEntityTypeName(Logic.GetBuildingTypeByUpgradeCategory(ucat, pl)).." "
+	return r
+end
+
 function TechStatusHelper.GetTechnologyDescStrings(t, p)
 	local title = " @color:tit "..TechStatusHelper.GetTechName(t).." @color:weis "
 	local requires = " @color:req benötigt: @color:weis "
@@ -64,6 +77,8 @@ function TechStatusHelper.GetTechnologyDescStrings(t, p)
 		TecConditions = true,
 		RequiredEntityConditions = true,
 		EntityConditions = true,
+		RequiredUpgradeCategoryConditions = true,
+		UpgradeCategoryConditions = true,
 	})
 	if tdata.RequiredTecConditions > 0 then
 		requires = requires..tdata.RequiredTecConditions.." von ( "
@@ -81,6 +96,15 @@ function TechStatusHelper.GetTechnologyDescStrings(t, p)
 		requires = requires..TechStatusHelper.GetColoredEntityTypeName(tre.EntityType, tre.Amount, p)
 	end
 	if tdata.RequiredEntityConditions > 0 then
+		requires = requires.." @color:weis ) "
+	end
+	if tdata.RequiredUpgradeCategoryConditions > 0 then
+		requires = requires.." @color:weis "..tdata.RequiredUpgradeCategoryConditions.." von ( "
+	end
+	for _,tre in ipairs(tdata.UpgradeCategoryConditions) do
+		requires = requires..TechStatusHelper.GetColoredUpgradeCategoryTypeName(tre.UpgradeCategory, tre.Amount, p)
+	end
+	if tdata.RequiredUpgradeCategoryConditions > 0 then
 		requires = requires.." @color:weis ) "
 	end
 	if not TechStatusHelper.reverseRequirementCache then
