@@ -2211,6 +2211,8 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="MotivationThresholdAngry", index={71}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="MotivationThresholdLeave", index={72}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="AverageMotivationVillageCenterLockThreshold", index={73}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="WorkTimeBase", index={74}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="WorkTimeThresholdWork", index={75}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="MotivationAbsoluteMaxMotivation", index={80}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 			{name="HeroResurrectionTime", index={82}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="HeroResurrectionSlippage", index={83}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
