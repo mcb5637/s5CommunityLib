@@ -34,6 +34,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetLeaderExperience						Die Erfahrung eines Leaders.
 -- - MemoryManipulation.Get/SetLeaderTroopHealth					Die gesundheit der Soldaten eines leaders (Alle aufaddiert, -1 -> noch nicht verwendet, voll).
 -- - MemoryManipulation.Get/SetSettlerMovementSpeed					Die bewegungsgeschwidigkeit einer einheit (Scm/sec).
+-- 																		Dies ist die Basisgeschwindigkeit auf die Boni von Techs addiert werden.
 -- - MemoryManipulation.Get/SetSettlerRotationSpeed					Die rotationsgeschwindigkeit einer einheit (deg/sec).
 -- - MemoryManipulation.GetLeaderOfSoldier							Der leader eines soldiers (kein set verfügbar).
 -- - MemoryManipulation.GetBarracksAutoFillActive					Der autofill status einer Kaserne (Set über GUI).
@@ -82,6 +83,8 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der Schaden den Helden dieses types mit einer CircularAttack verursachen.
 -- - MemoryManipulation.GetSettlerCurrentAnimation					Die aktuelle Animation eines entities. (AnimateEntity zum setzen nutzen).
 -- - MemoryManipulation.Get/SetSettlerTaskListIndex					Der Index der aktuellen Tasklist eines Siedlers.
+-- - MemoryManipulation.GetSettlerModifiedMovementSpeed				Die Bewegungsgeschwindigkeit eines Enities, modifiziert mit Technologieboni.
+-- 																		Wird bei jeder Bewegung aktualisiert, deswegen ist ein Set sinnlos.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2734,6 +2737,7 @@ MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEnt
 MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CGLBehaviorAnimationEx.Animation"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TaskIndex"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
+MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"MovingSpeed"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
