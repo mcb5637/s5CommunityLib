@@ -85,6 +85,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetSettlerTaskListIndex					Der Index der aktuellen Tasklist eines Siedlers.
 -- - MemoryManipulation.GetSettlerModifiedMovementSpeed				Die Bewegungsgeschwindigkeit eines Enities, modifiziert mit Technologieboni.
 -- 																		Wird bei jeder Bewegung aktualisiert, deswegen ist ein Set sinnlos.
+-- 																		(Berechnung ist base * weatherfactor * weatherfactor + techbonus).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
