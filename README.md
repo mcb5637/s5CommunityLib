@@ -31,3 +31,6 @@ Eine Sammlung von kleinen und größeren Svcriptteilen.
 
 ## Eigene branches
 - wichtig ist nur der status beim pull request, solange sich niemand beschwert
+
+## Lizenz
+- wenn nicht extra in der datei etwas anderes steht, gilt die MIT lizenz (die erlaubt praktisch alles, ohne schadensersatzansprüche)
