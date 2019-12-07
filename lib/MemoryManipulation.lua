@@ -1881,6 +1881,10 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 			{name="t", index={0}, datatype=nil},
 			{name="PlayerID", index={1}, datatype=MemoryManipulation.DataType.Int, check={}},
+			{name="NumberOfSettlersKilled", index={82}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="NumberOfSettlersLost", index={83}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="NumberOfBuildingsKilled", index={84}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="NumberOfBuildingsLost", index={85}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 			{name="PlayerAttractionHandler", index={197}, datatype=MemoryManipulation.DataType.ObjectPointer},
 		},
 	},
