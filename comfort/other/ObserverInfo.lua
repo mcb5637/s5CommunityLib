@@ -6,6 +6,18 @@ end --mcbPacker.ignore
 
 ObserverInfo = {ObservedPlayers = {}, ObservedResearch = {}, ObservedUpgrade = {}, ShowLines = {}}
 
+function ObserverInfo.InitIfLocalSpecForAllPlayers()
+	if GUI.GetPlayerID()==17 then
+		local p = {}
+		for i=1,XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer() do
+			if XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)==1 then
+				table.insert(p, i)
+			end
+		end
+		ObserverInfo.Init(p)
+	end
+end
+
 function ObserverInfo.Init(players)
 	ObserverInfo.ObservedPlayers = players
 	ObserverInfo.GameCallback_StartResearch = GameCallback_StartResearch
@@ -69,6 +81,7 @@ function ObserverInfo.Init(players)
 		CWidget.Transaction_Commit()
 	end
 	XGUIEng.ShowWidget("ObserverInfo", 1)
+	Input.KeyBindDown(Keys.F7, 'XGUIEng.ShowWidget("ObserverInfo", 1-XGUIEng.IsWidgetShown("ObserverInfo"))', 2)
 end
 
 ObserverInfo.ShowBuildingsOfUCats = {
