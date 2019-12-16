@@ -223,7 +223,7 @@ function MemoryManipulation.MemList:iterator()
     return function()
         i = i + 1
         if i < count then
-            return self:get(i)
+            return self:get(i), i
         end
     end
 end
@@ -276,10 +276,15 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 			elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
 				local li = MemoryManipulation.MemList.init(sv2, 4)
-				for sv3 in li:iterator() do
+				for sv3, svind in li:iterator() do
 					if sv3[0]:GetInt()>0 then
 						local vt = sv3[0][0]:GetInt()
-						local vtn = MemoryManipulation.VTableNames[vt]
+						local vtn = nil
+						if fi.indexAsKey then
+							vtn = svind
+						else
+							vtn = MemoryManipulation.VTableNames[vt]
+						end
 						--LuaDebugger.Log(vt..(KeyOf(vt, MemoryManipulation.ClassVTable) or "nil"))
 						if (not readFilter or readFilter[fi.name][vtn]~=nil) and MemoryManipulation.ObjFieldInfo[vt] then
 							val[vtn] = MemoryManipulation.ReadObj(sv3[0], val[vtn] and val[vtn]~=true and val[vtn], nil, readFilter and readFilter[fi.name]~=true and readFilter[fi.name][vtn]~=true and readFilter[fi.name][vtn])
@@ -291,20 +296,16 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 				val = MemoryManipulation.ReadObj(sv2, objInfo[fi.name] and objInfo[fi.name]~=true and objInfo[fi.name], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
-				local i=1
 				local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
-				for sv3 in li:iterator() do
-					val[i] = MemoryManipulation.ReadObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
-					i=i+1
+				for sv3, svind in li:iterator() do
+					val[svind+1] = MemoryManipulation.ReadObj(sv3, val[svind+1], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
-				local i=1
 				local li = MemoryManipulation.MemList.init(sv2, 4)
-				for sv3 in li:iterator() do
-					val[i] = sv3[0]:GetInt()
-					i=i+1
+				for sv3, svind in li:iterator() do
+					val[svind+1] = sv3[0]:GetInt()
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.String then
@@ -313,31 +314,25 @@ function MemoryManipulation.ReadObj(sv, objInfo, fieldInfo, readFilter)
 				end
 			elseif fi.datatype==MemoryManipulation.DataType.DataPointerListSize then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
-				local i=1
 				local li = MemoryManipulation.MemList.initFromPointerAndSize(sv2, 4)
-				for sv3 in li:iterator() do
+				for sv3, svind in li:iterator() do
 					if sv3[0]:GetInt()>0 then
-						val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
+						val[svind+1] = MemoryManipulation.ReadObj(sv3[0], val[svind+1], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 					end
-					i=i+1
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
-				local i=1
 				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-				for sv3 in li:iterator() do
-					val[i] = sv3[0]:GetFloat()
-					i=i+1
+				for sv3, svind in li:iterator() do
+					val[svind+1] = sv3[0]:GetFloat()
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
 				val = objInfo[fi.name]~=true and objInfo[fi.name] or {}
-				local i=1
 				local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-				for sv3 in li:iterator() do
-					val[i] = MemoryManipulation.ReadObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
-					i=i+1
+				for sv3, svind in li:iterator() do
+					val[svind+1] = MemoryManipulation.ReadObj(sv3[0], val[svind+1], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], readFilter and readFilter[fi.name]~=true and readFilter[fi.name])
 				end
 				objInfo[fi.name] = val
 			elseif fi.datatype==nil then
@@ -432,10 +427,15 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 					end
 				elseif fi.datatype==MemoryManipulation.DataType.ObjectPointerList then
 					local li = MemoryManipulation.MemList.init(sv2, 4)
-					for sv3 in li:iterator() do
+					for sv3, svind in li:iterator() do
 						if sv3[0]:GetInt()>0 then
 							local vt = sv3[0][0]:GetInt()
-							local vtn = MemoryManipulation.VTableNames[vt]
+							local vtn = nil
+							if fi.indexAsKey then
+								vtn = svind
+							else
+								vtn = MemoryManipulation.VTableNames[vt]
+							end
 							if val[vtn] then
 								ret = MemoryManipulation.WriteObj(sv3[0], val[vtn], nil, noErrorOnCheck) or ret
 							end
@@ -446,42 +446,34 @@ function MemoryManipulation.WriteObj(sv, objInfo, fieldInfo, noErrorOnCheck)
 				elseif fi.datatype==MemoryManipulation.DataType.ListOfInt then
 					local li = MemoryManipulation.MemList.init(sv2, 4)
 					li:override(table.getn(val))
-					local i=1
-					for sv3 in li:iterator() do
-						sv3[0]:SetInt(val[i])
-						i=i+1
+					for sv3, svind in li:iterator() do
+						sv3[0]:SetInt(val[svind+1])
 					end
 					ret = true
 				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedObjectList then
 					local li = MemoryManipulation.MemList.init(sv2, 4*fi.objectSize)
 					li:override(table.getn(val))
-					local i=1
-					for sv3 in li:iterator() do
-						if val[i] then
-							ret = MemoryManipulation.WriteObj(sv3, val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+					for sv3, svind in li:iterator() do
+						if val[svind+1] then
+							ret = MemoryManipulation.WriteObj(sv3, val[svind+1], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
 						end
-						i=i+1
 					end
 				elseif fi.datatype==MemoryManipulation.DataType.String then
 					assert(false, "cannot write strings")
 				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthFloats then
 					local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-					local i=1
-					for sv3 in li:iterator() do
-						if val[i] then
-							sv3[0]:SetFloat(val[i])
+					for sv3, svind in li:iterator() do
+						if val[svind+1] then
+							sv3[0]:SetFloat(val[svind+1])
 							ret = true
 						end
-						i=i+1
 					end
 				elseif fi.datatype==MemoryManipulation.DataType.EmbeddedFixedLengthObjectPointers then
 					local li = MemoryManipulation.MemList.initManually(sv2, 4, fi.fixedLength)
-					local i=1
-					for sv3 in li:iterator() do
-						if val[i] then
-							ret = MemoryManipulation.WriteObj(sv3[0], val[i], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
+					for sv3, svind in li:iterator() do
+						if val[svind+1] then
+							ret = MemoryManipulation.WriteObj(sv3[0], val[svind+1], MemoryManipulation.ObjFieldInfo[fi.vtableOverride], noErrorOnCheck) or ret
 						end
-						i=i+1
 					end
 				end
 			end
@@ -760,6 +752,14 @@ MemoryManipulation.ClassVTable = {
 	
 	GGL_CBarrackBehaviorProperties = tonumber("778B34", 16),
 	GGL_CBarrackBehavior = tonumber("778A68", 16),
+	
+	GGL_CBuildingMerchantBehaviorProps = tonumber("7783B8", 16),
+	GGL_CBuildingMerchantBehavior = tonumber("778208", 16),
+	GGL_CBuildingMercenaryBehavior = tonumber("7782C0", 16),
+	GGL_CBuildingTechTraderBehavior = tonumber("77822C", 16),
+	GGL_CBuildingMerchantBehavior_COffer = tonumber("7781B4", 16),
+	GGL_CBuildingMercenaryBehavior_CMercenaryOffer = tonumber("778284", 16),
+	GGL_CBuildingTechTraderBehavior_CTechOffer = tonumber("7781C4", 16),
 	
 	-- CNetEvents
 	BB_CEvent = tonumber("762114", 16),
@@ -1479,6 +1479,12 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="TrainingTime", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehaviorProps] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehaviorProps,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+		},
+	},
 	-- behaviors
 	markerBehaviors=nil,
 	["EGL_CGLEBehavior"] = {-- no vtable known
@@ -1855,6 +1861,25 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="AnimSlot3", index={21}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="BehMultiSubAnimsSlot"},
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="ListOfOffers", index={7}, datatype=MemoryManipulation.DataType.ObjectPointerList, indexAsKey=true},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingMercenaryBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingMercenaryBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior},
+		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingTechTraderBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingTechTraderBehavior,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior},
+		fields = {
+		},
+	},
 	-- display props
 	markerDisplayProps=nil,
 	[MemoryManipulation.ClassVTable.ED_CDisplayEntityProps] = {
@@ -2120,6 +2145,27 @@ MemoryManipulation.ObjFieldInfo = {
 	},
 	-- misc stuff (embedded objects, helper tables...)
 	markerMiscStuff=nil,
+	[MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior_COffer] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior_COffer,
+		fields = {
+			{name="ResourceCosts", index={1}, datatype=MemoryManipulation.DataType.EmbeddedObject, vtableOverride="costInfo"},
+			{name="OffersRemaining", index={19}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingMercenaryBehavior_CMercenaryOffer] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingMercenaryBehavior_CMercenaryOffer,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior_COffer},
+		fields = {
+			{name="OfferedEntityType", index={20}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CBuildingTechTraderBehavior_CTechOffer] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingTechTraderBehavior_CTechOffer,
+		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior_COffer},
+		fields = {
+			{name="OfferedTechnologyType", index={20}, datatype=MemoryManipulation.DataType.Int, check=Technologies},
+		},
+	},
 	["Technology"] = {
 		hasNoVTable = true,
 		fields = {
