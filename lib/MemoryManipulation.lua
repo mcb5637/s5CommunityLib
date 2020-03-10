@@ -45,7 +45,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetSettlerOverheadWidget				Typ der Anzeige über dem settler (0->nur Name, 1->Name+Bar (auch für nicht Leader), 2->Worker,
 -- 																		3->Name+Bar (nur Leader), 4->Nix).
 -- - MemoryManipulation.Get/SetMovingEntityTargetPos				Die Zielposition, zu der ein Entity sich bewegt.
--- - MemoryManipulation.Get/SetEntityCamouflageRemaining			Die Zeit, die ein entity noch unsichtbar ist (nur standard-unsichtbarkeit, nicht Dieb).
+-- - MemoryManipulation.Get/SetEntityCamouflageRemaining			Die Zeit, die ein entity noch unsichtbar ist (nur standard-unsichtbarkeit, bei Dieb invis==15).
 -- - MemoryManipulation.GetEntityTimeToCamouflage					Die Zeit, die ein entity noch sichtbar ist (diebes-unsichtbarkeit, nicht standard).
 -- - MemoryManipulation.Get/SetHeroResurrectionTime					Die Zeit, bis ein Held wiederbelebt wird.
 -- - MemoryManipulation.Get/SetEntityLimitedLifespanRemainingSeconds	Die Zeit die ein LimitedLifespan entity noch lebt.
@@ -112,6 +112,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.SetBuildingMaxSleepers(id, sleepers)		Setzt die maximalen schlafplätze eines Wohnhauses.
 -- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
 -- - MemoryManipulation.SetMovingEntityTargetRotation(id, rot)		Setzt die Zielrotation eines entities.
+-- - MemoryManipulation.IsEntityInvisible(id)						Prüft, ob ein entity unsichtbar ist (kann nur bei dieb/ari true sein).
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit FrameworkWrapper).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit S5HookLoader).
@@ -760,6 +761,9 @@ MemoryManipulation.ClassVTable = {
 	GGL_CBuildingMerchantBehavior_COffer = tonumber("7781B4", 16),
 	GGL_CBuildingMercenaryBehavior_CMercenaryOffer = tonumber("778284", 16),
 	GGL_CBuildingTechTraderBehavior_CTechOffer = tonumber("7781C4", 16),
+	
+	GGL_CServiceBuildingBehaviorProperties = tonumber("774830", 16),
+	GGL_CMarketBehavior = tonumber("775CCC", 16),
 	
 	-- CNetEvents
 	BB_CEvent = tonumber("762114", 16),
@@ -1485,6 +1489,13 @@ MemoryManipulation.ObjFieldInfo = {
 		fields = {
 		},
 	},
+	[MemoryManipulation.ClassVTable.GGL_CServiceBuildingBehaviorProperties] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CServiceBuildingBehaviorProperties,
+		inheritsFrom = {MemoryManipulation.ClassVTable.EGL_CGLEBehaviorProps},
+		fields = {
+			-- InitialWorkAmount at 4?
+		},
+	},
 	-- behaviors
 	markerBehaviors=nil,
 	["EGL_CGLEBehavior"] = {-- no vtable known
@@ -1878,6 +1889,17 @@ MemoryManipulation.ObjFieldInfo = {
 		vtable = MemoryManipulation.ClassVTable.GGL_CBuildingTechTraderBehavior,
 		inheritsFrom = {MemoryManipulation.ClassVTable.GGL_CBuildingMerchantBehavior},
 		fields = {
+		},
+	},
+	[MemoryManipulation.ClassVTable.GGL_CMarketBehavior] = {
+		vtable = MemoryManipulation.ClassVTable.GGL_CMarketBehavior,
+		inheritsFrom = {"EGL_CGLEBehavior"},
+		fields = {
+			{name="SellResourceType", index={5}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="BuyResourceType", index={6}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="BuyAmount", index={7}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="SellAmount", index={8}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end},
+			{name="ProgressAmount", index={9}, datatype=MemoryManipulation.DataType.Float, check=function(a) return a>=0 end}, -- max is (BuyAmount+SellAmount)/10
 		},
 	},
 	-- display props
@@ -2647,6 +2669,13 @@ function MemoryManipulation.SetMovingEntityTargetRotation(id, rot)
 	local w = MemoryManipulation.ConvertToObjInfo("TargetRotationValid", 1)
 	MemoryManipulation.ConvertToObjInfo("TargetRotation", rot or 1, w)
 	assert(MemoryManipulation.WriteObj(S5Hook.GetEntityMem(id), w))
+end
+
+function MemoryManipulation.IsEntityInvisible(id)
+	assert(IsValid(id))
+	local w, t, a = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining", true)
+	MemoryManipulation.ReadObj(S5Hook.GetEntityMem(GetID(id)), w, nil, w)
+	return t[a] ~= true and t[a] > 0
 end
 
 function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)

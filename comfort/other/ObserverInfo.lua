@@ -6,7 +6,7 @@ end --mcbPacker.ignore
 
 ObserverInfo = {ObservedPlayers = {}, ObservedResearch = {}, ObservedUpgrade = {}, ShowLines = {}}
 
-function ObserverInfo.InitIfLocalSpecForAllPlayers()
+function ObserverInfo.InitIfLocalSpecForAllPlayers(guipath)
 	if GUI.GetPlayerID()==17 then
 		local p = {}
 		for i=1,XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer() do
@@ -14,11 +14,11 @@ function ObserverInfo.InitIfLocalSpecForAllPlayers()
 				table.insert(p, i)
 			end
 		end
-		ObserverInfo.Init(p)
+		ObserverInfo.Init(p, guipath)
 	end
 end
 
-function ObserverInfo.Init(players)
+function ObserverInfo.Init(players, guipath)
 	ObserverInfo.ObservedPlayers = players
 	ObserverInfo.GameCallback_StartResearch = GameCallback_StartResearch
 	function GameCallback_StartResearch(id, tech, state)
@@ -76,7 +76,7 @@ function ObserverInfo.Init(players)
 		end
 	end
 	if XGUIEng.GetWidgetID("ObserverInfo")==0 then
-		CWidget.Transaction_AddRawWidgetsFromFile("data/maps/externalmap/observerinfo.xml", "VideoPreview")
+		CWidget.Transaction_AddRawWidgetsFromFile(guipath or "data/maps/externalmap/observerinfo.xml", "VideoPreview")
 		--Script.Load("data/maps/externalmap/ObserverInfoGUI.lua")
 		CWidget.Transaction_Commit()
 	end
@@ -136,19 +136,30 @@ function ObserverInfo.UpdateWidget()
 end
 
 function ObserverInfo.AddResearch(id, tech)
-	table.insert(ObserverInfo.ObservedResearch, {id=id, tech=tech, progressActive=false, timer=Logic.GetTime(), player=GetPlayer(id)})
+	ObserverInfo.InsertByPlayer(ObserverInfo.ObservedResearch, {id=id, tech=tech, progressActive=false, timer=Logic.GetTime(), player=GetPlayer(id)})
 end
 
 function ObserverInfo.AddUpgrade(id)
-	table.insert(ObserverInfo.ObservedUpgrade, {id=id, type=ObserverInfo.GetNextETypeInUCat(Logic.GetEntityType(id)), timer=Logic.GetTime(), player=GetPlayer(id), build=false})
+	ObserverInfo.InsertByPlayer(ObserverInfo.ObservedUpgrade, {id=id, type=ObserverInfo.GetNextETypeInUCat(Logic.GetEntityType(id)), timer=Logic.GetTime(), player=GetPlayer(id), build=false})
 end
 
 function ObserverInfo.AddBuild(id)
-	table.insert(ObserverInfo.ObservedUpgrade, {id=id, type=Logic.GetEntityType(id), timer=Logic.GetTime(), player=GetPlayer(id), build=true})
+	ObserverInfo.InsertByPlayer(ObserverInfo.ObservedUpgrade, {id=id, type=Logic.GetEntityType(id), timer=Logic.GetTime(), player=GetPlayer(id), build=true})
 end
 
 function ObserverInfo.AddLine(pl, txt)
-	table.insert(ObserverInfo.ShowLines, {player=pl, txt=txt, timer=Logic.GetTime()})
+	ObserverInfo.InsertByPlayer(ObserverInfo.ShowLines, {player=pl, txt=txt, timer=Logic.GetTime()})
+end
+
+function ObserverInfo.InsertByPlayer(t, ins)
+	local p = ins.player
+	for i=1,table.getn(t) do
+		if t[i].player > p then
+			table.insert(t, i, ins)
+			return
+		end
+	end
+	table.insert(t, ins)
 end
 
 function ObserverInfo.GetPlayerColoredName(p)
@@ -166,10 +177,11 @@ function ObserverInfo.GetBuildingTypeName(ty)
 end
 
 function ObserverInfo.GetResearchTextLine(r)
-	if IsDead(r.id) or Logic.GetTechnologyResearchedAtBuilding(r.id)~=r.tech then
+	if IsDead(r.id) or Logic.GetTechnologyResearchedAtBuilding(r.id)~=r.tech or r.cancelled then
 		if r.timer+15<Logic.GetTime() then
 			return "", true
 		end
+		r.cancelled = true
 		return " @cr "..ObserverInfo.GetPlayerColoredName(r.player)..ObserverInfo.GetTechName(r.tech)..(r.progressActive and " cancelled" or " 0%")
 	end
 	r.progressActive = true
@@ -191,21 +203,23 @@ end
 
 function ObserverInfo.GetUpgradeLine(r)
 	if r.build then
-		local prog = ObserverInfo.ReadBuildProgress(r.id)
-		if IsDead(r.id) then
+		if IsDead(r.id) or r.cancelled then
 			if r.timer+15<Logic.GetTime() then
 				return "", true
 			end
+			r.cancelled = true
 			return " @cr "..ObserverInfo.GetPlayerColoredName(r.player)..ObserverInfo.GetBuildingTypeName(r.type).." cancelled"
 		end
 		r.timer = Logic.GetTime()
-		local prog = math.floor(prog*100)
+		local prog = ObserverInfo.ReadBuildProgress(r.id)
+		prog = math.floor(prog*100)
 		return " @cr "..ObserverInfo.GetPlayerColoredName(r.player)..ObserverInfo.GetBuildingTypeName(r.type).." "..prog.."%"
 	else
-		if IsDead(r.id) or Logic.GetRemainingUpgradeTimeForBuilding(r.id)==Logic.GetTotalUpgradeTimeForBuilding(r.id) then
+		if IsDead(r.id) or Logic.GetRemainingUpgradeTimeForBuilding(r.id)==Logic.GetTotalUpgradeTimeForBuilding(r.id) or r.cancelled then
 			if r.timer+15<Logic.GetTime() then
 				return "", true
 			end
+			r.cancelled = true
 			return " @cr "..ObserverInfo.GetPlayerColoredName(r.player)..ObserverInfo.GetBuildingTypeName(r.type).." cancelled"
 		end
 		r.timer = Logic.GetTime()
