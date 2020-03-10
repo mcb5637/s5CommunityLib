@@ -1,4 +1,6 @@
+if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
+end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v1.1
 -- Neue Funktion auf Grundlage von KreisPosition von Noigi.
