@@ -53,7 +53,7 @@ end --mcbPacker.ignore
 -- 
 -- Benötigt:
 -- - CopyTable
--- - S5Hook
+-- - S5Hook (optional, aber ohne eingeschränkte funktionalität (Heldenfähigkeiten und zielfindung))
 -- - PredicateHelper
 -- - MemoryManipulation (optional, ignoriert diebe/ari in camo)
 -- - GetDistance
@@ -255,18 +255,18 @@ function UnlimitedArmy:DoHeroAbilities(id, nume)
 						acf.Use(self, id, p.X+GetRandom(-500,500), p.Y+GetRandom(-500,500)) -- command should be ignored with invalid position
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyEntity then
 						if acf.PrefersBackline then
-							local tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, Predicate.OfCategory(EntityCategories.Leader))
+							local tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
 							if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 								acf.Use(self, id, tid)
 							end
 						else
-							local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, Predicate.OfCategory(EntityCategories.Leader))
+							local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
 							if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 								acf.Use(self, id, tid)
 							end
 						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyBuilding then
-						local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, Predicate.IsBuilding())
+						local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, nil, true)
 						if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 							acf.Use(self, id, tid)
 						end
@@ -514,37 +514,51 @@ function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 	})
 end
 
-function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, ...)
+function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
 	if p == invalidPosition then
 		return nil
 	end
-	for id in S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
+	if not S5Hook then
+		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
+	end
+	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
 		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
-		Predicate.InCircle(p.X, p.Y, area), unpack(arg)
-	) do
+		Predicate.InCircle(p.X, p.Y, area)
+	}
+	if leader then
+		table.insert(pred, Predicate.OfCategory(EntityCategories.Leader))
+	end
+	if building then
+		table.insert(pred, Predicate.IsBuilding())
+	end
+	for id in S5Hook.EntityIterator(unpack(pred)) do
 		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
 			return id
 		end
 	end
 end
 
-function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, ...)
+function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
 	if p == invalidPosition then
 		return nil
 	end
-	local r, d = nil, nil
-	local iter = nil
-	if area then
-		iter = S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
-			PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
-			Predicate.InCircle(p.X, p.Y, area), unpack(arg)
-		)
-	else
-		iter = S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
-			PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray), unpack(arg)
-		)
+	if not S5Hook then
+		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
 	end
-	for id in iter do
+	local r, d = nil, nil
+	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
+		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray)
+	}
+	if area then
+		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
+	end
+	if leader then
+		table.insert(pred, Predicate.OfCategory(EntityCategories.Leader))
+	end
+	if building then
+		table.insert(pred, Predicate.IsBuilding())
+	end
+	for id in S5Hook.EntityIterator(unpack(pred)) do
 		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
 			local cd = GetDistance(id, p)
 			if not d or cd < d then
@@ -555,23 +569,27 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, ...)
 	return r
 end
 
-function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, ...)
+function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
 	if p == invalidPosition then
 		return nil
 	end
-	local r, d = nil, nil
-	local iter = nil
-	if area then
-		iter = S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
-			PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
-			Predicate.InCircle(p.X, p.Y, area), unpack(arg)
-		)
-	else
-		iter = S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
-			PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray), unpack(arg)
-		)
+	if not S5Hook then
+		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
 	end
-	for id in iter do
+	local r, d = nil, nil
+	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
+		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray)
+	}
+	if area then
+		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
+	end
+	if leader then
+		table.insert(pred, Predicate.OfCategory(EntityCategories.Leader))
+	end
+	if building then
+		table.insert(pred, Predicate.IsBuilding())
+	end
+	for id in S5Hook.EntityIterator(unpack(pred)) do
 		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
 			local cd = GetDistance(id, p)
 			if not d or cd > d then
@@ -596,6 +614,17 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
 		end
 	end
 	return num
+end
+
+function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
+	for i=1, 8 do
+		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
+			local _, id = Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 1)
+			if IsValid(id) then
+				return id
+			end
+		end
+	end
 end
 
 function UnlimitedArmy.IsLeaderIdleOrMoving(id)
