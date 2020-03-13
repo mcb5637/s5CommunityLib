@@ -43,13 +43,15 @@ end --mcbPacker.ignore
 -- Army:ClearCommandQueue()						leert die auftragsliste.
 -- Army:AddCommandMove(p, looped)				fügt einen bewegungsbefehl hinzu (beendet sofort).
 -- Army:AddCommandFlee(p, looped)				fügt einen bewegungsbefehl ohne kampf hinzu (beendet sofort).
--- Army:AddCommandDefend(looped)				fügt einen verteidigungsbefehl hinzu (beendet wenn keine leader mehr übrig).
+-- Army:AddCommandDefend(pos, area, looped)		fügt einen verteidigungsbefehl hinzu (beendet wenn keine leader mehr übrig)(pos/area optional).
 -- Army:AddCommandWaitForIdle(looped)			fügt einen befehl hinzu um darauf zu warten bis die armee idle ist.
 -- Army:AddCommandLuaFunc(func, looped)			fügt eine lua funktion als command hinzu. diese hat 2 return werte:
 -- 													1->weiter zum nächsten command.
 -- 													2->temporärer command, der diesen tick ausgeführt wird (kann nil sein).
 -- Army:AddCommandAttackNearestTarget(maxrange, looped)
 -- 												fügt einen angriffsbefehl auf dan nächste ziel in maxrange hinzu (maxrange kann nil sein für ganze map) (beendet sofort).
+-- Army:CreateLeaderForArmy(ety, sol, pos, experience)
+-- 												erstellt einen leader und verbindet ihn mit der army.
 -- 
 -- Benötigt:
 -- - CopyTable
@@ -133,6 +135,9 @@ function UnlimitedArmy:AddLeader(id)
 	self:CheckValidArmy()
 	id = GetID(id)
 	table.insert(self.Leaders, id)
+	if not self.Target then
+		self.Target = GetPosition(id)
+	end
 	self.HadOneLeader = true
 	self:RequireNewFormat()
 end
@@ -146,6 +151,11 @@ function UnlimitedArmy:RemoveLeader(id)
 		end
 	end
 	self:RequireNewFormat()
+end
+
+function UnlimitedArmy:CreateLeaderForArmy(ety, sol, pos, experience)
+	self:CheckValidArmy()
+	self:AddLeader(AI.Entity_CreateFormation(self.Player, ety, nil, sol, pos.X, pos.Y, nil, nil, experience or 0, 0))
 end
 
 function UnlimitedArmy:RequireNewFormat()
@@ -386,7 +396,9 @@ function UnlimitedArmy:ProcessCommandQueue()
 			if IsValid(tid) then
 				self.Target = GetPosition(tid)
 				self.ReMove = true
-				self:AdvanceCommand()
+				if com == self.CommandQueue[1] then
+					self:AdvanceCommand()
+				end
 			end
 		end
 	end
