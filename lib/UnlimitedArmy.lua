@@ -107,7 +107,13 @@ function UnlimitedArmy:Tick()
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
 		end
+		if self.Spawner then
+			self.Spawner:Tick()
+		end
 		return
+	end
+	if self.Spawner then
+		self.Spawner:Tick()
 	end
 	local preventfurthercommands = false
 	self:CheckBattle()
@@ -640,7 +646,13 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 end
 
 function UnlimitedArmy.IsLeaderIdleOrMoving(id)
+	if IsDead(id) then
+		return false
+	end
 	local tl = Logic.GetCurrentTaskList(id)
+	if not tl then
+		return false
+	end
 	if (string.find(tl, "WALK") or string.find(tl, "IDLE")) and not string.find(tl, "BATTLE") then
 		return true
 	end
@@ -648,7 +660,13 @@ function UnlimitedArmy.IsLeaderIdleOrMoving(id)
 end
 
 function UnlimitedArmy.IsLeaderIdle(id)
+	if IsDead(id) then
+		return false
+	end
 	local tl = Logic.GetCurrentTaskList(id)
+	if not tl then
+		return false
+	end
 	if string.find(tl, "IDLE") then
 		return true
 	end
@@ -656,7 +674,13 @@ function UnlimitedArmy.IsLeaderIdle(id)
 end
 
 function UnlimitedArmy.IsLeaderMoving(id)
+	if IsDead(id) then
+		return false
+	end
 	local tl = Logic.GetCurrentTaskList(id)
+	if not tl then
+		return false
+	end
 	if string.find(tl, "WALK") then
 		return true
 	end
