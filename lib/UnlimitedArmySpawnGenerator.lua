@@ -20,6 +20,9 @@ end --mcbPacker.ignore
 -- 			Generator,
 -- 			FreeArea,
 -- 		})
+-- 	
+-- - Spawner:Remove()									entfernt den spawner.
+-- - Spawner:IsDead()									gibt zurück, ob der spawngenerator tot (und der spawner somit nutzlos) ist.
 -- 
 -- Benötigt:
 -- - CopyTable
@@ -52,6 +55,10 @@ end
 
 function UnlimitedArmySpawnGenerator:Tick()
 	self:CheckValidSpawner()
+	if self:IsDead() then
+		self:Remove()
+		return
+	end
 	self.CCounter = self.CCounter - 1
 	if self.CCounter <= 0 and self.Army:GetSize()<self.ArmySize and self:IsSpawnPossible() then
 		self.CCounter = self.SpawnCounter
@@ -61,6 +68,9 @@ end
 
 function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 	self:CheckValidSpawner()
+	if self:IsDead() then
+		return false
+	end
 	if self.FreeArea then
 		local id = UnlimitedArmy.GetFirstEnemyInArea(self.Pos, self.Army.Player, self.FreeArea)
 		return IsDead(id)

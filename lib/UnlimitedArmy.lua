@@ -56,7 +56,7 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - CopyTable
 -- - S5Hook (optional, aber ohne eingeschränkte funktionalität (Heldenfähigkeiten und zielfindung))
--- - PredicateHelper
+-- - PredicateHelper (optional, siehe hook)
 -- - MemoryManipulation (optional, ignoriert diebe/ari in camo)
 -- - GetDistance
 -- - IsEntityOfType
