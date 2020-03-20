@@ -113,6 +113,8 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.GetEntityModel(id)							Gibt das im moment genutzte model eines entities zurück.
 -- - MemoryManipulation.SetMovingEntityTargetRotation(id, rot)		Setzt die Zielrotation eines entities.
 -- - MemoryManipulation.IsEntityInvisible(id)						Prüft, ob ein entity unsichtbar ist (kann nur bei dieb/ari true sein).
+-- - MemoryManipulation.HurtLeader(id, dmg, noKill)					Verletzt ein Entity unter berücksichtigung der soldaten eines leaders (return kills, übriger schaden).
+-- - MemoryManipulation.HealLeader(id, heal)						Heilt ein entity unter berücksichtigung der soldaten eines leaders (return übriger heal).
 -- 
 -- - MemoryManipulation.OnLeaveMap()								Muss beim verlassen der map aufgerufen werden (automatisch mit FrameworkWrapper).
 -- - MemoryManipulation.OnLoadMap()									Muss beim starten der Map aufgerufen werden (automatisch mit S5HookLoader).
@@ -2676,6 +2678,74 @@ function MemoryManipulation.IsEntityInvisible(id)
 	local w, t, a = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining", true)
 	MemoryManipulation.ReadObj(S5Hook.GetEntityMem(GetID(id)), w, nil, w)
 	return t[a] ~= true and t[a] > 0
+end
+
+function MemoryManipulation.HurtLeader(id, dmg, noKill)
+	if MemoryManipulation.IsSoldier(id) then
+		id = MemoryManipulation.GetLeaderOfSoldier(id)
+	end
+	local kills = {}
+	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>0 then
+		local shp, hpsol = MemoryManipulation.GetLeaderTroopHealth(id), MemoryManipulation.GetEntityTypeMaxHealth(Logic.LeaderGetSoldiersType(id))
+		local numsol = Logic.LeaderGetNumberOfSoldiers(id)
+		if shp <= -1 then
+			shp = hpsol * numsol
+		end
+		
+		if shp >= dmg then
+			shp = shp - dmg
+			dmg = 0
+		else
+			dmg = dmg - shp
+			shp = 0
+		end
+		local newsol = math.ceil(shp/hpsol)
+		local d = {Logic.GetSoldiersAttachedToLeader(id)}
+		table.remove(d, 1)
+		for i=1, numsol-newsol do
+			if not noKill then
+				Logic.HurtEntity(d[i], hpsol)
+			end
+			table.insert(kills, d[i])
+		end
+		MemoryManipulation.SetLeaderTroopHealth(id, shp)
+	end
+	local ehp = Logic.GetEntityHealth(id)
+	if ehp<=dmg then
+		if not noKill then
+			Logic.HurtEntity(id, dmg)
+		end
+		dmg = dmg - ehp
+		table.insert(kills, id)
+	else
+		Logic.HurtEntity(id, dmg)
+		dmg = 0
+	end
+	return kills, dmg
+end
+
+function MemoryManipulation.HealLeader(id, heal)
+	if MemoryManipulation.IsSoldier(id) then
+		id = MemoryManipulation.GetLeaderOfSoldier(id)
+	end
+	local lmiss = Logic.GetEntityMaxHealth(id)-Logic.GetEntityHealth(id)
+	if lmiss > 0 then
+		local h = math.min(lmiss, heal)
+		Logic.HealEntity(id, h)
+		heal = heal - h
+	end
+	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>0 then
+		local shp, hpsol = MemoryManipulation.GetLeaderTroopHealth(id), MemoryManipulation.GetEntityTypeMaxHealth(Logic.LeaderGetSoldiersType(id))
+		local numsol = Logic.LeaderGetNumberOfSoldiers(id)
+		if shp <= -1 then
+			return heal
+		end
+		local hpmax = hpsol * numsol
+		local h = math.min(hpmax-shp, heal)
+		heal = heal - h
+		MemoryManipulation.SetLeaderTroopHealth(id, shp+h)
+	end
+	return heal
 end
 
 function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
