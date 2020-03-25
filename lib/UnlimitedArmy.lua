@@ -5,8 +5,10 @@ mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
+mcbPacker.require("s5CommunityLib/comfort/entity/ConvertEntityCallback")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetCirclePosition")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetAngleBetween")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -62,6 +64,7 @@ end --mcbPacker.ignore
 -- - IsEntityOfType
 -- - GetCirclePosition
 -- - GetAngleBetween
+-- - TriggerFix
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil,
@@ -842,21 +845,10 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityConvertSettlers] = {
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.EnemyEntity,
 	PrefersBackline = true,
 	Use = function(army, id, tid)
-		PostEvent.HeroConvertSettlerAbility(id, tid) -- TODO get id of converted and add to army
-		--[[StartSimpleJob(function(id, tid, army, t)
-			t.t = t.t - 1
-			if Logic.GetCurrentTaskList(id)~="TL_CONVERT_SETTLERS" and t.t<0 then
-				if IsDestroyed(tid) then
-					tid = entityIdChangedHelper.getNewID(id)
-				end
-				if IsAlive(tid) and GetPlayer(tid)==army.Player then
-					army:AddLeader(tid)
-					Message("found")
-				end
-				Message("end")
-				return true
-			end
-		end, id, tid, army, {t=2})]]
+		--PostEvent.HeroConvertSettlerAbility(id, tid)
+		ConvertEntityCallback(id, tid, function(nid, army)
+			army:AddLeader(nid)
+		end, army)
 	end,
 	Range = 1400,
 	IsInstant = false,
@@ -901,6 +893,14 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityPlaceKeg] = {
 	IsInstant = false,
 	RequiredEnemiesInArea = 1,
 	TargetCooldown = 30,
+	BridgeEntitytypes = {
+		Entities.PB_Bridge1,
+		Entities.PB_Bridge2,
+		Entities.PB_Bridge3,
+		Entities.PB_Bridge4,
+		Entities.XD_DrawBridgeOpen1,
+		Entities.XD_DrawBridgeOpen2,
+	},
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 	RequiresHook = false,
