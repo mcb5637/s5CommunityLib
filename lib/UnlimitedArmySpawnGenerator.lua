@@ -106,7 +106,7 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 			table.insert(self.LeaderDesc, d)
 		end
 	end
-	if not self.LeaderDesc then
+	if not self.LeaderDesc[1] then
 		self:Remove()
 		return true
 	end
