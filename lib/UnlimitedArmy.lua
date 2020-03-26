@@ -540,7 +540,7 @@ function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
 	end
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
 		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
@@ -564,7 +564,7 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
@@ -595,7 +595,7 @@ function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEntitiesInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
@@ -624,6 +624,21 @@ end
 function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
 	if p == invalidPosition then
 		return 0
+	end
+	if not S5Hook then
+		local num = 0
+		for p2=1,8 do
+			if Logic.GetDiplomacyState(player, p2)==Diplomacy.Hostile then
+				local d = {Logic.GetPlayerEntitiesInArea(p2, 0, p.X, p.Y, area, 16)}
+				table.remove(d, 1)
+				for _,id in ipairs(d) do
+					if Logic.IsSettler(id)==1 or Logic.IsBuilding(id)==1 then
+						num = num + 1
+					end
+				end
+			end
+		end
+		return num
 	end
 	local num = 0
 	for id in S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
