@@ -179,7 +179,7 @@ function TriggerFix.ShowErrorMessage(txt)
 end
 GUIUpdate_UpdateDebugInfo = function()
 	local txt = ""
-	for k,v in ipairs(TriggerFix.ShowErrorMessagetext) do
+	for k,v in ipairs(TriggerFix.ShowErrorMessageText) do
 		txt = txt.." @color:255,0,0 "..v.." @cr "
 	end
 	XGUIEng.SetText("DebugWindow", txt)
