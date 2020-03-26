@@ -27,7 +27,7 @@
 -- Benötigt:
 -- 	- S5Hook (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
-TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, errtext={}, xpcallTimeMsg=false, currentEvent=nil}
+TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil}
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
 
 function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
@@ -171,9 +171,9 @@ function TriggerFix.ShowErrorMessage(txt)
 	end
 	Message("@color:255,0,0 Err:")
 	Message(txt)
-	table.insert(TriggerFix.ShowErrorMessagetext, txt)
-	if table.getn(TriggerFix.ShowErrorMessagetext) > 15 then
-		table.remove(TriggerFix.ShowErrorMessagetext)
+	table.insert(TriggerFix.ShowErrorMessageText, txt)
+	if table.getn(TriggerFix.ShowErrorMessageText) > 15 then
+		table.remove(TriggerFix.ShowErrorMessageText)
 	end
 	XGUIEng.ShowWidget("DebugWindow", 1)
 end
