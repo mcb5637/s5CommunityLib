@@ -311,7 +311,7 @@ function UnlimitedArmy:DoBattleCommands()
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area)
 	for _,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume)
-		if UnlimitedArmy.IsLeaderIdleOrMoving(id) and not UnlimitedArmy.IsNonCombatEntity(id) then
+		if not UnlimitedArmy.IsLeaderInBattle(id) and not UnlimitedArmy.IsNonCombatEntity(id) then
 			if DoCommands and UnlimitedArmy.IsRangedEntity(id) then
 				Logic.GroupAttack(id, self.CurrentBattleTarget)
 			elseif DoCommands then
@@ -663,46 +663,28 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 	end
 end
 
-function UnlimitedArmy.IsLeaderIdleOrMoving(id)
+function UnlimitedArmy.IsLeaderInBattle(id)
 	if IsDead(id) then
 		return false
 	end
-	local tl = Logic.GetCurrentTaskList(id)
-	if not tl then
-		return false
-	end
-	if (string.find(tl, "WALK") or string.find(tl, "IDLE")) and not string.find(tl, "BATTLE") then
-		return true
-	end
-	return false
+	local com = Logic.LeaderGetCurrentCommand(id)
+	return com==0 or com==5 or com==10
 end
 
 function UnlimitedArmy.IsLeaderIdle(id)
 	if IsDead(id) then
 		return false
 	end
-	local tl = Logic.GetCurrentTaskList(id)
-	if not tl then
-		return false
-	end
-	if string.find(tl, "IDLE") then
-		return true
-	end
-	return false
+	local com = Logic.LeaderGetCurrentCommand(id)
+	return com==3 or com==7
 end
 
 function UnlimitedArmy.IsLeaderMoving(id)
 	if IsDead(id) then
 		return false
 	end
-	local tl = Logic.GetCurrentTaskList(id)
-	if not tl then
-		return false
-	end
-	if string.find(tl, "WALK") then
-		return true
-	end
-	return false
+	local com = Logic.LeaderGetCurrentCommand(id)
+	return com==8 or com==5 or com==4
 end
 
 function UnlimitedArmy.IsRangedEntity(id)
