@@ -26,6 +26,8 @@ end --mcbPacker.ignore
 -- 			-- optional
 -- 			AutoDestroyIfEmpty,
 -- 			Formation,
+-- 			PrepDefense,
+-- 			DestroyBridges,
 -- 		})
 -- 
 -- Army.Player
@@ -67,7 +69,7 @@ end --mcbPacker.ignore
 -- - TriggerFix
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
-	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil,
+	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -91,8 +93,11 @@ function UnlimitedArmy.New(data)
 	self.Formation = data.Formation or UnlimitedArmy.Formations.Chaotic
 	self.AutoDestroyIfEmpty = data.AutoDestroyIfEmpty
 	self.HadOneLeader = false
+	self.PrepDefense = data.PrepDefense
+	self.DestroyBridges = data.DestroyBridges
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
+	self.FormationResets = {}
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(self.Tick, self)
 	return self
@@ -119,25 +124,39 @@ function UnlimitedArmy:Tick()
 		self.Spawner:Tick()
 	end
 	local preventfurthercommands = false
-	self:CheckBattle()
+	if IsDead(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
+		self.CurrentBattleTarget = self:GetFirstEnemyInArmyRange()
+	end
 	if not preventfurthercommands and self.Status ~= UnlimitedArmy.Status.MovingNoBattle and IsValid(self.CurrentBattleTarget) then
-		self.Status = UnlimitedArmy.Status.Battle
-		self:DoBattleCommands()
+		self:CheckStatus(UnlimitedArmy.Status.Battle)
 		preventfurthercommands = true
 	end
 	if not preventfurthercommands and GetDistance(self:GetPosition(), self.Target)>1000 then
 		if self.Status ~= UnlimitedArmy.Status.MovingNoBattle and self.Status ~= UnlimitedArmy.Status.Moving then
-			self.Status = UnlimitedArmy.Status.Moving
+			self:CheckStatus(UnlimitedArmy.Status.Moving)
 		end
-		self:DoMoveCommands()
 		preventfurthercommands = true
 	end
-	if not preventfurthercommands and self.Status ~= UnlimitedArmy.Status.Idle then
-		self.Status = UnlimitedArmy.Status.Idle
-		self:DoFormationCommands()
+	if not preventfurthercommands then
+		self:CheckStatus(UnlimitedArmy.Status.Idle)
 		preventfurthercommands = true
 	end
 	self:ProcessCommandQueue()
+	if self.Status == UnlimitedArmy.Status.Battle then
+		self:DoBattleCommands()
+	elseif self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.MovingNoBattle then
+		self:DoMoveCommands()
+	elseif self.Status == UnlimitedArmy.Status.Idle then
+		self:DoFormationCommands()
+	end
+end
+
+function UnlimitedArmy:CheckStatus(st)
+	self:CheckValidArmy()
+	if self.Status ~= st then
+		self.Status = st
+		self.ReMove = true
+	end
 end
 
 function UnlimitedArmy:AddLeader(id)
@@ -236,7 +255,7 @@ function UnlimitedArmy:CheckHeroTargetingCache(tid, d)
 	return false
 end
 
-function UnlimitedArmy:DoHeroAbilities(id, nume)
+function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 	self:CheckValidArmy()
 	if Logic.IsHero(id)==0 and not UnlimitedArmy.IsNonCombatEntity(id) then
 		return false
@@ -246,18 +265,24 @@ function UnlimitedArmy:DoHeroAbilities(id, nume)
 		if not (noninstant and acf.IsInstant) then
 			if Logic.HeroIsAbilitySupported(id, ab)==1 and Logic.HeroGetAbiltityChargeSeconds(id, ab)==Logic.HeroGetAbilityRechargeTime(id, ab) then
 				local executeAbility = true
-				if acf.RequiredEnemiesInArea then
-					if acf.RequiredRange then
-						if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange) < acf.RequiredEnemiesInArea then
-							executeAbility = false
-						end
-					else
-						if nume < acf.RequiredEnemiesInArea then
-							executeAbility = false
+				if combat and acf.Combat then
+					if acf.RequiredEnemiesInArea then
+						if acf.RequiredRange then
+							if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange) < acf.RequiredEnemiesInArea then
+								executeAbility = false
+							end
+						else
+							if nume < acf.RequiredEnemiesInArea then
+								executeAbility = false
+							end
 						end
 					end
+				elseif prepdefense and acf.PrepDefense then
+					executeAbility = true
+				else
+					executeAbility = false
 				end
-				if acf.PreventUse and acf.PreventUse(self, id) then
+				if acf.PreventUse and acf.PreventUse(self, id, combat, prepdefense) then
 					executeAbility = false
 				end
 				if acf.RequiresHook and not S5Hook then
@@ -271,26 +296,28 @@ function UnlimitedArmy:DoHeroAbilities(id, nume)
 						acf.Use(self, id, p.X, p.Y)
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.FreePos then
 						local p = GetPosition(id)
-						acf.Use(self, id, p.X+GetRandom(-500,500), p.Y+GetRandom(-500,500)) -- command should be ignored with invalid position
+						local a = math.floor(self.Area / 1000)
+						acf.Use(self, id, p.X+(GetRandom(a,a)*100), p.Y+(GetRandom(a,a)*100)) -- command should be ignored with invalid position
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyEntity then
+						local tid = nil
 						if acf.PrefersBackline then
-							local tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
-							if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
-								acf.Use(self, id, tid)
-							end
+							tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
 						else
-							local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
-							if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
-								acf.Use(self, id, tid)
-							end
+							tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
+						end
+						if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
+							acf.Use(self, id, tid)
 						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyBuilding then
 						local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, nil, true)
+						if IsDestroyed(tid) and acf.TargetBridgesAsSecondaryTargetIfAllowed and self.DestroyBridges then
+							tid = UnlimitedArmy.GetNearestBridgeInArea(GetPosition(id), self.Player, acf.Range, UnlimitedArmy.BridgeEntityTypes)
+						end
 						if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 							acf.Use(self, id, tid)
 						end
 					end
-					noninstant = acf.IsInstant
+					noninstant = not acf.IsInstant
 				end
 			end
 		end
@@ -298,20 +325,13 @@ function UnlimitedArmy:DoHeroAbilities(id, nume)
 	return noninstant
 end
 
-function UnlimitedArmy:CheckBattle()
-	self:CheckValidArmy()
-	if IsDead(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
-		self.CurrentBattleTarget = self:GetFirstEnemyInArmyRange()
-	end
-end
-
 function UnlimitedArmy:DoBattleCommands()
 	self:CheckValidArmy()
 	local tpos = GetPosition(self.CurrentBattleTarget)
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area)
 	for _,id in ipairs(self.Leaders) do
-		local DoCommands = not self:DoHeroAbilities(id, nume)
-		if not UnlimitedArmy.IsLeaderInBattle(id) and not UnlimitedArmy.IsNonCombatEntity(id) then
+		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
+		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id)) and not UnlimitedArmy.IsNonCombatEntity(id) then
 			if DoCommands and UnlimitedArmy.IsRangedEntity(id) then
 				Logic.GroupAttack(id, self.CurrentBattleTarget)
 			elseif DoCommands then
@@ -319,6 +339,7 @@ function UnlimitedArmy:DoBattleCommands()
 			end
 		end
 	end
+	self.ReMove = false
 end
 
 function UnlimitedArmy:DoMoveCommands()
@@ -341,7 +362,24 @@ end
 
 function UnlimitedArmy:DoFormationCommands()
 	self:CheckValidArmy()
-	self:Formation(self.Target)
+	if self.ReMove then
+		self:Formation(self.Target)
+	elseif self.PrepDefense and self:IsIdle() then
+		for _,id in ipairs(self.Leaders) do
+			if Logic.LeaderGetCurrentCommand(id)~=10 then
+				local p = GetPosition(id)
+				p.r = Logic.GetEntityOrientation(id)
+				local reset = self:DoHeroAbilities(id, 0, false, true)
+				if reset then
+					self.FormationResets[id] = p
+				elseif self.FormationResets[id] then
+					UnlimitedArmy.MoveAndSetTargetRotation(id, self.FormationResets[id], self.FormationResets[id].r)
+					self.FormationResets[id] = nil
+				end
+			end
+		end
+	end
+	self.ReMove = false
 end
 
 function UnlimitedArmy:ProcessCommandQueue()
@@ -359,7 +397,12 @@ function UnlimitedArmy:ProcessCommandQueue()
 		end
 		if com.c == UnlimitedArmy.CommandType.Move then
 			self.Target = com.pos
-			self.ReMove = true
+			if self.Status ~= UnlimitedArmy.Status.Battle then
+				self.Status = UnlimitedArmy.Status.Moving
+			end
+			if self.Status == UnlimitedArmy.Status.Moving then
+				self.ReMove = true
+			end
 			if com == self.CommandQueue[1] then
 				self:AdvanceCommand()
 			end
@@ -379,19 +422,20 @@ function UnlimitedArmy:ProcessCommandQueue()
 					self:AdvanceCommand()
 				end
 				self.Target = com.area
-				self.ReMove = true
 			elseif GetDistance(self:GetPosition(), com.pos) > com.distArea then
 				self.Status = UnlimitedArmy.Status.MovingNoBattle
 				self.Target = com.pos
 				self.ReMove = true
-			elseif self:IsIdle() then
+			elseif self.Status ~= UnlimitedArmy.Status.Battle then
 				local tid = UnlimitedArmy.GetFirstEnemyInArea(com.pos, self.Player, com.distArea)
 				if IsValid(tid) then
 					self.Target = GetPosition(tid)
 					self.ReMove = true
-				else
+					self.Status = UnlimitedArmy.Status.Moving
+				elseif GetDistance(self.Target, com.pos)>100 then
 					self.Target = com.pos
 					self.ReMove = true
+					self.Status = UnlimitedArmy.Status.Moving
 				end
 			end
 		elseif com.c == UnlimitedArmy.CommandType.WaitForIdle then
@@ -404,7 +448,10 @@ function UnlimitedArmy:ProcessCommandQueue()
 			local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange)
 			if IsValid(tid) then
 				self.Target = GetPosition(tid)
-				self.ReMove = true
+				if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
+					self.ReMove = true
+					self.Status = UnlimitedArmy.Status.Moving
+				end
 				if com == self.CommandQueue[1] then
 					self:AdvanceCommand()
 				end
@@ -652,6 +699,31 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
 	return num
 end
 
+function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
+	if p == invalidPosition then
+		return nil
+	end
+	if not S5Hook then
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, false, false)
+	end
+	local r, d = nil, nil
+	local pred = {
+		PredicateHelper.GetETypePredicate(etypes)
+	}
+	if area then
+		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
+	end
+	for id in S5Hook.EntityIterator(unpack(pred)) do
+		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+			local cd = GetDistance(id, p)
+			if not d or cd < d then
+				r, d = id, cd
+			end
+		end
+	end
+	return r
+end
+
 function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 	for i=1, 8 do
 		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
@@ -809,6 +881,7 @@ UnlimitedArmy.HeroAbilityTargetType = {FreePos=1,Self=2,EnemyEntity=3,Pos=4,Enem
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityBuildCannon] = {
 	RequiresHook = true,
 	Combat = true,
+	PrepDefense = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.FreePos,
 	Use = function(army, id, x, y)
 		local bt, tt = nil, nil
@@ -879,25 +952,18 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityPlaceBomb] = {
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityPlaceKeg] = {
 	RequiresHook = true,
 	Combat = true,
+	PrepDefense = true, -- with this, thieves can target bridges in idle
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.EnemyBuilding,
 	Use = function(army, id, tid)
 		PostEvent.ThiefSabotage(id, tid)
 	end,
-	Range = 5000,
+	Range = 10000,
 	PreventUse = function(army, id)
 		return Logic.IsTechnologyResearched(army.Player, Technologies.T_ThiefSabotage)==0
 	end,
 	IsInstant = false,
-	RequiredEnemiesInArea = 1,
 	TargetCooldown = 30,
-	BridgeEntitytypes = {
-		Entities.PB_Bridge1,
-		Entities.PB_Bridge2,
-		Entities.PB_Bridge3,
-		Entities.PB_Bridge4,
-		Entities.XD_DrawBridgeOpen1,
-		Entities.XD_DrawBridgeOpen2,
-	},
+	TargetBridgesAsSecondaryTargetIfAllowed = true,
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 	RequiresHook = false,
@@ -958,7 +1024,25 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilitySummon] = {
 	IsInstant = true,
 	RequiredEnemiesInArea = 5,
 }
+UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityMotivateWorkers] = {
+	RequiresHook = true,
+	Combat = false,
+	PrepDefense = true,
+	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
+	Use = function(army, id)
+		GUI.SettlerMotivateWorkers(id)
+	end,
+	IsInstant = false,
+}
 
+UnlimitedArmy.BridgeEntityTypes = {
+	Entities.PB_Bridge1,
+	Entities.PB_Bridge2,
+	Entities.PB_Bridge3,
+	Entities.PB_Bridge4,
+	Entities.XD_DrawBridgeOpen1,
+	Entities.XD_DrawBridgeOpen2,
+}
 
 local IgnoreEtypes = {
 	[Entities.PU_Hero1_Hawk] = true,
