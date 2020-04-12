@@ -80,12 +80,14 @@ function UnlimitedArmy.New(data)
 		[UnlimitedArmy.Formations]=UnlimitedArmy.Formations,
 		[UnlimitedArmy.HeroAbilityConfigs]=UnlimitedArmy.HeroAbilityConfigs,
 		[UnlimitedArmy.HeroAbilityTargetType]=UnlimitedArmy.HeroAbilityTargetType,
+		[UnlimitedArmy.IgnoreEtypes]=UnlimitedArmy.IgnoreEtypes,
 	})
 	self.New = nil
 	self.EntityTypeArray = nil
 	self.Formations = nil
 	self.HeroAbilityConfigs = nil
 	self.HeroAbilityTargetType = nil
+	self.IgnoreEtypes = nil
 	self.Leaders = {}
 	self.Player = assert(data.Player)
 	self.Area = assert(data.Area)
@@ -582,6 +584,19 @@ function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 	})
 end
 
+function UnlimitedArmy.IsValidTarget(id)
+	if IsDead(id) then
+		return false
+	end
+	if MemoryManipulation and MemoryManipulation.IsEntityInvisible(id) then
+		return false
+	end
+	if UnlimitedArmy.IgnoreEtypes[Logic.GetEntityType(id)] then
+		return false
+	end
+	return true
+end
+
 function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
 	if p == invalidPosition then
 		return nil
@@ -600,7 +615,7 @@ function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+		if UnlimitedArmy.IsValidTarget(id) then
 			return id
 		end
 	end
@@ -627,7 +642,7 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+		if UnlimitedArmy.IsValidTarget(id) then
 			local cd = GetDistance(id, p)
 			if not d or cd < d then
 				r, d = id, cd
@@ -658,7 +673,7 @@ function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+		if UnlimitedArmy.IsValidTarget(id) then
 			local cd = GetDistance(id, p)
 			if not d or cd > d then
 				r, d = id, cd
@@ -692,7 +707,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
 		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
 		Predicate.InCircle(p.X, p.Y, area)
 	) do
-		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+		if UnlimitedArmy.IsValidTarget(id) then
 			num = num + 1
 		end
 	end
@@ -714,7 +729,7 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
 		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if not MemoryManipulation or not MemoryManipulation.IsEntityInvisible(id) then
+		if UnlimitedArmy.IsValidTarget(id) then
 			local cd = GetDistance(id, p)
 			if not d or cd < d then
 				r, d = id, cd
@@ -727,9 +742,12 @@ end
 function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 	for i=1, 8 do
 		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
-			local _, id = Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 1)
-			if IsValid(id) then
-				return id
+			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
+			table.remove(d, 1)
+			for _,id in ipairs(d) do
+				if IsValid(id) and UnlimitedArmy.IsValidTarget(id) then
+					return id
+				end
 			end
 		end
 	end
@@ -1044,14 +1062,18 @@ UnlimitedArmy.BridgeEntityTypes = {
 	Entities.XD_DrawBridgeOpen2,
 }
 
-local IgnoreEtypes = {
+UnlimitedArmy.IgnoreEtypes = {
 	[Entities.PU_Hero1_Hawk] = true,
+	[Entities.PB_Tower2_Ballista] = true,
+	[Entities.PB_Tower3_Cannon] = true,
+	[Entities.PB_DarkTower2_Ballista] = true,
+	[Entities.PB_DarkTower3_Cannon] = true,
 }
 
 UnlimitedArmy.EntityTypeArray = {}
 
 for en, e in pairs(Entities) do
-	if string.find(en, "[PC][UBV]") and not IgnoreEtypes[e] then
+	if string.find(en, "[PC][UBV]") and not UnlimitedArmy.IgnoreEtypes[e] then
 		table.insert(UnlimitedArmy.EntityTypeArray, e)
 	end
 end
