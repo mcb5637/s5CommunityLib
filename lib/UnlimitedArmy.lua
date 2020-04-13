@@ -70,6 +70,7 @@ end --mcbPacker.ignore
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
+	CannonCommandCache=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -100,6 +101,7 @@ function UnlimitedArmy.New(data)
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
+	self.CannonCommandCache = {}
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(self.Tick, self)
 	return self
@@ -128,6 +130,7 @@ function UnlimitedArmy:Tick()
 	local preventfurthercommands = false
 	if IsDead(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
 		self.CurrentBattleTarget = self:GetFirstEnemyInArmyRange()
+		self.CannonCommandCache = {}
 	end
 	if not preventfurthercommands and self.Status ~= UnlimitedArmy.Status.MovingNoBattle and IsValid(self.CurrentBattleTarget) then
 		self:CheckStatus(UnlimitedArmy.Status.Battle)
@@ -331,10 +334,18 @@ function UnlimitedArmy:DoBattleCommands()
 	self:CheckValidArmy()
 	local tpos = GetPosition(self.CurrentBattleTarget)
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area)
-	for _,id in ipairs(self.Leaders) do
+	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
-		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id)) and not UnlimitedArmy.IsNonCombatEntity(id) then
-			if DoCommands and UnlimitedArmy.IsRangedEntity(id) then
+		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id) or self.CannonCommandCache[id]==-1) and not UnlimitedArmy.IsNonCombatEntity(id) then
+			if DoCommands and Logic.IsEntityInCategory(id, EntityCategories.Cannon) then
+				if not self.CannonCommandCache[id] or self.CannonCommandCache[id]==-1 or self.CannonCommandCache[id]<Logic.GetTime() then
+					self.CannonCommandCache[id] = Logic.GetTime()+1
+					Logic.GroupAttack(id, self.CurrentBattleTarget)
+				else
+					Logic.GroupAttackMove(id, tpos.X, tpos.Y, -1)
+					self.CannonCommandCache[id] = -1
+				end
+			elseif DoCommands and UnlimitedArmy.IsRangedEntity(id) then
 				Logic.GroupAttack(id, self.CurrentBattleTarget)
 			elseif DoCommands then
 				Logic.GroupAttackMove(id, tpos.X, tpos.Y, -1)
