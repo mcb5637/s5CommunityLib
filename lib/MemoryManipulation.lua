@@ -1816,7 +1816,7 @@ MemoryManipulation.ObjFieldInfo = {
 		inheritsFrom = {"EGL_CGLEBehavior"},
 		fields = {
 			{name="Amount", index={4}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
-			{name="ResourceType", index={5}, datatype=MemoryManipulation.DataType.Int, check=ResourceType},
+			{name="ResourceType", index={5}, datatype=MemoryManipulation.DataType.Int, check=function(r) return r==0 or KeyOf(r, ResourceType) end},
 			{name="StolenFromPlayer", index={6}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 and a<9 end},
 			{name="TimeToSteal", index={7}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end, readConv=function(a) return a/10 end, writeConv=function(a) return a*10 end},
 		},

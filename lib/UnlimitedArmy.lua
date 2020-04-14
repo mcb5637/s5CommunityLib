@@ -25,6 +25,7 @@ end --mcbPacker.ignore
 -- 			Area,
 -- 			-- optional
 -- 			AutoDestroyIfEmpty,
+-- 			TransitAttackMove,
 -- 			Formation,
 -- 			PrepDefense,
 -- 			DestroyBridges,
@@ -70,7 +71,7 @@ end --mcbPacker.ignore
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
-	CannonCommandCache=nil,
+	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -102,6 +103,8 @@ function UnlimitedArmy.New(data)
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
 	self.CannonCommandCache = {}
+	self.LeaderTransit = {}
+	self.TransitAttackMove = data.TransitAttackMove
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(self.Tick, self)
 	return self
@@ -115,6 +118,29 @@ end
 function UnlimitedArmy:Tick()
 	self:CheckValidArmy()
 	self:RemoveAllDestroyedLeaders()
+	if self:GetSize() == 0 and self.LeaderTransit[1] then
+		table.insert(self.Leaders, table.remove(self.LeaderTransit, 1))
+		self.ReMove = true
+		self:RequireNewFormat()
+	end
+	if self.LeaderTransit[1] then
+		local p = self:GetPosition()
+		for i=table.getn(self.LeaderTransit),1,-1 do
+			if GetDistance(p, self.LeaderTransit[i]) < self.Area then
+				table.insert(self.Leaders, table.remove(self.LeaderTransit, i))
+				self.ReMove = true
+				self:RequireNewFormat()
+			elseif self.TransitAttackMove then
+				if UnlimitedArmy.IsLeaderIdle(self.LeaderTransit[i]) then
+					Logic.GroupAttackMove(self.LeaderTransit[i], p.X, p.Y, -1)
+				end
+			else
+				if not UnlimitedArmy.IsLeaderMoving(self.LeaderTransit[i]) then
+					Move(self.LeaderTransit[i], p)
+				end
+			end
+		end
+	end
 	if self:GetSize() == 0 then
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
@@ -167,12 +193,17 @@ end
 function UnlimitedArmy:AddLeader(id)
 	self:CheckValidArmy()
 	id = GetID(id)
-	table.insert(self.Leaders, id)
-	if not self.Target then
-		self.Target = GetPosition(id)
+	local p = self:GetPosition()
+	if p==invalidPosition or GetDistance(p, id)<self.Area then
+		table.insert(self.Leaders, id)
+		if not self.Target then
+			self.Target = GetPosition(id)
+		end
+		self:RequireNewFormat()
+	else
+		table.insert(self.LeaderTransit, id)
 	end
 	self.HadOneLeader = true
-	self:RequireNewFormat()
 end
 
 function UnlimitedArmy:RemoveLeader(id)
