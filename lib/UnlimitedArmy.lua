@@ -55,6 +55,8 @@ end --mcbPacker.ignore
 -- 													2->temporärer command, der diesen tick ausgeführt wird (kann nil sein).
 -- Army:AddCommandAttackNearestTarget(maxrange, looped)
 -- 												fügt einen angriffsbefehl auf dan nächste ziel in maxrange hinzu (maxrange kann nil sein für ganze map) (beendet sofort).
+-- Army:AddCommandWaitForTroopSize(size, lessthan, looped)
+-- 												wartet darauf, das die armee eine anzahl an truppen hat.
 -- Army:CreateLeaderForArmy(ety, sol, pos, experience)
 -- 												erstellt einen leader und verbindet ihn mit der army.
 -- 
@@ -75,7 +77,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
-UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7}
+UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8}
 
 function UnlimitedArmy.New(data)
 	local self = CopyTable(UnlimitedArmy, {[UnlimitedArmy.EntityTypeArray]=UnlimitedArmy.EntityTypeArray,
@@ -492,6 +494,13 @@ function UnlimitedArmy:ProcessCommandQueue()
 					self:AdvanceCommand()
 				end
 			end
+		elseif com.c == UnlimitedArmy.CommandType.WaitForTroopSize then
+			local s = self:GetSize(true)
+			if (s >= com.size and not com.lessthan) or (s < com.size and com.lessthan) then
+				if com == self.CommandQueue[1] then
+					self:AdvanceCommand()
+				end
+			end
 		elseif com.c == UnlimitedArmy.CommandType.AttackNearest then
 			local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange)
 			if IsValid(tid) then
@@ -608,6 +617,16 @@ function UnlimitedArmy:AddCommandWaitForIdle(looped)
 	self:CheckValidArmy()
 	table.insert(self.CommandQueue, {
 		c = UnlimitedArmy.CommandType.WaitForIdle,
+		looped = looped,
+	})
+end
+
+function UnlimitedArmy:AddCommandWaitForTroopSize(size, lessthan, looped)
+	self:CheckValidArmy()
+	table.insert(self.CommandQueue, {
+		c = UnlimitedArmy.CommandType.WaitForTroopSize,
+		size = size,
+		lessthan = lessthan,
 		looped = looped,
 	})
 end
