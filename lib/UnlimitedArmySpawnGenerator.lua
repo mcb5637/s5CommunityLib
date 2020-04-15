@@ -60,9 +60,9 @@ function UnlimitedArmySpawnGenerator:Tick()
 		return
 	end
 	self.CCounter = self.CCounter - 1
-	if self.CCounter <= 0 and self.Army:GetSize()<self.ArmySize and self:IsSpawnPossible() then
+	if self.CCounter <= 0 and self.Army:GetSize(true)<self.ArmySize and self:IsSpawnPossible() then
 		self.CCounter = self.SpawnCounter
-		self:ForceSpawn(math.min(self.SpawnLeaders, self.ArmySize-self.Army:GetSize()))
+		self:ForceSpawn(math.min(self.SpawnLeaders, self.ArmySize-self.Army:GetSize(true)))
 	end
 end
 

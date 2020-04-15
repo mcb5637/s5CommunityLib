@@ -38,7 +38,7 @@ end --mcbPacker.ignore
 -- 
 -- Army:AddLeader(id)							Fügt id zur army hinzu.
 -- Army:RemoveLeader(id)						Entfernt id aus der army.
--- Army:GetSize()								Anzahl der Leader.
+-- Army:GetSize(addTransit)						Anzahl der Leader, addTransit gibt an, ob leader die zur armee unterwegs sind mitgezählt werden sollen..
 -- Army:Destroy()								Entfernt die Army, alle leader bleiben wo sie sind.
 -- Army:KillAllLeaders()						Tötet alle leader.
 -- Army:IsDead()								-1-> destroyed, 2->kein leader, aber spawner, 1->kein leader, 3->hatte keinen leader, false->min 1 leader.
@@ -239,9 +239,13 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 	end
 end
 
-function UnlimitedArmy:GetSize()
+function UnlimitedArmy:GetSize(addTransit)
 	self:CheckValidArmy()
-	return table.getn(self.Leaders)
+	local r = table.getn(self.Leaders)
+	if addTransit then
+		r = r + table.getn(self.LeaderTransit)
+	end
+	return r
 end
 
 function UnlimitedArmy:Destroy()
