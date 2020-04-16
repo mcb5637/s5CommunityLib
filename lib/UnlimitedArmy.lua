@@ -659,6 +659,12 @@ function UnlimitedArmy.IsValidTarget(id)
 	if UnlimitedArmy.IgnoreEtypes[Logic.GetEntityType(id)] then
 		return false
 	end
+	if Logic.IsWorker(id) then
+		local wb = Logic.GetSettlersWorkBuilding(id)
+		if Logic.IsSettlerAtWork(id)==1 then
+			return false, wb
+		end
+	end
 	return true
 end
 
@@ -805,17 +811,23 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
 end
 
 function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
+	local repid = nil
 	for i=1, 8 do
 		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
-				if IsValid(id) and UnlimitedArmy.IsValidTarget(id) then
-					return id
+				if IsValid(id) then
+					local b, rid = UnlimitedArmy.IsValidTarget(id)
+					if b then
+						return id
+					end
+					repid = repid or rid
 				end
 			end
 		end
 	end
+	return repid
 end
 
 function UnlimitedArmy.IsLeaderInBattle(id)
