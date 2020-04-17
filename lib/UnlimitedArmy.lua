@@ -156,7 +156,7 @@ function UnlimitedArmy:Tick()
 		self.Spawner:Tick()
 	end
 	local preventfurthercommands = false
-	if IsDead(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
+	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
 		self.CurrentBattleTarget = self:GetFirstEnemyInArmyRange()
 		self.CannonCommandCache = {}
 	end
@@ -659,7 +659,7 @@ function UnlimitedArmy.IsValidTarget(id)
 	if UnlimitedArmy.IgnoreEtypes[Logic.GetEntityType(id)] then
 		return false
 	end
-	if Logic.IsWorker(id) then
+	if Logic.IsWorker(id)==1 then
 		local wb = Logic.GetSettlersWorkBuilding(id)
 		if Logic.IsSettlerAtWork(id)==1 then
 			return false, wb
@@ -817,13 +817,11 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
-				if IsValid(id) then
-					local b, rid = UnlimitedArmy.IsValidTarget(id)
-					if b then
-						return id
-					end
-					repid = repid or rid
+				local b, rid = UnlimitedArmy.IsValidTarget(id)
+				if b then
+					return id
 				end
+				repid = repid or rid
 			end
 		end
 	end
