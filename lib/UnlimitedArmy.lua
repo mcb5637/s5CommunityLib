@@ -9,6 +9,7 @@ mcbPacker.require("s5CommunityLib/comfort/entity/ConvertEntityCallback")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetCirclePosition")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetAngleBetween")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
+mcbPacker.require("s5CommunityLib/tables/LeaderFormations")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -29,6 +30,7 @@ end --mcbPacker.ignore
 -- 			Formation,
 -- 			PrepDefense,
 -- 			DestroyBridges,
+-- 			LeaderFormation,
 -- 		})
 -- 
 -- Army.Player
@@ -73,7 +75,7 @@ end --mcbPacker.ignore
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
-	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil,
+	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -101,6 +103,7 @@ function UnlimitedArmy.New(data)
 	self.HadOneLeader = false
 	self.PrepDefense = data.PrepDefense
 	self.DestroyBridges = data.DestroyBridges
+	self.LeaderFormation = data.LeaderFormation
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
@@ -204,6 +207,9 @@ function UnlimitedArmy:AddLeader(id)
 		self:RequireNewFormat()
 	else
 		table.insert(self.LeaderTransit, id)
+	end
+	if self.LeaderFormation then
+		Logic.LeaderChangeFormationType(id, self.LeaderFormation)
 	end
 	self.HadOneLeader = true
 end
@@ -660,9 +666,14 @@ function UnlimitedArmy.IsValidTarget(id)
 		return false
 	end
 	if Logic.IsWorker(id)==1 then
-		local wb = Logic.GetSettlersWorkBuilding(id)
 		if Logic.IsSettlerAtWork(id)==1 then
-			return false, wb
+			return false, Logic.GetSettlersWorkBuilding(id)
+		end
+		if Logic.IsSettlerAtFarm(id)==1 then
+			return false, Logic.GetSettlersFarm(id)
+		end
+		if Logic.IsSettlerAtResidence(id)==1 then
+			return false, Logic.GetSettlersResidence(id)
 		end
 	end
 	return true
