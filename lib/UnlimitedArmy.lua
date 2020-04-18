@@ -477,7 +477,7 @@ function UnlimitedArmy:ProcessCommandQueue()
 				if com == self.CommandQueue[1] then
 					self:AdvanceCommand()
 				end
-				self.Target = com.area
+				self.Target = com.pos
 			elseif GetDistance(self:GetPosition(), com.pos) > com.distArea then
 				self.Status = UnlimitedArmy.Status.MovingNoBattle
 				self.Target = com.pos
