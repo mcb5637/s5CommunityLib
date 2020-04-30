@@ -31,6 +31,7 @@ end --mcbPacker.ignore
 -- 			PrepDefense,
 -- 			DestroyBridges,
 -- 			LeaderFormation,
+-- 			AIActive,
 -- 		})
 -- 
 -- Army.Player
@@ -75,7 +76,7 @@ end --mcbPacker.ignore
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
-	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil,
+	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -104,6 +105,7 @@ function UnlimitedArmy.New(data)
 	self.PrepDefense = data.PrepDefense
 	self.DestroyBridges = data.DestroyBridges
 	self.LeaderFormation = data.LeaderFormation
+	self.AIActive = data.AIActive
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
@@ -159,7 +161,7 @@ function UnlimitedArmy:Tick()
 		self.Spawner:Tick()
 	end
 	local preventfurthercommands = false
-	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
+	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
 		self.CurrentBattleTarget = self:GetFirstEnemyInArmyRange()
 		self.CannonCommandCache = {}
 	end
@@ -316,7 +318,7 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 				if combat and acf.Combat then
 					if acf.RequiredEnemiesInArea then
 						if acf.RequiredRange then
-							if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange) < acf.RequiredEnemiesInArea then
+							if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange, self.AIActive) < acf.RequiredEnemiesInArea then
 								executeAbility = false
 							end
 						else
@@ -349,17 +351,17 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyEntity then
 						local tid = nil
 						if acf.PrefersBackline then
-							tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
+							tid = UnlimitedArmy.GetFurthestEnemyInArea(GetPosition(id), self.Player, acf.Range, true, nil, self.AIActive)
 						else
-							tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, true)
+							tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, true, nil, self.AIActive)
 						end
 						if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 							acf.Use(self, id, tid)
 						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyBuilding then
-						local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, nil, true)
+						local tid = UnlimitedArmy.GetNearestEnemyInArea(GetPosition(id), self.Player, acf.Range, nil, true, self.AIActive)
 						if IsDestroyed(tid) and acf.TargetBridgesAsSecondaryTargetIfAllowed and self.DestroyBridges then
-							tid = UnlimitedArmy.GetNearestBridgeInArea(GetPosition(id), self.Player, acf.Range, UnlimitedArmy.BridgeEntityTypes)
+							tid = UnlimitedArmy.GetNearestBridgeInArea(GetPosition(id), self.Player, acf.Range, UnlimitedArmy.BridgeEntityTypes, self.AIActive)
 						end
 						if IsValid(tid) and self:CheckHeroTargetingCache(tid, acf.TargetCooldown) then
 							acf.Use(self, id, tid)
@@ -376,7 +378,7 @@ end
 function UnlimitedArmy:DoBattleCommands()
 	self:CheckValidArmy()
 	local tpos = GetPosition(self.CurrentBattleTarget)
-	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area)
+	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive)
 	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
 		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id) or self.CannonCommandCache[id]==-1) and not UnlimitedArmy.IsNonCombatEntity(id) then
@@ -483,7 +485,7 @@ function UnlimitedArmy:ProcessCommandQueue()
 				self.Target = com.pos
 				self.ReMove = true
 			elseif self.Status ~= UnlimitedArmy.Status.Battle then
-				local tid = UnlimitedArmy.GetFirstEnemyInArea(com.pos, self.Player, com.distArea)
+				local tid = UnlimitedArmy.GetFirstEnemyInArea(com.pos, self.Player, com.distArea, nil, nil, self.AIActive)
 				if IsValid(tid) then
 					self.Target = GetPosition(tid)
 					self.ReMove = true
@@ -508,7 +510,7 @@ function UnlimitedArmy:ProcessCommandQueue()
 				end
 			end
 		elseif com.c == UnlimitedArmy.CommandType.AttackNearest then
-			local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange)
+			local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange, nil, nil, self.AIActive)
 			if IsValid(tid) then
 				self.Target = GetPosition(tid)
 				if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
@@ -536,7 +538,7 @@ end
 
 function UnlimitedArmy:GetFirstEnemyInArmyRange()
 	self:CheckValidArmy()
-	return UnlimitedArmy.GetFirstEnemyInArea(self:GetPosition(), self.Player, self.Area)
+	return UnlimitedArmy.GetFirstEnemyInArea(self:GetPosition(), self.Player, self.Area, nil, nil, self.AIActive)
 end
 
 function UnlimitedArmy:IsIdle()
@@ -655,12 +657,18 @@ function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 	})
 end
 
-function UnlimitedArmy.IsValidTarget(id)
+function UnlimitedArmy.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then
 		return false
 	end
-	if MemoryManipulation and MemoryManipulation.IsEntityInvisible(id) then
-		return false
+	if MemoryManipulation then
+		if MemoryManipulation.IsEntityInvisible(id) then
+			return false
+		end
+	else
+		if UnlimitedArmy.NoHookCheckInvisibility(id, enemypl, aiactive) then
+			return false
+		end
 	end
 	if UnlimitedArmy.IgnoreEtypes[Logic.GetEntityType(id)] then
 		return false
@@ -679,12 +687,12 @@ function UnlimitedArmy.IsValidTarget(id)
 	return true
 end
 
-function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
+function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building, aiactive)
 	if p == invalidPosition then
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building, aiactive)
 	end
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
 		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
@@ -697,18 +705,18 @@ function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if UnlimitedArmy.IsValidTarget(id) then
+		if UnlimitedArmy.IsValidTarget(id, player, aiactive) then
 			return id
 		end
 	end
 end
 
-function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
+function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building, aiactive)
 	if p == invalidPosition then
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building, aiactive)
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
@@ -724,7 +732,7 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if UnlimitedArmy.IsValidTarget(id) then
+		if UnlimitedArmy.IsValidTarget(id, player, aiactive) then
 			local cd = GetDistance(id, p)
 			if not d or cd < d then
 				r, d = id, cd
@@ -734,12 +742,12 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building)
 	return r
 end
 
-function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
+function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building, aiactive)
 	if p == invalidPosition then
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building, aiactive)
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
@@ -755,7 +763,7 @@ function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
 		table.insert(pred, Predicate.IsBuilding())
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if UnlimitedArmy.IsValidTarget(id) then
+		if UnlimitedArmy.IsValidTarget(id, player, aiactive) then
 			local cd = GetDistance(id, p)
 			if not d or cd > d then
 				r, d = id, cd
@@ -765,7 +773,7 @@ function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building)
 	return r
 end
 
-function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
+function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive)
 	if p == invalidPosition then
 		return 0
 	end
@@ -789,19 +797,19 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area)
 		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
 		Predicate.InCircle(p.X, p.Y, area)
 	) do
-		if UnlimitedArmy.IsValidTarget(id) then
+		if UnlimitedArmy.IsValidTarget(id, player, aiactive) then
 			num = num + 1
 		end
 	end
 	return num
 end
 
-function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
+function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes, aiactive)
 	if p == invalidPosition then
 		return nil
 	end
 	if not S5Hook then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, false, false)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, false, false, aiactive)
 	end
 	local r, d = nil, nil
 	local pred = {
@@ -811,7 +819,7 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
 		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
 	end
 	for id in S5Hook.EntityIterator(unpack(pred)) do
-		if UnlimitedArmy.IsValidTarget(id) then
+		if UnlimitedArmy.IsValidTarget(id, player, aiactive) then
 			local cd = GetDistance(id, p)
 			if not d or cd < d then
 				r, d = id, cd
@@ -821,14 +829,14 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes)
 	return r
 end
 
-function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
+function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings, aiactive)
 	local repid = nil
 	for i=1, 8 do
 		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
-				local b, rid = UnlimitedArmy.IsValidTarget(id)
+				local b, rid = UnlimitedArmy.IsValidTarget(id, player, aiactive)
 				if b then
 					return id
 				end
@@ -837,6 +845,28 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings)
 		end
 	end
 	return repid
+end
+
+function UnlimitedArmy.NoHookCheckInvisibility(id, enemypl, aiactive)
+	local ety = Logic.GetEntityType(id)
+	if not (ety==Entities.PU_Hero5 or ety==Entities.PU_Thief) then -- assume just ari and thieves are invisible
+		return false
+	end
+	local p = GetPosition(id)
+	local eid = AI.Army_SearchClosestEnemy(enemypl, 0, p.X, p.Y, 500)
+	if eid==id then
+		return false
+	end
+	if aiactive then
+		return true
+	end
+	if ety==Entities.PU_Hero5 then
+		if Logic.HeroGetAbiltityChargeSeconds(id, Abilities.AbilityCamouflage) < Logic.HeroGetAbilityRechargeTime(id, Abilities.AbilityCamouflage)/2 then
+			return true -- might be some false positive, but nothing better possible
+		end
+	elseif ety==Entities.PU_Thief then
+		return true -- just assume thieves are invisible
+	end
 end
 
 function UnlimitedArmy.IsLeaderInBattle(id)
