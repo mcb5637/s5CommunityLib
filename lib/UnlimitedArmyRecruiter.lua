@@ -127,9 +127,11 @@ UnlimitedArmyRecruiter.UCatBuyTypes = {
 	[UpgradeCategories.Evil_LeaderSkirmisher] = UpgradeCategories.Archery,
 	[UpgradeCategories.LeaderCavalry] = UpgradeCategories.Stable,
 	[UpgradeCategories.LeaderHeavyCavalry] = UpgradeCategories.Stable,
-	[UpgradeCategories.Thief] = UpgradeCategories.Tavern,
-	[UpgradeCategories.Scout] = UpgradeCategories.Tavern,
 }
+if UpgradeCategories.Thief then
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Thief] = UpgradeCategories.Tavern
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Scout] = UpgradeCategories.Tavern
+end
 
 UnlimitedArmyRecruiter.CannonBuyTypes = {
 	[UpgradeCategories.Cannon1] = UpgradeCategories.Foundry,
