@@ -120,17 +120,19 @@ UnlimitedArmyRecruiter.UCatBuyTypes = {
 	[UpgradeCategories.LeaderBandit] = UpgradeCategories.Barracks,
 	[UpgradeCategories.LeaderBarbarian] = UpgradeCategories.Barracks,
 	[UpgradeCategories.BlackKnightLeaderMace1] = UpgradeCategories.Barracks,
-	[UpgradeCategories.Evil_LeaderBearman] = UpgradeCategories.Barracks,
 	[UpgradeCategories.LeaderBow] = UpgradeCategories.Archery,
-	[UpgradeCategories.LeaderRifle] = UpgradeCategories.Archery,
-	[UpgradeCategories.LeaderBanditBow] = UpgradeCategories.Archery,
-	[UpgradeCategories.Evil_LeaderSkirmisher] = UpgradeCategories.Archery,
 	[UpgradeCategories.LeaderCavalry] = UpgradeCategories.Stable,
 	[UpgradeCategories.LeaderHeavyCavalry] = UpgradeCategories.Stable,
 }
 if UpgradeCategories.Thief then
 	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Thief] = UpgradeCategories.Tavern
 	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Scout] = UpgradeCategories.Tavern
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Evil_LeaderBearman] = UpgradeCategories.Barracks
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.Evil_LeaderSkirmisher] = UpgradeCategories.Archery
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.LeaderRifle] = UpgradeCategories.Archery
+end
+if UpgradeCategories.LeaderBanditBow then
+	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.LeaderBanditBow] = UpgradeCategories.Archery
 end
 
 UnlimitedArmyRecruiter.CannonBuyTypes = {
