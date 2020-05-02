@@ -76,11 +76,11 @@ end --mcbPacker.ignore
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
-	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil,
+	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
-UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8}
+UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8, SetSpawnerStatus=9}
 
 function UnlimitedArmy.New(data)
 	local self = CopyTable(UnlimitedArmy, {[UnlimitedArmy.EntityTypeArray]=UnlimitedArmy.EntityTypeArray,
@@ -112,6 +112,7 @@ function UnlimitedArmy.New(data)
 	self.CannonCommandCache = {}
 	self.LeaderTransit = {}
 	self.TransitAttackMove = data.TransitAttackMove
+	self.SpawnerActive = true
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(self.Tick, self)
 	return self
@@ -152,12 +153,12 @@ function UnlimitedArmy:Tick()
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
 		end
-		if self.Spawner then
+		if self.Spawner and self.SpawnerActive then
 			self.Spawner:Tick()
 		end
 		return
 	end
-	if self.Spawner then
+	if self.Spawner and self.SpawnerActive then
 		self.Spawner:Tick()
 	end
 	local preventfurthercommands = false
@@ -521,6 +522,11 @@ function UnlimitedArmy:ProcessCommandQueue()
 					self:AdvanceCommand()
 				end
 			end
+		elseif com.c == UnlimitedArmy.CommandType.SetSpawnerStatus then
+			self.SpawnerActive = com.status
+			if com == self.CommandQueue[1] then
+				self:AdvanceCommand()
+			end
 		end
 	end
 end
@@ -654,6 +660,15 @@ function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 		c = UnlimitedArmy.CommandType.AttackNearest,
 		looped = looped,
 		maxrange = maxrange,
+	})
+end
+
+function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
+	self:CheckValidArmy()
+	table.insert(self.CommandQueue, {
+		c = UnlimitedArmy.CommandType.SetSpawnerStatus,
+		looped = looped,
+		status = status,
 	})
 end
 
