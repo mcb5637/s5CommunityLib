@@ -673,6 +673,23 @@ function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
 	})
 end
 
+function UnlimitedArmy:Iterator(transit)
+	local k = 0
+	local t = self.Leaders
+	return function()
+		k = k + 1
+		if t[k] then
+			return t[k]
+		end
+		if t==self.Leaders and transit then
+			t = self.LeaderTransit
+			k = 1
+			return t[k]
+		end
+		return nil
+	end
+end
+
 function UnlimitedArmy.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then
 		return false
