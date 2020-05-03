@@ -156,6 +156,7 @@ function UnlimitedArmy:Tick()
 		if self.Spawner and self.SpawnerActive then
 			self.Spawner:Tick()
 		end
+		self:ProcessCommandQueue()
 		return
 	end
 	if self.Spawner and self.SpawnerActive then
