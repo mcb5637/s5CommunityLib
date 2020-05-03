@@ -66,7 +66,7 @@ function UnlimitedArmyRecruiter:CheckValidSpawner()
 	assert(self.Army)
 end
 
-function UnlimitedArmyRecruiter:Tick()
+function UnlimitedArmyRecruiter:Tick(active)
 	self:CheckValidSpawner()
 	for i=table.getn(self.Buildings),1,-1 do
 		if IsDead(self.Buildings[i]) then
@@ -95,7 +95,7 @@ function UnlimitedArmyRecruiter:Tick()
 		end
 		return
 	end
-	if (self.Army:GetSize(true) + table.getn(self.InRecruitment))<self.ArmySize then
+	if active and (self.Army:GetSize(true) + table.getn(self.InRecruitment))<self.ArmySize then
 		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment)))
 	end
 end

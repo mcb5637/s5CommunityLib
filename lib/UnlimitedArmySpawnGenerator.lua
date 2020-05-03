@@ -53,14 +53,14 @@ function UnlimitedArmySpawnGenerator:CheckValidSpawner()
 	assert(self.Army)
 end
 
-function UnlimitedArmySpawnGenerator:Tick()
+function UnlimitedArmySpawnGenerator:Tick(active)
 	self:CheckValidSpawner()
 	if self:IsDead() then
 		self:Remove()
 		return
 	end
 	self.CCounter = self.CCounter - 1
-	if self.CCounter <= 0 and self.Army:GetSize(true)<self.ArmySize and self:IsSpawnPossible() then
+	if active and self.CCounter <= 0 and self.Army:GetSize(true)<self.ArmySize and self:IsSpawnPossible() then
 		self.CCounter = self.SpawnCounter
 		self:ForceSpawn(math.min(self.SpawnLeaders, self.ArmySize-self.Army:GetSize(true)))
 	end

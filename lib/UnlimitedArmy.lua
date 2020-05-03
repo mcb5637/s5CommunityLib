@@ -153,14 +153,14 @@ function UnlimitedArmy:Tick()
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
 		end
-		if self.Spawner and self.SpawnerActive then
-			self.Spawner:Tick()
+		if self.Spawner then
+			self.Spawner:Tick(self.SpawnerActive)
 		end
 		self:ProcessCommandQueue()
 		return
 	end
-	if self.Spawner and self.SpawnerActive then
-		self.Spawner:Tick()
+	if self.Spawner then
+		self.Spawner:Tick(self.SpawnerActive)
 	end
 	local preventfurthercommands = false
 	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive) or GetDistance(self:GetPosition(), self.CurrentBattleTarget)>self.Area then
