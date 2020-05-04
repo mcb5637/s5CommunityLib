@@ -2,6 +2,7 @@ if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
+mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -70,13 +71,13 @@ function UnlimitedArmyRecruiter:Tick(active)
 	self:CheckValidSpawner()
 	self:CheckLeaders(self.Army, self.Army.AddLeader)
 	if self:IsDead() then
-		if table.getn(self.InRecruitment)<=0 then
+		if (table.getn(self.InRecruitment) + self:GetCannonBuyNum())<=0 then
 			self:Remove()
 		end
 		return
 	end
 	if active and (self.Army:GetSize(true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum())<self.ArmySize then
-		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment)))
+		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum()))
 	end
 end
 
@@ -122,6 +123,16 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 		end
 	end
 	for i=table.getn(self.InRecruitment),1,-1 do
+		if IsDestroyed(self.InRecruitment[i].Id) then
+			local nid = EntityIdChangedHelper.GetNewID(self.InRecruitment[i].Id)
+			if nid then
+				self.InRecruitment[i].Id = nid
+			end
+		end
+		if IsDestroyed(self.InRecruitment[i].Id) then
+			table.remove(self.InRecruitment, i)
+			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
+		end
 		if Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
 			local d = table.remove(self.InRecruitment, i)
 			f(obj, d.Id)

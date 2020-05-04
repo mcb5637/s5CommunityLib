@@ -10,6 +10,7 @@ mcbPacker.require("s5CommunityLib/comfort/pos/GetCirclePosition")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetAngleBetween")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/tables/LeaderFormations")
+mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -134,7 +135,15 @@ function UnlimitedArmy:Tick()
 	if self.LeaderTransit[1] then
 		local p = self:GetPosition()
 		for i=table.getn(self.LeaderTransit),1,-1 do
-			if GetDistance(p, self.LeaderTransit[i]) < self.Area then
+			if IsDestroyed(self.LeaderTransit[i]) then
+				local nid = EntityIdChangedHelper.GetNewID(self.LeaderTransit[i])
+				if nid then
+					self.LeaderTransit[i] = nid
+				end
+			end
+			if IsDestroyed(self.LeaderTransit[i]) then
+				table.remove(self.LeaderTransit, i)
+			elseif GetDistance(p, self.LeaderTransit[i]) < self.Area then
 				table.insert(self.Leaders, table.remove(self.LeaderTransit, i))
 				self.ReMove = true
 				self:RequireNewFormat()
@@ -250,8 +259,13 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 	self:CheckValidArmy()
 	for i=table.getn(self.Leaders),1,-1 do
 		if IsDestroyed(self.Leaders[i]) then
-			table.remove(self.Leaders, i)
-			self:RequireNewFormat()
+			local nid = EntityIdChangedHelper.GetNewID(self.Leaders[i])
+			if nid then
+				self.Leaders[i] = nid
+			else
+				table.remove(self.Leaders, i)
+				self:RequireNewFormat()
+			end
 		end
 	end
 end
