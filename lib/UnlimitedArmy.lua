@@ -226,6 +226,11 @@ function UnlimitedArmy:RemoveLeader(id)
 			table.remove(self.Leaders, i)
 		end
 	end
+	for i=table.getn(self.LeaderTransit),1,-1 do
+		if self.LeaderTransit[i] == id then
+			table.remove(self.LeaderTransit, i)
+		end
+	end
 	self:RequireNewFormat()
 end
 
@@ -263,6 +268,9 @@ end
 function UnlimitedArmy:Destroy()
 	self.Status = UnlimitedArmy.Status.Destroyed
 	EndJob(self.Trigger)
+	if self.Spawner then
+		self.Spawner:Remove()
+	end
 end
 
 function UnlimitedArmy:KillAllLeaders()
@@ -674,16 +682,16 @@ function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
 end
 
 function UnlimitedArmy:Iterator(transit)
-	local k = 0
+	local k = table.getn(self.Leaders)+1
 	local t = self.Leaders
 	return function()
-		k = k + 1
+		k = k - 1
 		if t[k] then
 			return t[k]
 		end
 		if t==self.Leaders and transit then
 			t = self.LeaderTransit
-			k = 1
+			k = table.getn(self.LeaderTransit)
 			return t[k]
 		end
 		return nil

@@ -63,20 +63,59 @@ end
 
 function UnlimitedArmyRecruiter:CheckValidSpawner()
 	assert(self ~= UnlimitedArmyRecruiter)
-	assert(self.Army)
+	assert(self.Army or self.DetachedFunc)
 end
 
 function UnlimitedArmyRecruiter:Tick(active)
 	self:CheckValidSpawner()
+	self:CheckLeaders(self.Army, self.Army.AddLeader)
+	if self:IsDead() then
+		if table.getn(self.InRecruitment)<=0 then
+			self:Remove()
+		end
+		return
+	end
+	if active and (self.Army:GetSize(true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum())<self.ArmySize then
+		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment)))
+	end
+end
+
+function UnlimitedArmyRecruiter:TickDetached()
+	self:CheckValidSpawner()
+	self:CheckLeaders(self.DetachedObject, self.DetachedFunc)
+	if table.getn(self.InRecruitment) + self:GetCannonBuyNum() <= 0 then
+		self:Remove()
+		return true
+	end
+end
+
+function UnlimitedArmyRecruiter:GetCannonBuyNum()
+	self:CheckValidSpawner()
+	local i=0
+	for _,_ in pairs(self.Cannons) do
+		i = i + 1
+	end
+	return i
+end
+
+function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
+	self:CheckValidSpawner()
 	for i=table.getn(self.Buildings),1,-1 do
 		if IsDead(self.Buildings[i]) then
+			if self.Cannons[self.Buildings[i]] then
+				if IsValid(self.Cannons[self.Buildings[i]]) then
+					f(obj, self.Cannons[self.Buildings[i]])
+				end
+				self.Cannons[self.Buildings[i]] = nil
+				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
+			end
 			table.remove(self.Buildings, i)
 		elseif self.Cannons[self.Buildings[i]] then
 			local c = Logic.GetLeaderTrainingAtBuilding(self.Buildings[i])
 			if self.Cannons[self.Buildings[i]] == -1 and IsValid(c) then
 				self.Cannons[self.Buildings[i]] = c
 			elseif self.Cannons[self.Buildings[i]]~=-1 and c==0 then
-				self.Army:AddLeader(self.Cannons[self.Buildings[i]])
+				f(obj, self.Cannons[self.Buildings[i]])
 				self.Cannons[self.Buildings[i]] = nil
 				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
 			end
@@ -85,18 +124,9 @@ function UnlimitedArmyRecruiter:Tick(active)
 	for i=table.getn(self.InRecruitment),1,-1 do
 		if Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
 			local d = table.remove(self.InRecruitment, i)
-			self.Army:AddLeader(d.Id)
+			f(obj, d.Id)
 			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
 		end
-	end
-	if self:IsDead() then
-		if table.getn(self.InRecruitment)<=0 then
-			self:Remove()
-		end
-		return
-	end
-	if active and (self.Army:GetSize(true) + table.getn(self.InRecruitment))<self.ArmySize then
-		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment)))
 	end
 end
 
@@ -243,9 +273,20 @@ function UnlimitedArmyRecruiter:GetNumberTrainingAtBuilding(id)
 	return self.NumCache[id]
 end
 
-function UnlimitedArmyRecruiter:Remove()
-	self.Army.Spawner = nil
-	self.Army = nil
+function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
+	self:CheckValidSpawner()
+	if table.getn(self.InRecruitment) + self:GetCannonBuyNum() > 0 then
+		if not self.DetachedFunc then
+			StartSimpleJob(self.TickDetached, self)
+		end
+		self.DetachedFunc = detachedFunc or self.DetachedFunc or function(_,id) DestroyEntity(id) end
+		self.DetachedObject = detachedObj or self.DetachedObject
+		return
+	end
+	if self.Army then
+		self.Army.Spawner = nil
+		self.Army = nil
+	end
 	EndJob(self.AddTrigger)
 end
 
