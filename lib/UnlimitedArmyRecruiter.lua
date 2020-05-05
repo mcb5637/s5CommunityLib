@@ -76,8 +76,8 @@ function UnlimitedArmyRecruiter:Tick(active)
 		end
 		return
 	end
-	if active and (self.Army:GetSize(true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum())<self.ArmySize then
-		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum()))
+	if active and (self.Army:GetSize(true, true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum())<self.ArmySize then
+		self:ForceSpawn(self.ArmySize - (self.Army:GetSize(true, true) + table.getn(self.InRecruitment) + self:GetCannonBuyNum()))
 	end
 end
 

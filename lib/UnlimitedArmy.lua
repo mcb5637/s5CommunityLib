@@ -33,6 +33,7 @@ end --mcbPacker.ignore
 -- 			DestroyBridges,
 -- 			LeaderFormation,
 -- 			AIActive,
+-- 			DefendDoNotHelpHeroes,
 -- 		})
 -- 
 -- Army.Player
@@ -78,6 +79,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
+	DeadHeroes=nil, DefendDoNotHelpHeroes=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -107,11 +109,13 @@ function UnlimitedArmy.New(data)
 	self.DestroyBridges = data.DestroyBridges
 	self.LeaderFormation = data.LeaderFormation
 	self.AIActive = data.AIActive
+	self.DefendDoNotHelpHeroes = data.DefendDoNotHelpHeroes
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
 	self.CannonCommandCache = {}
 	self.LeaderTransit = {}
+	self.DeadHeroes={}
 	self.TransitAttackMove = data.TransitAttackMove
 	self.SpawnerActive = true
 	self.Status = UnlimitedArmy.Status.Idle
@@ -132,32 +136,7 @@ function UnlimitedArmy:Tick()
 		self.ReMove = true
 		self:RequireNewFormat()
 	end
-	if self.LeaderTransit[1] then
-		local p = self:GetPosition()
-		for i=table.getn(self.LeaderTransit),1,-1 do
-			if IsDestroyed(self.LeaderTransit[i]) then
-				local nid = EntityIdChangedHelper.GetNewID(self.LeaderTransit[i])
-				if nid then
-					self.LeaderTransit[i] = nid
-				end
-			end
-			if IsDestroyed(self.LeaderTransit[i]) then
-				table.remove(self.LeaderTransit, i)
-			elseif GetDistance(p, self.LeaderTransit[i]) < self.Area then
-				table.insert(self.Leaders, table.remove(self.LeaderTransit, i))
-				self.ReMove = true
-				self:RequireNewFormat()
-			elseif self.TransitAttackMove then
-				if UnlimitedArmy.IsLeaderIdle(self.LeaderTransit[i]) then
-					Logic.GroupAttackMove(self.LeaderTransit[i], p.X, p.Y, -1)
-				end
-			else
-				if not UnlimitedArmy.IsLeaderMoving(self.LeaderTransit[i]) then
-					Move(self.LeaderTransit[i], p)
-				end
-			end
-		end
-	end
+	self:HandleTransit()
 	if self:GetSize() == 0 then
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
@@ -197,6 +176,52 @@ function UnlimitedArmy:Tick()
 		self:DoMoveCommands()
 	elseif self.Status == UnlimitedArmy.Status.Idle then
 		self:DoFormationCommands()
+	end
+end
+
+function UnlimitedArmy:HandleTransit()
+	if self.LeaderTransit[1] then
+		local p = self:GetPosition()
+		for i=table.getn(self.LeaderTransit),1,-1 do
+			if IsDestroyed(self.LeaderTransit[i]) then
+				local nid = EntityIdChangedHelper.GetNewID(self.LeaderTransit[i])
+				if nid then
+					self.LeaderTransit[i] = nid
+				end
+			end
+			if IsDestroyed(self.LeaderTransit[i]) then
+				table.remove(self.LeaderTransit, i)
+			elseif IsDead(self.LeaderTransit[i]) and Logic.IsHero(self.Leaders[i])==1 then
+				table.insert(self.DeadHeroes, table.remove(self.LeaderTransit, i))
+			elseif GetDistance(p, self.LeaderTransit[i]) < self.Area then
+				table.insert(self.Leaders, table.remove(self.LeaderTransit, i))
+				self.ReMove = true
+				self:RequireNewFormat()
+			elseif self.TransitAttackMove then
+				if UnlimitedArmy.IsLeaderIdle(self.LeaderTransit[i]) then
+					Logic.GroupAttackMove(self.LeaderTransit[i], p.X, p.Y, -1)
+				end
+			else
+				if not UnlimitedArmy.IsLeaderMoving(self.LeaderTransit[i]) then
+					Move(self.LeaderTransit[i], p)
+				end
+			end
+		end
+	end
+	if self.DeadHeroes[1] then
+		for i=table.getn(self.DeadHeroes),1,-1 do
+			if IsDestroyed(self.DeadHeroes[i]) then
+				local nid = EntityIdChangedHelper.GetNewID(self.DeadHeroes[i])
+				if nid then
+					self.DeadHeroes[i] = nid
+				end
+			end
+			if IsDestroyed(self.DeadHeroes[i]) then
+				table.remove(self.DeadHeroes, i)
+			elseif IsAlive(self.DeadHeroes[i]) then
+				self:AddLeader(table.remove(self.DeadHeroes, i))
+			end
+		end
 	end
 end
 
@@ -266,15 +291,21 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 				table.remove(self.Leaders, i)
 				self:RequireNewFormat()
 			end
+		elseif IsDead(self.Leaders[i]) and Logic.IsHero(self.Leaders[i])==1 then
+			table.insert(self.DeadHeroes, table.remove(self.Leaders, i))
+			self:RequireNewFormat()
 		end
 	end
 end
 
-function UnlimitedArmy:GetSize(addTransit)
+function UnlimitedArmy:GetSize(addTransit, adddeadhero)
 	self:CheckValidArmy()
 	local r = table.getn(self.Leaders)
 	if addTransit then
 		r = r + table.getn(self.LeaderTransit)
+	end
+	if adddeadhero then
+		r = r + table.getn(self.DeadHeroes)
 	end
 	return r
 end
@@ -514,6 +545,12 @@ function UnlimitedArmy:ProcessCommandQueue()
 					self.Target = GetPosition(tid)
 					self.ReMove = true
 					self.Status = UnlimitedArmy.Status.Moving
+				elseif self.DeadHeroes[1] and not self.DefendDoNotHelpHeroes then
+					if GetDistance(self.Target, self.DeadHeroes[1])>100 then
+						self.Target = GetPosition(self.DeadHeroes[1])
+						self.ReMove = true
+						self.Status = UnlimitedArmy.Status.Moving
+					end
 				elseif GetDistance(self.Target, com.pos)>100 then
 					self.Target = com.pos
 					self.ReMove = true
@@ -527,7 +564,7 @@ function UnlimitedArmy:ProcessCommandQueue()
 				end
 			end
 		elseif com.c == UnlimitedArmy.CommandType.WaitForTroopSize then
-			local s = self:GetSize(true)
+			local s = self:GetSize()
 			if (s >= com.size and not com.lessthan) or (s < com.size and com.lessthan) then
 				if com == self.CommandQueue[1] then
 					self:AdvanceCommand()
