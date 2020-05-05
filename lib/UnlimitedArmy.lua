@@ -43,10 +43,10 @@ end --mcbPacker.ignore
 -- 
 -- Army:AddLeader(id)							Fügt id zur army hinzu.
 -- Army:RemoveLeader(id)						Entfernt id aus der army.
--- Army:GetSize(addTransit)						Anzahl der Leader, addTransit gibt an, ob leader die zur armee unterwegs sind mitgezählt werden sollen..
+-- Army:GetSize(addTransit, adddeadhero)		Anzahl der Leader, addTransit gibt an, ob leader die zur armee unterwegs sind mitgezählt werden sollen..
 -- Army:Destroy()								Entfernt die Army, alle leader bleiben wo sie sind.
 -- Army:KillAllLeaders()						Tötet alle leader.
--- Army:IsDead()								-1-> destroyed, 2->kein leader, aber spawner, 1->kein leader, 3->hatte keinen leader, false->min 1 leader.
+-- Army:IsDead()								-1-> destroyed, 2->kein leader, aber spawner, 1->kein leader, 3->hatte keinen leader, false->min 1 leader, 4->nur noch tote helden.
 -- Army:GetPosition()							aktuelle position der armee, invalidPosition wenn leer.
 -- Army:GetFirstEnemyInArmyRange()				erster gegner in reichweite.
 -- Army:IsIdle()								tut die armee gerade etwas.
@@ -137,7 +137,7 @@ function UnlimitedArmy:Tick()
 		self:RequireNewFormat()
 	end
 	self:HandleTransit()
-	if self:GetSize() == 0 then
+	if self:GetSize(true, true) == 0 then
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
 		end
@@ -627,12 +627,15 @@ function UnlimitedArmy:IsDead()
 	if self.Status == UnlimitedArmy.Status.Destroyed then
 		return -1
 	end
-	if self:GetSize()==0 then
+	if self:GetSize(true, false)==0 then
 		if self.Spawner then
 			return 2
 		end
 		if not self.HadOneLeader then
 			return 3
+		end
+		if self.DeadHeroes[1] then
+			return 4
 		end
 		return 1
 	end
