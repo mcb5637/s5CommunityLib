@@ -23,6 +23,9 @@ end --mcbPacker.ignore
 -- 	
 -- - Spawner:Remove()									entfernt den spawner.
 -- - Spawner:IsDead()									gibt zurück, ob der spawngenerator tot (und der spawner somit nutzlos) ist.
+-- - Spawner:AddLeaderType(ety, solnum, spawnnum, exp, looped)
+-- 														fügt eine leaderdesc hinzu.
+-- - Spawner:RemoveLeaderType(ety)						entfernt alle leaderdescs die den entitytyp haben.
 -- 
 -- Benötigt:
 -- - CopyTable
@@ -39,12 +42,11 @@ function UnlimitedArmySpawnGenerator.New(army, spawndata)
 	self.Generator = spawndata.Generator
 	self.FreeArea = spawndata.FreeArea
 	self.LeaderDesc = {}
-	for _,d in ipairs(spawndata.LeaderDesc) do
-		table.insert(self.LeaderDesc, d)
-		d.CurrNum = d.SpawnNum
-	end
 	army.Spawner = self
 	self.Army = army
+	for _,d in ipairs(spawndata.LeaderDesc) do
+		self:AddLeaderType(d.LeaderType, d.SoldierNum, d.SpawnNum, d.Experience, d.Looped)
+	end
 	return self
 end
 
@@ -115,4 +117,25 @@ end
 function UnlimitedArmySpawnGenerator:Remove()
 	self.Army.Spawner = nil
 	self.Army = nil
+end
+
+function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, looped)
+	self:CheckValidSpawner()
+	table.insert(self.LeaderDesc, {
+		LeaderType = assert(ety),
+		SoldierNum = assert(solnum),
+		SpawnNum = assert(spawnnum),
+		CurrNum = spawnnum,
+		Experience = exp,
+		Looped = looped,
+	})
+end
+
+function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
+	self:CheckValidSpawner()
+	for i=table.getn(self.LeaderDesc),1,-1 do
+		if self.LeaderDesc[i].LeaderType==ety then
+			table.remove(self.LeaderDesc, i)
+		end
+	end
 end

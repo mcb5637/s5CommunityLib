@@ -23,6 +23,10 @@ end --mcbPacker.ignore
 -- 	
 -- - Recruiter:Remove()									entfernt den spawner.
 -- - Recruiter:IsDead()									gibt zurück, ob der spawngenerator tot (und der spawner somit nutzlos) ist.
+-- - Recruiter:AddBuilding(id)							fügt ein rekrutierungsgebäude hinzu.
+-- - Recruiter:RemoveBuilding(id)						entfernt ein rekrutierungsgebäude.
+-- - Recruiter:AddUCat(ucat, spawnnum, looped)			fügt einen kaufauftrag hinzu.
+-- - Recruiter:RemoveUCat(ucat)							entfernt alle kaufaufträge der ucat.
 -- 
 -- Benötigt:
 -- - CopyTable
@@ -38,10 +42,6 @@ function UnlimitedArmyRecruiter.New(army, data)
 	assert(self.Buildings[1] and IsAlive(self.Buildings[1]))
 	self.ArmySize = assert(data.ArmySize)
 	self.UCats = {}
-	for _,d in ipairs(data.UCats) do
-		d.CurrNum = d.SpawnNum
-		table.insert(self.UCats, d)
-	end
 	self.ResCheat = data.ResCheat
 	self.InRecruitment = {}
 	self.Cannons = {}
@@ -49,6 +49,9 @@ function UnlimitedArmyRecruiter.New(army, data)
 	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, self.CheckAddRecruitment, 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
+	for _,d in ipairs(data.UCats) do
+		self:AddUCat(d.UCat, d.SpawnNum, d.Looped)
+	end
 	return self
 end
 
@@ -110,7 +113,12 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 				self.Cannons[self.Buildings[i]] = nil
 				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
 			end
-			table.remove(self.Buildings, i)
+			local nid = EntityIdChangedHelper.GetNewID(self.Buildings[i])
+			if IsValid(nid) then
+				table.remove(self.Buildings, i)
+			else
+				self.Buildings[i] = nid
+			end
 		elseif self.Cannons[self.Buildings[i]] then
 			local c = Logic.GetLeaderTrainingAtBuilding(self.Buildings[i])
 			if self.Cannons[self.Buildings[i]] == -1 and IsValid(c) then
@@ -304,6 +312,34 @@ end
 function UnlimitedArmyRecruiter:AddBuilding(id)
 	self:CheckValidSpawner()
 	table.insert(self.Buildings, id)
+end
+
+function UnlimitedArmyRecruiter:RemoveBuilding(id)
+	self:CheckValidSpawner()
+	for i=table.getn(self.Buildings),1,-1 do
+		if self.Buildings[i]==id then
+			table.remove(self.Buildings, i)
+		end
+	end
+end
+
+function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
+	self:CheckValidSpawner()
+	table.insert(self.UCats, {
+		UCat = assert(ucat),
+		SpawnNum = assert(spawnnum),
+		CurrNum = spawnnum,
+		Looped = looped,
+	})
+end
+
+function UnlimitedArmyRecruiter:RemoveUCat(ucat)
+	self:CheckValidSpawner()
+	for i=table.getn(self.UCats),1,-1 do
+		if self.UCats[i].UCat==ucat then
+			table.remove(self.UCats, i)
+		end
+	end
 end
 
 UnlimitedArmyRecruiter.SpawnOffset = {
