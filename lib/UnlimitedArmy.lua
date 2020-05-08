@@ -34,6 +34,7 @@ end --mcbPacker.ignore
 -- 			LeaderFormation,
 -- 			AIActive,
 -- 			DefendDoNotHelpHeroes,
+-- 			AutoRotateRange,
 -- 		})
 -- 
 -- Army.Player
@@ -79,7 +80,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
-	DeadHeroes=nil, DefendDoNotHelpHeroes=nil,
+	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -110,6 +111,7 @@ function UnlimitedArmy.New(data)
 	self.LeaderFormation = data.LeaderFormation
 	self.AIActive = data.AIActive
 	self.DefendDoNotHelpHeroes = data.DefendDoNotHelpHeroes
+	self.AutoRotateRange = data.AutoRotateRange
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
@@ -167,6 +169,14 @@ function UnlimitedArmy:Tick()
 	end
 	if not preventfurthercommands then
 		self:CheckStatus(UnlimitedArmy.Status.Idle)
+		if self.AutoRotateRange then
+			local p = self:GetPosition()
+			local tid = UnlimitedArmy.GetNearestEnemyInArea(p, self.Player, self.AutoRotateRange, false, false, self.AIActive)
+			if tid and math.abs(GetAngleBetween(p, GetPosition(tid))-self.FormationRotation)>10 then
+				self.FormationRotation = GetAngleBetween(p, GetPosition(tid))
+				self.ReMove = true
+			end
+		end
 		preventfurthercommands = true
 	end
 	self:ProcessCommandQueue()
