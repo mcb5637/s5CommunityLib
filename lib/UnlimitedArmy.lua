@@ -63,8 +63,14 @@ end --mcbPacker.ignore
 -- 												fügt einen angriffsbefehl auf dan nächste ziel in maxrange hinzu (maxrange kann nil sein für ganze map) (beendet sofort).
 -- Army:AddCommandWaitForTroopSize(size, lessthan, looped)
 -- 												wartet darauf, das die armee eine anzahl an truppen hat.
+-- Army:AddCommandSetSpawnerStatus(status, looped)
+-- 												setzt ob ein spawner neue truppen spawnen/rekrutieren darf (default true).
+-- Army:AddCommandWaitForSpawnerFull(looped)	wartet darauf, das ein spawner die armee gefüllt hat (size im spawner) (sofort wahr, wenn kein spawner vorhanden).
 -- Army:CreateLeaderForArmy(ety, sol, pos, experience)
 -- 												erstellt einen leader und verbindet ihn mit der army.
+-- Army:Iterator(transit)						gibt einen iterator zurück, der über alle leader der armee iteriert, zu verwenden: for id in Army:Iterator() do.
+-- 													den zurückgegebenen iterator nicht speichern, enthält upvalues.
+-- 
 -- 
 -- Benötigt:
 -- - CopyTable
@@ -84,7 +90,9 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
-UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8, SetSpawnerStatus=9}
+UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8, SetSpawnerStatus=9,
+	WaitForSpawnerFull=10,
+}
 
 function UnlimitedArmy.New(data)
 	local self = CopyTable(UnlimitedArmy, {[UnlimitedArmy.EntityTypeArray]=UnlimitedArmy.EntityTypeArray,
@@ -597,6 +605,13 @@ function UnlimitedArmy:ProcessCommandQueue()
 			if com == self.CommandQueue[1] then
 				self:AdvanceCommand()
 			end
+		elseif com.c == UnlimitedArmy.CommandType.WaitForSpawnerFull then
+			local s = self:GetSize()
+			if not self.Spawner or s >= self.Spawner.ArmySize then
+				if com == self.CommandQueue[1] then
+					self:AdvanceCommand()
+				end
+			end
 		end
 	end
 end
@@ -742,6 +757,14 @@ function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
 		c = UnlimitedArmy.CommandType.SetSpawnerStatus,
 		looped = looped,
 		status = status,
+	})
+end
+
+function UnlimitedArmy:AddCommandWaitForSpawnerFull(looped)
+	self:CheckValidArmy()
+	table.insert(self.CommandQueue, {
+		c = UnlimitedArmy.CommandType.WaitForSpawnerFull,
+		looped = looped,
 	})
 end
 
