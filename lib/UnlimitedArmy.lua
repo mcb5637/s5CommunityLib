@@ -637,6 +637,9 @@ function UnlimitedArmy:IsIdle()
 	if self.Status ~= UnlimitedArmy.Status.Idle then
 		return false
 	end
+	if self.LeaderTransit[1] then
+		return false
+	end
 	if GetDistance(self:GetPosition(), self.Target)>1000 then
 		return false
 	end
