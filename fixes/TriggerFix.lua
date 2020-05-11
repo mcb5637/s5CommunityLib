@@ -125,6 +125,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			LuaDebugger.Break()
 		end
 	end
+	TriggerFix.currentEvent = nil
 end
 
 function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
@@ -163,6 +164,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	if rtime > 0.03 and TriggerFix.xpcallTimeMsg and KeyOf then
 		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
 	end
+	TriggerFix.currentEvent = nil
 end
 
 function TriggerFix.ShowErrorMessage(txt)
@@ -248,7 +250,10 @@ function TriggerFix.HackTrigger()
 	for k,v in pairs(TriggerFix.event) do
 		local name = k	-- upvalue, muss aber sowieso nach jedem laden neu initialisiert werden
 		Event[name] = function()
-			return TriggerFix.currentEvent[name]
+			if TriggerFix.currentEvent then
+				return TriggerFix.currentEvent[name]
+			end
+			return TriggerFix.event[name]()
 		end
 	end
 	for _,f in ipairs(TriggerFix.onHackTrigger) do
