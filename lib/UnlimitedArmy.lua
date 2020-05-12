@@ -1318,7 +1318,13 @@ UnlimitedArmy.IgnoreEtypes = {
 	[Entities.PB_Tower3_Cannon] = true,
 	[Entities.PB_DarkTower2_Ballista] = true,
 	[Entities.PB_DarkTower3_Cannon] = true,
+	[Entities.PU_Hero2_Cannon1] = true,
+	[Entities.PU_Hero3_Trap] = true,
+	[Entities.PU_Hero3_TrapCannon] = true,
 }
+if Entities.CB_Evil_Tower1_ArrowLauncher then
+	UnlimitedArmy.IgnoreEtypes[Entities.CB_Evil_Tower1_ArrowLauncher] = true
+end
 
 UnlimitedArmy.EntityTypeArray = {}
 
