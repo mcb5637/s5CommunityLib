@@ -634,6 +634,9 @@ end
 
 function UnlimitedArmy:IsIdle()
 	self:CheckValidArmy()
+	if self:GetSize(true, false)<=0 then
+		return true
+	end
 	if self.Status ~= UnlimitedArmy.Status.Idle then
 		return false
 	end
