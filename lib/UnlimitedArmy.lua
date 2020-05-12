@@ -129,7 +129,7 @@ function UnlimitedArmy.New(data)
 	self.TransitAttackMove = data.TransitAttackMove
 	self.SpawnerActive = true
 	self.Status = UnlimitedArmy.Status.Idle
-	self.Trigger = StartSimpleJob(self.Tick, self)
+	self.Trigger = StartSimpleJob(":Tick", self)
 	return self
 end
 

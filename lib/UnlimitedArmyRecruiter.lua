@@ -46,7 +46,7 @@ function UnlimitedArmyRecruiter.New(army, data)
 	self.InRecruitment = {}
 	self.Cannons = {}
 	self.ReorderAllowed = data.ReorderAllowed
-	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, self.CheckAddRecruitment, 1, nil, {self})
+	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, ":CheckAddRecruitment", 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
 	for _,d in ipairs(data.UCats) do
@@ -296,7 +296,7 @@ function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
 	self:CheckValidSpawner()
 	if table.getn(self.InRecruitment) + self:GetCannonBuyNum() > 0 then
 		if not self.DetachedFunc then
-			StartSimpleJob(self.TickDetached, self)
+			StartSimpleJob(":TickDetached", self)
 		end
 		self.DetachedFunc = detachedFunc or self.DetachedFunc or function(_,id) DestroyEntity(id) end
 		self.DetachedObject = detachedObj or self.DetachedObject

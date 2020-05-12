@@ -3,6 +3,7 @@
 -- Funktionen anstelle von Funktionsnamen als Trigger
 -- Tableindexierung in Funktionsanamen (sowas wie "foo.bar")
 -- tables als Trigger-Argumente
+-- OOP methoden als Trigger (1. parameter ist objekt, triggername ist methodenname mit : am start (":foo", obj))
 -- Trigger-Argumente bei StarteSimpleJob, StartSimpleHiResJob, StartJob, StartHiResJob
 -- error-handling (Trigger werden nicht gelöscht!)
 -- Warnung, wenn Trigger / HiRes-Trigger zusammen länger als 0.03 sec brauchen (ab da ruckelts!)
@@ -64,15 +65,15 @@ end
 
 function TriggerFix.ExecuteSingleTrigger(t)
 	if t.con then
-		local ret = TriggerFix.GetTriggerFunc(t.con)(unpack(t.acon))
+		local ret = TriggerFix.GetTriggerFunc(t.con, t.acon[1])(unpack(t.acon))
 		if not ret or ret==0 then
 			return nil, true
 		end
 	end
-	return TriggerFix.GetTriggerFunc(t.act)(unpack(t.aact))
+	return TriggerFix.GetTriggerFunc(t.act, t.aact[1])(unpack(t.aact))
 end
 
-function TriggerFix.GetTriggerFunc(f)
+function TriggerFix.GetTriggerFunc(f, obj)
 	local t = type(f)
 	if t=="function" then
 		return f
@@ -82,6 +83,9 @@ function TriggerFix.GetTriggerFunc(f)
 	end
 	if t=="table" then
 		local ta = _G
+		if f.object then
+			ta = obj
+		end
 		for _, k in ipairs(f) do
 			ta = ta[k]
 		end
@@ -188,6 +192,14 @@ GUIUpdate_UpdateDebugInfo = function()
 end
 
 function TriggerFix.SplitTableIndexPath(s)
+	if string.sub(s, 1, 1)==":" then
+		local r = TriggerFix.SplitTableIndexPath(string.sub(s, 2))
+		if type(r)=="string" then
+			r = {r}
+		end
+		r.object = true
+		return r
+	end
 	if not string.find(s, ".", nil, true) then
 		return s
 	end
