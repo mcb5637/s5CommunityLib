@@ -548,7 +548,7 @@ function UnlimitedArmy:ProcessCommandQueue()
 			if com.pos == nil then
 				com.pos = self:GetPosition()
 			end
-			if self:GetSize()==0 then
+			if self:GetSize(true, false)<=0 then
 				if com == self.CommandQueue[1] then
 					self:AdvanceCommand()
 				end
@@ -589,15 +589,21 @@ function UnlimitedArmy:ProcessCommandQueue()
 				end
 			end
 		elseif com.c == UnlimitedArmy.CommandType.AttackNearest then
-			local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange, nil, nil, self.AIActive)
-			if IsValid(tid) then
-				self.Target = GetPosition(tid)
-				if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
-					self.ReMove = true
-					self.Status = UnlimitedArmy.Status.Moving
-				end
+			if self:GetSize(true, false)<=0 then
 				if com == self.CommandQueue[1] then
 					self:AdvanceCommand()
+				end
+			else
+				local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange, nil, nil, self.AIActive)
+				if IsValid(tid) then
+					self.Target = GetPosition(tid)
+					if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
+						self.ReMove = true
+						self.Status = UnlimitedArmy.Status.Moving
+					end
+					if com == self.CommandQueue[1] then
+						self:AdvanceCommand()
+					end
 				end
 			end
 		elseif com.c == UnlimitedArmy.CommandType.SetSpawnerStatus then
