@@ -56,7 +56,10 @@ function UnlimitedArmyRecruiter.New(army, data)
 end
 
 function UnlimitedArmyRecruiter:IsDead()
-	self:CheckValidSpawner()
+	assert(self ~= UnlimitedArmyRecruiter)
+	if not self.Army then
+		return false
+	end
 	for _,id in ipairs(self.Buildings) do
 		if IsAlive(id) then
 			return false
@@ -202,6 +205,9 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 		return
 	end
 	if Logic.GetAverageMotivation(self.Army.Player) < Logic.GetLogicPropertiesMotivationThresholdVCLock() then
+		return
+	end
+	if not self.UCats[1] then
 		return
 	end
 	local buyT = UnlimitedArmyRecruiter.UCatBuyTypes[self.UCats[1].UCat]
