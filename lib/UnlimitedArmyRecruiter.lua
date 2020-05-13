@@ -105,6 +105,7 @@ end
 function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 	self:CheckValidSpawner()
 	for i=table.getn(self.Buildings),1,-1 do
+		local alive = true
 		if IsDead(self.Buildings[i]) then
 			if self.Cannons[self.Buildings[i]] then
 				if IsValid(self.Cannons[self.Buildings[i]]) then
@@ -115,16 +116,20 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 			end
 			local nid = EntityIdChangedHelper.GetNewID(self.Buildings[i])
 			if IsValid(nid) then
-				table.remove(self.Buildings, i)
-			else
 				self.Buildings[i] = nid
+			else
+				table.remove(self.Buildings, i)
+				alive = false
 			end
-		elseif self.Cannons[self.Buildings[i]] then
+		end
+		if alive and self.Cannons[self.Buildings[i]] then
 			local c = Logic.GetLeaderTrainingAtBuilding(self.Buildings[i])
 			if self.Cannons[self.Buildings[i]] == -1 and IsValid(c) then
 				self.Cannons[self.Buildings[i]] = c
 			elseif self.Cannons[self.Buildings[i]]~=-1 and c==0 then
-				f(obj, self.Cannons[self.Buildings[i]])
+				if IsValid(self.Cannons[self.Buildings[i]]) then
+					f(obj, self.Cannons[self.Buildings[i]])
+				end
 				self.Cannons[self.Buildings[i]] = nil
 				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
 			end
@@ -138,7 +143,7 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 			end
 		end
 		if IsDestroyed(self.InRecruitment[i].Id) then
-			table.remove(self.InRecruitment, i)
+			local d = table.remove(self.InRecruitment, i)
 			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
 		end
 		if Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
