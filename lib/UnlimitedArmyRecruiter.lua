@@ -58,7 +58,7 @@ end
 function UnlimitedArmyRecruiter:IsDead()
 	assert(self ~= UnlimitedArmyRecruiter)
 	if not self.Army then
-		return false
+		return true
 	end
 	for _,id in ipairs(self.Buildings) do
 		if IsAlive(id) then
