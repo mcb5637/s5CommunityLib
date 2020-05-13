@@ -86,6 +86,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.GetSettlerModifiedMovementSpeed				Die Bewegungsgeschwindigkeit eines Enities, modifiziert mit Technologieboni.
 -- 																		Wird bei jeder Bewegung aktualisiert, deswegen ist ein Set sinnlos.
 -- 																		(Berechnung ist base * weatherfactor * weatherfactor + techbonus).
+-- - MemoryManipulation.GetSettlerMovementSpeedFactor				Der speedfactor eines entities. (Set über Logic).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2888,6 +2889,7 @@ MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.
 MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TaskIndex"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
 MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"MovingSpeed"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""

@@ -35,6 +35,7 @@ end --mcbPacker.ignore
 -- 			AIActive,
 -- 			DefendDoNotHelpHeroes,
 -- 			AutoRotateRange,
+-- 			DoNotNormalizeSpeed,
 -- 		})
 -- 
 -- Army.Player
@@ -86,7 +87,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
-	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil,
+	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
@@ -120,12 +121,14 @@ function UnlimitedArmy.New(data)
 	self.AIActive = data.AIActive
 	self.DefendDoNotHelpHeroes = data.DefendDoNotHelpHeroes
 	self.AutoRotateRange = data.AutoRotateRange
+	self.DoNotNormalizeSpeed = data.DoNotNormalizeSpeed
 	self.CommandQueue = {}
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
 	self.CannonCommandCache = {}
 	self.LeaderTransit = {}
 	self.DeadHeroes={}
+	self.SpeedNormalizationFactors={}
 	self.TransitAttackMove = data.TransitAttackMove
 	self.SpawnerActive = true
 	self.Status = UnlimitedArmy.Status.Idle
@@ -450,6 +453,9 @@ end
 
 function UnlimitedArmy:DoBattleCommands()
 	self:CheckValidArmy()
+	if self.ReMove then
+		self:NormalizeSpeed(false)
+	end
 	local tpos = GetPosition(self.CurrentBattleTarget)
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive)
 	for num,id in ipairs(self.Leaders) do
@@ -475,6 +481,9 @@ end
 
 function UnlimitedArmy:DoMoveCommands()
 	self:CheckValidArmy()
+	if self.ReMove then
+		self:NormalizeSpeed(true)
+	end
 	if self.Status == UnlimitedArmy.Status.MovingNoBattle then
 		for _,id in ipairs(self.Leaders) do
 			if self.ReMove or not UnlimitedArmy.IsLeaderMoving(id) then
@@ -494,6 +503,7 @@ end
 function UnlimitedArmy:DoFormationCommands()
 	self:CheckValidArmy()
 	if self.ReMove then
+		self:NormalizeSpeed(false)
 		self:Formation(self.Target)
 	elseif self.PrepDefense and self:IsIdle() then
 		for _,id in ipairs(self.Leaders) do
@@ -797,6 +807,43 @@ function UnlimitedArmy:Iterator(transit)
 	end
 end
 
+function UnlimitedArmy:NormalizeSpeed(normalize)
+	if self.DoNotNormalizeSpeed then
+		return
+	end
+	if normalize then
+		local lowest = nil
+		for id in self:Iterator() do
+			local s = UnlimitedArmy.GetEntitySpeed(id)
+			if not lowest or lowest>s then
+				lowest = s
+			end
+		end
+		for id in self:Iterator() do
+			local f = lowest/UnlimitedArmy.GetEntitySpeed(id)
+			Logic.SetSpeedFactor(id, f)
+			if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0 and Logic.LeaderGetNumberOfSoldiers(id)>0 then
+				local d = {Logic.GetSoldiersAttachedToLeader(id)}
+				table.remove(d, 1)
+				for _,ids in ipairs(d) do
+					Logic.SetSpeedFactor(ids, f)
+				end
+			end
+		end
+	else
+		for id in self:Iterator() do
+			Logic.SetSpeedFactor(id, 1)
+			if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0 and Logic.LeaderGetNumberOfSoldiers(id)>0 then
+				local d = {Logic.GetSoldiersAttachedToLeader(id)}
+				table.remove(d, 1)
+				for _,ids in ipairs(d) do
+					Logic.SetSpeedFactor(ids, 1)
+				end
+			end
+		end
+	end
+end
+
 function UnlimitedArmy.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then
 		return false
@@ -1007,6 +1054,34 @@ function UnlimitedArmy.NoHookCheckInvisibility(id, enemypl, aiactive)
 	elseif ety==Entities.PU_Thief then
 		return true -- just assume thieves are invisible
 	end
+end
+
+function UnlimitedArmy.GetEntitySpeed(id)
+	if S5Hook and MemoryManipulation then
+		return MemoryManipulation.GetSettlerModifiedMovementSpeed(id) -- this does not include logic modifier
+	end
+	if Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1 then
+		local ety = Logic.GetEntityType(id)
+		if ety==Entities.PV_Cannon1 then
+			return 240
+		elseif ety==Entities.PV_Cannon2 then
+			return 260
+		elseif ety==Entities.PV_Cannon3 then
+			return 220
+		else
+			return 180
+		end
+	end
+	if Logic.IsEntityInCategory(id, EntityCategories.Hero)==1 then
+		return 400
+	end
+	if Logic.IsEntityInCategory(id, EntityCategories.CavalryLight)==1 or Logic.IsEntityInCategory(id, EntityCategories.CavalryHeavy)==1 then
+		return 500
+	end
+	if Logic.IsEntityInCategory(id, EntityCategories.Bow)==1 or Logic.IsEntityInCategory(id, EntityCategories.Rifle)==1 then
+		return 320
+	end
+	return 360
 end
 
 function UnlimitedArmy.IsLeaderInBattle(id)
