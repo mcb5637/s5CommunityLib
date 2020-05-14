@@ -215,14 +215,16 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 	local buyingAt = 0
 	if buyT then
 		for _,id in ipairs(self.Buildings) do
-			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==buyT and self:GetNumberTrainingAtBuilding(id)<3 then
+			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==buyT and self:GetNumberTrainingAtBuilding(id)<3
+			and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
 				buyingAt = id
 				break
 			end
 		end
 	elseif cbuyT then
 		for _,id in ipairs(self.Buildings) do
-			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==cbuyT and self:GetNumberTrainingAtBuilding(id)<1 then
+			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==cbuyT and self:GetNumberTrainingAtBuilding(id)<1
+			and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
 				local num, wid = Logic.GetAttachedWorkersToBuilding(id)
 				if num>=1 and Logic.GetCurrentTaskList(wid)=="TL_SMELTER_WORK1_WAIT"
 				and not InterfaceTool_IsBuildingDoingSomething(id)
