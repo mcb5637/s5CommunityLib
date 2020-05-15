@@ -148,8 +148,7 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 		if IsDestroyed(self.InRecruitment[i].Id) then
 			local d = table.remove(self.InRecruitment, i)
 			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
-		end
-		if Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
+		elseif Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
 			local d = table.remove(self.InRecruitment, i)
 			f(obj, d.Id)
 			self.NumCache[d.Building] = self.NumCache[d.Building] - 1

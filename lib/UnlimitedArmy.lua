@@ -527,117 +527,25 @@ function UnlimitedArmy:ProcessCommandQueue()
 	self:CheckValidArmy()
 	local com = self.CommandQueue[1]
 	if com then
-		if com.c == UnlimitedArmy.CommandType.LuaFunc then
-			local adv, tmpcmd = com.func(self, com)
-			if adv and com == self.CommandQueue[1] then
-				self:AdvanceCommand()
-			end
-			if tmpcmd then
-				com = tmpcmd
-			end
-		end
-		if com.c == UnlimitedArmy.CommandType.Move then
-			self.Target = com.pos
-			if self.Status ~= UnlimitedArmy.Status.Battle then
-				self.Status = UnlimitedArmy.Status.Moving
-			end
-			if self.Status == UnlimitedArmy.Status.Moving then
-				self.ReMove = true
-			end
-			if com == self.CommandQueue[1] then
-				self:AdvanceCommand()
-			end
-		elseif com.c == UnlimitedArmy.CommandType.Flee then
-			self.Target = com.pos
-			self.Status = UnlimitedArmy.Status.MovingNoBattle
-			self.ReMove = true
-			if com == self.CommandQueue[1] then
-				self:AdvanceCommand()
-			end
-		elseif com.c == UnlimitedArmy.CommandType.Defend then
-			if com.pos == nil then
-				com.pos = self:GetPosition()
-			end
-			if self:GetSize(true, false)<=0 then
-				if com == self.CommandQueue[1] then
-					self:AdvanceCommand()
-				end
-				self.Target = com.pos
-			elseif GetDistance(self:GetPosition(), com.pos) > com.distArea then
-				self.Status = UnlimitedArmy.Status.MovingNoBattle
-				self.Target = com.pos
-				self.ReMove = true
-			elseif self.Status ~= UnlimitedArmy.Status.Battle then
-				local tid = UnlimitedArmy.GetFirstEnemyInArea(com.pos, self.Player, com.distArea, nil, nil, self.AIActive)
-				if IsValid(tid) then
-					self.Target = GetPosition(tid)
-					self.ReMove = true
-					self.Status = UnlimitedArmy.Status.Moving
-				elseif self.DeadHeroes[1] and not self.DefendDoNotHelpHeroes then
-					if GetDistance(self.Target, self.DeadHeroes[1])>100 then
-						self.Target = GetPosition(self.DeadHeroes[1])
-						self.ReMove = true
-						self.Status = UnlimitedArmy.Status.Moving
-					end
-				elseif GetDistance(self.Target, com.pos)>100 then
-					self.Target = com.pos
-					self.ReMove = true
-					self.Status = UnlimitedArmy.Status.Moving
-				end
-			end
-		elseif com.c == UnlimitedArmy.CommandType.WaitForIdle then
-			if self:IsIdle() then
-				if com == self.CommandQueue[1] then
-					self:AdvanceCommand()
-				end
-			end
-		elseif com.c == UnlimitedArmy.CommandType.WaitForTroopSize then
-			local s = self:GetSize()
-			if (s >= com.size and not com.lessthan) or (s < com.size and com.lessthan) then
-				if com == self.CommandQueue[1] then
-					self:AdvanceCommand()
-				end
-			end
-		elseif com.c == UnlimitedArmy.CommandType.AttackNearest then
-			if self:GetSize(true, false)<=0 then
-				if com == self.CommandQueue[1] then
-					self:AdvanceCommand()
-				end
-			else
-				local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.maxrange, nil, nil, self.AIActive)
-				if IsValid(tid) then
-					self.Target = GetPosition(tid)
-					if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
-						self.ReMove = true
-						self.Status = UnlimitedArmy.Status.Moving
-					end
-					if com == self.CommandQueue[1] then
-						self:AdvanceCommand()
-					end
-				end
-			end
-		elseif com.c == UnlimitedArmy.CommandType.SetSpawnerStatus then
-			self.SpawnerActive = com.status
-			if com == self.CommandQueue[1] then
-				self:AdvanceCommand()
-			end
-		elseif com.c == UnlimitedArmy.CommandType.WaitForSpawnerFull then
-			local s = self:GetSize()
-			if not self.Spawner or s >= self.Spawner.ArmySize then
-				if com == self.CommandQueue[1] then
-					self:AdvanceCommand()
-				end
-			end
-		end
+		self:ProcessCommand(com, table.getn(self.CommandQueue))
+	end
+end
+
+function UnlimitedArmy:ProcessCommand(com, ind)
+	local adv, rep = com.Command(self, com)
+	if adv and com == self.CommandQueue[1] then
+		self:AdvanceCommand()
+	end
+	if rep and ind>0 then
+		self:ProcessCommand(rep, ind-1)
 	end
 end
 
 function UnlimitedArmy:AdvanceCommand()
 	self:CheckValidArmy()
 	if self.CommandQueue[1] then
-		local c = self.CommandQueue[1]
-		table.remove(self.CommandQueue, 1)
-		if c.looped then
+		local c = table.remove(self.CommandQueue, 1)
+		if c.Looped then
 			table.insert(self.CommandQueue, c)
 		end
 	end
@@ -711,83 +619,47 @@ end
 
 function UnlimitedArmy:AddCommandMove(p, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.Move,
-		pos = p,
-		looped = looped,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandMove(p, looped))
 end
 
 function UnlimitedArmy:AddCommandFlee(p, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.Flee,
-		pos = p,
-		looped = looped,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandFlee(p, looped))
 end
 
 function UnlimitedArmy:AddCommandDefend(defendPos, defendArea, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.Defend,
-		looped = looped,
-		distArea = defendArea or self.Area,
-		pos = defendPos,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandDefend(defendPos, defendArea or self.Area, looped))
 end
 
 function UnlimitedArmy:AddCommandWaitForIdle(looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.WaitForIdle,
-		looped = looped,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForIdle(looped))
 end
 
 function UnlimitedArmy:AddCommandWaitForTroopSize(size, lessthan, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.WaitForTroopSize,
-		size = size,
-		lessthan = lessthan,
-		looped = looped,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForTroopSize(size, lessthan, looped))
 end
 
 function UnlimitedArmy:AddCommandLuaFunc(func, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.LuaFunc,
-		looped = looped,
-		func = func,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandLuaFunc(func, looped))
 end
 
 function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.AttackNearest,
-		looped = looped,
-		maxrange = maxrange,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped))
 end
 
 function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.SetSpawnerStatus,
-		looped = looped,
-		status = status,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandSetSpawnerStatus(status, looped))
 end
 
 function UnlimitedArmy:AddCommandWaitForSpawnerFull(looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, {
-		c = UnlimitedArmy.CommandType.WaitForSpawnerFull,
-		looped = looped,
-	})
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped))
 end
 
 function UnlimitedArmy:Iterator(transit)
@@ -842,6 +714,151 @@ function UnlimitedArmy:NormalizeSpeed(normalize)
 			end
 		end
 	end
+end
+
+function UnlimitedArmy.CreateCommandMove(p, looped)
+	return {
+		Pos = p,
+		Looped = looped,
+		Command = function(self, com)
+			self.Target = com.Pos
+			if self.Status ~= UnlimitedArmy.Status.Battle then
+				self.Status = UnlimitedArmy.Status.Moving
+			end
+			if self.Status == UnlimitedArmy.Status.Moving then
+				self.ReMove = true
+			end
+			return true
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandFlee(p, looped)
+	return {
+		Pos = p,
+		Looped = looped,
+		Command = function(self, com)
+			self.Target = com.Pos
+			self.Status = UnlimitedArmy.Status.MovingNoBattle
+			self.ReMove = true
+			return true
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandDefend(defendPos, defendArea, looped)
+	return {
+		Looped = looped,
+		DistArea = defendArea,
+		Pos = defendPos,
+		Command = function(self, com)
+			if com.Pos == nil then
+				com.Pos = self:GetPosition()
+			end
+			if self:GetSize(true, false)<=0 then
+				self.Target = com.Pos
+				return true
+			elseif GetDistance(self:GetPosition(), com.Pos) > com.DistArea then
+				self.Status = UnlimitedArmy.Status.MovingNoBattle
+				self.Target = com.Pos
+				self.ReMove = true
+			elseif self.Status ~= UnlimitedArmy.Status.Battle then
+				local tid = UnlimitedArmy.GetFirstEnemyInArea(com.Pos, self.Player, com.DistArea, nil, nil, self.AIActive)
+				if IsValid(tid) then
+					self.Target = GetPosition(tid)
+					self.ReMove = true
+					self.Status = UnlimitedArmy.Status.Moving
+				elseif self.DeadHeroes[1] and not self.DefendDoNotHelpHeroes then
+					if GetDistance(self.Target, self.DeadHeroes[1])>100 then
+						self.Target = GetPosition(self.DeadHeroes[1])
+						self.ReMove = true
+						self.Status = UnlimitedArmy.Status.Moving
+					end
+				elseif GetDistance(self.Target, com.Pos)>100 then
+					self.Target = com.Pos
+					self.ReMove = true
+					self.Status = UnlimitedArmy.Status.Moving
+				end
+			end
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandWaitForIdle(looped)
+	return {
+		Looped = looped,
+		Command = function(self, com)
+			if self:IsIdle() then
+				return true
+			end
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandWaitForTroopSize(size, lessthan, looped)
+	return {
+		Size = size,
+		LessThan = lessthan,
+		Looped = looped,
+		Command = function(self, com)
+			local s = self:GetSize()
+			if (s >= com.Size and not com.LessThan) or (s < com.Size and com.LessThan) then
+				return true
+			end
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandLuaFunc(func, looped)
+	return {
+		Looped = looped,
+		Command = func,
+	}
+end
+
+function UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
+	return {
+		MaxRange = maxrange,
+		Looped = looped,
+		Command = function(self, com)
+			if self:GetSize(true, false)<=0 then
+				return true
+			else
+				local tid = UnlimitedArmy.GetNearestEnemyInArea(self:GetPosition(), self.Player, com.MaxRange, nil, nil, self.AIActive)
+				if IsValid(tid) then
+					self.Target = GetPosition(tid)
+					if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.Idle then
+						self.ReMove = true
+						self.Status = UnlimitedArmy.Status.Moving
+					end
+					return true
+				end
+			end
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandSetSpawnerStatus(status, looped)
+	return {
+		Status = status,
+		Looped = looped,
+		Command = function(self, com)
+			self.SpawnerActive = com.Status
+			return true
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped)
+	return {
+		Looped = looped,
+		Command = function(self, com)
+			local s = self:GetSize()
+			if not self.Spawner or s >= self.Spawner.ArmySize then
+				return true
+			end
+		end,
+	}
 end
 
 function UnlimitedArmy.IsValidTarget(id, enemypl, aiactive)
