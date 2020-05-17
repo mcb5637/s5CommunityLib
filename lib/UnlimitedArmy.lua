@@ -1106,7 +1106,7 @@ function UnlimitedArmy.IsLeaderInBattle(id)
 		return false
 	end
 	local com = Logic.LeaderGetCurrentCommand(id)
-	return com==0 or com==5 or com==10
+	return (com==0 or com==5 or com==10) and not (string.sub(Logic.GetCurrentTaskList(id) or "", -5, -1)=="_IDLE")
 end
 
 function UnlimitedArmy.IsLeaderIdle(id)
@@ -1114,7 +1114,7 @@ function UnlimitedArmy.IsLeaderIdle(id)
 		return false
 	end
 	local com = Logic.LeaderGetCurrentCommand(id)
-	return com==3 or com==7
+	return com==3 or com==7 or (string.sub(Logic.GetCurrentTaskList(id) or "", -5, -1)=="_IDLE")
 end
 
 function UnlimitedArmy.IsLeaderMoving(id)
@@ -1122,7 +1122,7 @@ function UnlimitedArmy.IsLeaderMoving(id)
 		return false
 	end
 	local com = Logic.LeaderGetCurrentCommand(id)
-	return com==8 or com==5 or com==4
+	return (com==8 or com==5 or com==4) and not (string.sub(Logic.GetCurrentTaskList(id) or "", -5, -1)=="_IDLE")
 end
 
 function UnlimitedArmy.IsRangedEntity(id)
