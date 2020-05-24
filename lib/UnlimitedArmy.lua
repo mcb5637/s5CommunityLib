@@ -83,6 +83,7 @@ end --mcbPacker.ignore
 -- - GetCirclePosition
 -- - GetAngleBetween
 -- - TriggerFix
+-- - EntityIdChangedHelper
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,

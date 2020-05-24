@@ -19,6 +19,7 @@ end --mcbPacker.ignore
 -- 			-- optional:
 -- 			ResCheat,
 -- 			ReorderAllowed,
+-- 			RemoveUnavailable,
 -- 		})
 -- 	
 -- - Recruiter:Remove()									entfernt den spawner.
@@ -33,7 +34,7 @@ end --mcbPacker.ignore
 -- - UnlimitdArmy
 -- - GetDistance
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, NumCache={}, Cannons=nil, ReorderAllowed=nil,
+	TriggerType=nil, TriggerBuild=nil, NumCache={}, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil,
 }
 
 function UnlimitedArmyRecruiter.New(army, data)
@@ -46,6 +47,7 @@ function UnlimitedArmyRecruiter.New(army, data)
 	self.InRecruitment = {}
 	self.Cannons = {}
 	self.ReorderAllowed = data.ReorderAllowed
+	self.RemoveUnavailable = data.RemoveUnavailable
 	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, ":CheckAddRecruitment", 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
@@ -212,24 +214,29 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 	local buyT = UnlimitedArmyRecruiter.UCatBuyTypes[self.UCats[1].UCat]
 	local cbuyT = UnlimitedArmyRecruiter.CannonBuyTypes[self.UCats[1].UCat]
 	local buyingAt = 0
+	local hasOneBuilding = false
 	if buyT then
 		for _,id in ipairs(self.Buildings) do
-			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==buyT and self:GetNumberTrainingAtBuilding(id)<3
-			and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
-				buyingAt = id
-				break
+			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==buyT then
+				hasOneBuilding = true
+				if self:GetNumberTrainingAtBuilding(id)<3 and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
+					buyingAt = id
+					break
+				end
 			end
 		end
 	elseif cbuyT then
 		for _,id in ipairs(self.Buildings) do
-			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==cbuyT and self:GetNumberTrainingAtBuilding(id)<1
-			and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
-				local num, wid = Logic.GetAttachedWorkersToBuilding(id)
-				if num>=1 and Logic.GetCurrentTaskList(wid)=="TL_SMELTER_WORK1_WAIT"
-				and not InterfaceTool_IsBuildingDoingSomething(id)
-				and Logic.GetCannonProgress(id)==100 then
-					buyingAt = id
-					break
+			if Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(id))==cbuyT then
+				hasOneBuilding = true
+				if self:GetNumberTrainingAtBuilding(id)<1 and Logic.GetEntityHealth(id)/Logic.GetEntityMaxHealth(id)>0.2 then
+					local num, wid = Logic.GetAttachedWorkersToBuilding(id)
+					if num>=1 and Logic.GetCurrentTaskList(wid)=="TL_SMELTER_WORK1_WAIT"
+					and not InterfaceTool_IsBuildingDoingSomething(id)
+					and Logic.GetCannonProgress(id)==100 then
+						buyingAt = id
+						break
+					end
 				end
 			end
 		end
@@ -272,6 +279,8 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 				table.insert(self.UCats, d)
 			end
 		end
+	elseif not hasOneBuilding and self.RemoveUnavailable then
+		table.remove(self.UCats, 1)
 	elseif self.ReorderAllowed then
 		table.insert(self.UCats, table.remove(self.UCats, 1)) -- move ucat to end
 	end
