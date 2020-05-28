@@ -87,7 +87,6 @@ end --mcbPacker.ignore
 -- 																		Wird bei jeder Bewegung aktualisiert, deswegen ist ein Set sinnlos.
 -- 																		(Berechnung ist base * weatherfactor * weatherfactor + techbonus).
 -- - MemoryManipulation.GetSettlerMovementSpeedFactor				Der speedfactor eines entities. (Set über Logic).
--- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der schaden der circularattack eines entitytypes.
 -- - MemoryManipulation.Get/SetEntityTypeShurikenDamage				Der schaden der shuriken eines entitytypes.
 -- 
 -- Spezielle Funktionen:
@@ -2892,8 +2891,6 @@ MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.Lib
 MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
 MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"MovingSpeed"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
-MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
-MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
 MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CShurikenAbilityProps.DamageAmount"'}
 MemoryManipulation.SetEntityTypeShurikenDamage = MemoryManipulation.GetEntityTypeShurikenDamage
 
