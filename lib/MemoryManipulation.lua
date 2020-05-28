@@ -87,6 +87,8 @@ end --mcbPacker.ignore
 -- 																		Wird bei jeder Bewegung aktualisiert, deswegen ist ein Set sinnlos.
 -- 																		(Berechnung ist base * weatherfactor * weatherfactor + techbonus).
 -- - MemoryManipulation.GetSettlerMovementSpeedFactor				Der speedfactor eines entities. (Set über Logic).
+-- - MemoryManipulation.Get/SetEntityTypeCircularAttackDamage		Der schaden der circularattack eines entitytypes.
+-- - MemoryManipulation.Get/SetEntityTypeShurikenDamage				Der schaden der shuriken eines entitytypes.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2626,7 +2628,7 @@ function MemoryManipulation.SetHeroTypeAbilityRechargeTimeNeeded(typ, abilit, se
 		[Abilities.AbilitySniper] = "GGL_CSniperAbilityProps",
 		[Abilities.AbilitySummon] = "GGL_CSummonBehaviorProps",
 	}
-	local adr = "."..t[abilit]..".RechargeTimeSeconds"
+	local adr = "BehaviorProps."..t[abilit]..".RechargeTimeSeconds"
 	MemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), adr, sec)
 end
 
@@ -2890,6 +2892,10 @@ MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.Lib
 MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
 MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"MovingSpeed"', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
+MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
+MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CShurikenAbilityProps.DamageAmount"'}
+MemoryManipulation.SetEntityTypeShurikenDamage = MemoryManipulation.GetEntityTypeShurikenDamage
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
