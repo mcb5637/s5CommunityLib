@@ -1076,7 +1076,11 @@ end
 
 function UnlimitedArmy.GetEntitySpeed(id)
 	if S5Hook and MemoryManipulation then
-		return MemoryManipulation.GetSettlerModifiedMovementSpeed(id) -- this does not include logic modifier
+		local s = MemoryManipulation.GetSettlerModifiedMovementSpeed(id) -- this does not include logic modifier
+		if s < 0 then -- seems some entities have speed of -1 when spawned, fallback to base speed in this case
+			return MemoryManipulation.GetSettlerMovementSpeed(id)
+		end
+		return s
 	end
 	if Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1 then
 		local ety = Logic.GetEntityType(id)
