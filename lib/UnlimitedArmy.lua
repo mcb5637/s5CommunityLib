@@ -667,6 +667,11 @@ function UnlimitedArmy:AddCommandWaitForSpawnerFull(looped)
 	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped))
 end
 
+function UnlimitedArmy:AddCommandGuardEntity(target, looped)
+	self:CheckValidArmy()
+	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandGuardEntity(target, looped))
+end
+
 function UnlimitedArmy:Iterator(transit)
 	local k = table.getn(self.Leaders)+1
 	local t = self.Leaders
@@ -861,6 +866,28 @@ function UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped)
 			local s = self:GetSize()
 			if not self.Spawner or s >= self.Spawner.ArmySize then
 				return true
+			end
+		end,
+	}
+end
+
+function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
+	return {
+		Looped = looped,
+		Target = target,
+		Command = function(self, com)
+			if IsDestroyed(com.Target) or self:GetSize(true, false)<=0 then
+				return true
+			end
+			local tp = GetPosition(com.Target)
+			if not self.Target or GetDistance(tp, self.Target)>250 then
+				self.Target = tp
+				if self.Status ~= UnlimitedArmy.Status.Battle then
+					self.Status = UnlimitedArmy.Status.Moving
+				end
+				if self.Status == UnlimitedArmy.Status.Moving then
+					self.ReMove = true
+				end
 			end
 		end,
 	}
