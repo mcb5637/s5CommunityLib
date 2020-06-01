@@ -92,9 +92,6 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 }
 
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
-UnlimitedArmy.CommandType = {Move = 1, Defend = 2, Flee = 3, WaitForIdle = 5, LuaFunc = 6, AttackNearest = 7, WaitForTroopSize = 8, SetSpawnerStatus=9,
-	WaitForSpawnerFull=10,
-}
 
 function UnlimitedArmy.New(data)
 	local self = CopyTable(UnlimitedArmy, {[UnlimitedArmy.EntityTypeArray]=UnlimitedArmy.EntityTypeArray,
@@ -1152,7 +1149,14 @@ function UnlimitedArmy.IsNonCombatEntity(id)
 end
 
 function UnlimitedArmy.IsFearAffectableAndConvertable(id)
-	return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(Logic.GetEntityType(id)), "LogicProps.Fearless")==0
+	if S5Hook and MemoryManipulation then
+		return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(Logic.GetEntityType(id)), "LogicProps.Fearless")==0
+	end
+	if Logic.IsHero(id)==1 then
+		return false
+	end
+	local ty = Logic.GetEntityType(id)
+	return not (ty==Entities.CU_Evil_LeaderBearman1 or ty==Entities.CU_Evil_LeaderSkirmisher1)
 end
 
 function UnlimitedArmy.MoveAndSetTargetRotation(id, pos, r)
