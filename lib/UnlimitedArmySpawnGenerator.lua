@@ -19,6 +19,7 @@ end --mcbPacker.ignore
 -- 			-- optional:
 -- 			Generator,
 -- 			FreeArea,
+-- 			RefillSoldiers,
 -- 		})
 -- 	
 -- - Spawner:Remove()									entfernt den spawner.
@@ -30,7 +31,9 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - CopyTable
 -- - UnlimitdArmy
-UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil}
+UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
+	RefillSoldiers=nil,
+}
 
 function UnlimitedArmySpawnGenerator.New(army, spawndata)
 	local self = CopyTable(UnlimitedArmySpawnGenerator)
@@ -41,6 +44,7 @@ function UnlimitedArmySpawnGenerator.New(army, spawndata)
 	self.SpawnLeaders = assert(spawndata.SpawnLeaders)
 	self.Generator = spawndata.Generator
 	self.FreeArea = spawndata.FreeArea
+	self.RefillSoldiers = spawndata.RefillSoldiers
 	self.LeaderDesc = {}
 	army.Spawner = self
 	self.Army = army
@@ -62,9 +66,17 @@ function UnlimitedArmySpawnGenerator:Tick(active)
 		return
 	end
 	self.CCounter = self.CCounter - 1
-	if active and self.CCounter <= 0 and self.Army:GetSize(true, true)<self.ArmySize and self:IsSpawnPossible() then
-		self:ResetCounter()
-		self:ForceSpawn(math.min(self.SpawnLeaders, self.ArmySize-self.Army:GetSize(true, true)))
+	if active and self.CCounter <= 0 and self:IsSpawnPossible() then
+		local l, s = self:GetNeededSpawnAmount()
+		if l>0 or s>0 then
+			self:ResetCounter()
+			if l > 0 then
+				self:ForceSpawn(math.min(self.SpawnLeaders, l))
+			end
+			if s>0 and self.SpawnLeaders>l then
+				self:RefillSoldiersOfLeaders(self.SpawnLeaders-l)
+			end
+		end
 	end
 end
 
@@ -74,6 +86,35 @@ function UnlimitedArmySpawnGenerator:ResetCounter()
 		self.CCounter = self.SpawnCounter
 	else
 		self.CCounter = self:SpawnCounter()
+	end
+end
+
+function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
+	self:CheckValidSpawner()
+	local l = self.ArmySize-self.Army:GetSize(true, true)
+	local s = 0
+	if self.RefillSoldiers then
+		for id in self.Army:Iterator(true) do
+			if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0
+			and Logic.LeaderGetNumberOfSoldiers(id)<Logic.LeaderGetMaxNumberOfSoldiers(id) then
+				s = s + 1
+			end
+		end
+	end
+	return l, s
+end
+
+function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
+	self:CheckValidSpawner()
+	for id in self.Army:Iterator(true) do
+		if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0
+			and Logic.LeaderGetNumberOfSoldiers(id)<Logic.LeaderGetMaxNumberOfSoldiers(id) then
+			Tools.CreateSoldiersForLeader(id, Logic.LeaderGetMaxNumberOfSoldiers(id)-Logic.LeaderGetNumberOfSoldiers(id))
+			num = num - 1
+			if num <= 0 then
+				break
+			end
+		end
 	end
 end
 
