@@ -1190,6 +1190,23 @@ function UnlimitedArmy.MoveAndSetTargetRotation(id, pos, r)
 	Logic.GroupAttackMove(id, pos.X, pos.Y, r)
 end
 
+function UnlimitedArmy.IsReferenceDead(r)
+	if type(r)=="table" then
+		if r.IsDead then
+			return r.IsDead()
+		end
+		if r[1] then
+			for _,id in ipairs(r) do
+				if not UnlimitedArmy.IsReferenceDead(id) then
+					return false
+				end
+			end
+			return true
+		end
+	end
+	return IsDead(r)
+end
+
 UnlimitedArmy.Formations = {}
 function UnlimitedArmy.Formations.Chaotic(army, pos)
 	army.ChaotocCache = army.ChaotocCache or {}
