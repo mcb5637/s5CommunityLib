@@ -3,6 +3,7 @@ mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
+mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b

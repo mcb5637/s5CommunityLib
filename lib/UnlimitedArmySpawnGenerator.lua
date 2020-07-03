@@ -1,6 +1,7 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
+mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b

@@ -5,7 +5,7 @@ if mcbPacker then --mcbPacker.ignore
 	mcbPacker.require("s5CommunityLib/comfort/math/SimplexNoise")
 	mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 	mcbPacker.require("s5CommunityLib/tables/TerrainTypes")
-	mcbPacker.require("comfort/GetRandom")
+	mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 end --mcbPacker.ignore
 
 
