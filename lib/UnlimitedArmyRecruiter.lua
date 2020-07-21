@@ -35,11 +35,22 @@ end --mcbPacker.ignore
 -- - UnlimitdArmy
 -- - GetDistance
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, NumCache={}, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil,
+	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil,
 }
 
-function UnlimitedArmyRecruiter.New(army, data)
-	local self = CopyTable(UnlimitedArmyRecruiter, {[UnlimitedArmyRecruiter.NumCache] = UnlimitedArmyRecruiter.NumCache})
+UnlimitedArmyRecruiter = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmyRecruiter")
+
+
+UnlimitedArmyRecruiter:AStatic()
+UnlimitedArmyRecruiter.NumCache = {}
+
+UnlimitedArmyRecruiter:AReference()
+function UnlimitedArmyRecruiter:New(army, data) end
+
+UnlimitedArmyRecruiter:AMethod()
+function UnlimitedArmyRecruiter:Init(army, data)
+	self:CallBaseMethod("Init", UnlimitedArmyRecruiter)
+	assert(army:InstanceOf(UnlimitedArmy))
 	self.Buildings = data.Buildings
 	assert(self.Buildings[1] and IsAlive(self.Buildings[1]))
 	self.ArmySize = assert(data.ArmySize)
@@ -55,9 +66,9 @@ function UnlimitedArmyRecruiter.New(army, data)
 	for _,d in ipairs(data.UCats) do
 		self:AddUCat(d.UCat, d.SpawnNum, d.Looped)
 	end
-	return self
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:IsDead()
 	assert(self ~= UnlimitedArmyRecruiter)
 	if not self.Army then
@@ -71,11 +82,13 @@ function UnlimitedArmyRecruiter:IsDead()
 	return self.UCats[1] and true or false
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:CheckValidSpawner()
 	assert(self ~= UnlimitedArmyRecruiter)
 	assert(self.Army or self.DetachedFunc)
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:Tick(active)
 	self:CheckValidSpawner()
 	self:CheckLeaders(self.Army, self.Army.AddLeader)
@@ -90,6 +103,7 @@ function UnlimitedArmyRecruiter:Tick(active)
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:TickDetached()
 	self:CheckValidSpawner()
 	self:CheckLeaders(self.DetachedObject, self.DetachedFunc)
@@ -99,6 +113,7 @@ function UnlimitedArmyRecruiter:TickDetached()
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:GetCannonBuyNum()
 	self:CheckValidSpawner()
 	local i=0
@@ -108,6 +123,7 @@ function UnlimitedArmyRecruiter:GetCannonBuyNum()
 	return i
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 	self:CheckValidSpawner()
 	for i=table.getn(self.Buildings),1,-1 do
@@ -118,7 +134,7 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 					f(obj, self.Cannons[self.Buildings[i]])
 				end
 				self.Cannons[self.Buildings[i]] = nil
-				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
+				UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] = UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] - 1
 			end
 			local nid = EntityIdChangedHelper.GetNewID(self.Buildings[i])
 			if IsValid(nid) then
@@ -137,7 +153,7 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 					f(obj, self.Cannons[self.Buildings[i]])
 				end
 				self.Cannons[self.Buildings[i]] = nil
-				self.NumCache[self.Buildings[i]] = self.NumCache[self.Buildings[i]] - 1
+				UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] = UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] - 1
 			end
 		end
 	end
@@ -150,15 +166,16 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 		end
 		if IsDestroyed(self.InRecruitment[i].Id) then
 			local d = table.remove(self.InRecruitment, i)
-			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
+			UnlimitedArmyRecruiter.NumCache[d.Building] = UnlimitedArmyRecruiter.NumCache[d.Building] - 1
 		elseif Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
 			local d = table.remove(self.InRecruitment, i)
 			f(obj, d.Id)
-			self.NumCache[d.Building] = self.NumCache[d.Building] - 1
+			UnlimitedArmyRecruiter.NumCache[d.Building] = UnlimitedArmyRecruiter.NumCache[d.Building] - 1
 		end
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:ForceSpawn(num)
 	self:CheckValidSpawner()
 	for i=1, num do
@@ -168,11 +185,13 @@ function UnlimitedArmyRecruiter:ForceSpawn(num)
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:IsSpawnPossible()
 	self:CheckValidSpawner()
 	return not self:IsDead()
 end
 
+UnlimitedArmyRecruiter:AStatic()
 UnlimitedArmyRecruiter.UCatBuyTypes = {
 	[UpgradeCategories.LeaderSword] = UpgradeCategories.Barracks,
 	[UpgradeCategories.LeaderPoleArm] = UpgradeCategories.Barracks,
@@ -194,6 +213,7 @@ if UpgradeCategories.LeaderBanditBow then
 	UnlimitedArmyRecruiter.UCatBuyTypes[UpgradeCategories.LeaderBanditBow] = UpgradeCategories.Archery
 end
 
+UnlimitedArmyRecruiter:AStatic()
 UnlimitedArmyRecruiter.CannonBuyTypes = {
 	[UpgradeCategories.Cannon1] = UpgradeCategories.Foundry,
 	[UpgradeCategories.Cannon2] = UpgradeCategories.Foundry,
@@ -201,6 +221,7 @@ UnlimitedArmyRecruiter.CannonBuyTypes = {
 	[UpgradeCategories.Cannon4] = UpgradeCategories.Foundry,
 }
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:SpawnOneLeader()
 	self:CheckValidSpawner()
 	if Logic.GetPlayerAttractionUsage(self.Army.Player) >= Logic.GetPlayerAttractionLimit(self.Army.Player) then
@@ -248,7 +269,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 		local c = {}
 		Logic.FillLeaderCostsTable(self.Army.Player, self.UCats[1].UCat, c)
 		if self:CheckResources(c, true) then
-			self.NumCache[buyingAt] = self.NumCache[buyingAt] + 1
+			UnlimitedArmyRecruiter.NumCache[buyingAt] = UnlimitedArmyRecruiter.NumCache[buyingAt] + 1
 			if buyT then
 				self.TriggerType = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[1].UCat, self.Army.Player)
 				self.TriggerBuild = buyingAt
@@ -287,6 +308,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:CheckResources(c, addIfCheat)
 	self:CheckValidSpawner()
 	if self.ResCheat then
@@ -307,13 +329,15 @@ function UnlimitedArmyRecruiter:CheckResources(c, addIfCheat)
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:GetNumberTrainingAtBuilding(id)
-	if not self.NumCache[id] then
-		self.NumCache[id] = 0
+	if not UnlimitedArmyRecruiter.NumCache[id] then
+		UnlimitedArmyRecruiter.NumCache[id] = 0
 	end
-	return self.NumCache[id]
+	return UnlimitedArmyRecruiter.NumCache[id]
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
 	self:CheckValidSpawner()
 	if table.getn(self.InRecruitment) + self:GetCannonBuyNum() > 0 then
@@ -331,11 +355,13 @@ function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
 	EndJob(self.AddTrigger)
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:AddBuilding(id)
 	self:CheckValidSpawner()
 	table.insert(self.Buildings, id)
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:RemoveBuilding(id)
 	self:CheckValidSpawner()
 	for i=table.getn(self.Buildings),1,-1 do
@@ -345,6 +371,7 @@ function UnlimitedArmyRecruiter:RemoveBuilding(id)
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
 	self:CheckValidSpawner()
 	local t = {
@@ -356,6 +383,7 @@ function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
 	table.insert(self.UCats, t)
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:RemoveUCat(ucat)
 	self:CheckValidSpawner()
 	for i=table.getn(self.UCats),1,-1 do
@@ -365,6 +393,7 @@ function UnlimitedArmyRecruiter:RemoveUCat(ucat)
 	end
 end
 
+UnlimitedArmyRecruiter:AStatic()
 UnlimitedArmyRecruiter.SpawnOffset = {
 	[Entities.PB_Barracks1] = {X=-800,Y=-300},
 	[Entities.PB_Barracks2] = {X=-800,Y=-300},
@@ -374,6 +403,7 @@ UnlimitedArmyRecruiter.SpawnOffset = {
 	[Entities.PB_Stable2] = {X=-350,Y=400},
 }
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:CheckAddRecruitment()
 	self:CheckValidSpawner()
 	local id = Event.GetEntityID()
@@ -399,6 +429,7 @@ function UnlimitedArmyRecruiter:CheckAddRecruitment()
 	end
 end
 
+UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:ResetUCatNum(ldesc)
 	self:CheckValidSpawner()
 	if type(ldesc.SpawnNum)=="number" then
@@ -407,3 +438,5 @@ function UnlimitedArmyRecruiter:ResetUCatNum(ldesc)
 		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
 	end
 end
+
+UnlimitedArmyRecruiter:FinalizeClass()

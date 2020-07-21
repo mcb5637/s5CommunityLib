@@ -38,8 +38,14 @@ UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=ni
 	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil,
 }
 
-function UnlimitedArmySpawnGenerator.New(army, spawndata)
-	local self = CopyTable(UnlimitedArmySpawnGenerator)
+UnlimitedArmySpawnGenerator = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmySpawnGenerator")
+
+UnlimitedArmySpawnGenerator:AReference()
+function UnlimitedArmySpawnGenerator:New(army, spawndata)end
+
+UnlimitedArmySpawnGenerator:AMethod()
+function UnlimitedArmySpawnGenerator:Init(army, spawndata)
+	self:CallBaseMethod("Init", UnlimitedArmySpawnGenerator)
 	self.Pos = assert(spawndata.Position)
 	self.ArmySize = assert(spawndata.ArmySize)
 	self.SpawnCounter = assert(spawndata.SpawnCounter)
@@ -56,14 +62,15 @@ function UnlimitedArmySpawnGenerator.New(army, spawndata)
 	for _,d in ipairs(spawndata.LeaderDesc) do
 		self:AddLeaderType(d.LeaderType, d.SoldierNum, d.SpawnNum, d.Experience, d.Looped)
 	end
-	return self
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:CheckValidSpawner()
 	assert(self ~= UnlimitedArmySpawnGenerator)
 	assert(self.Army)
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:Tick(active)
 	self:CheckValidSpawner()
 	if self:IsDead() then
@@ -85,6 +92,7 @@ function UnlimitedArmySpawnGenerator:Tick(active)
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:ResetCounter()
 	self:CheckValidSpawner()
 	if type(self.SpawnCounter)=="number" then
@@ -94,6 +102,7 @@ function UnlimitedArmySpawnGenerator:ResetCounter()
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
 	self:CheckValidSpawner()
 	local l = self.ArmySize-self.Army:GetSize(true, true)
@@ -109,6 +118,7 @@ function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
 	return l, s
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
 	self:CheckValidSpawner()
 	for id in self.Army:Iterator(true) do
@@ -123,6 +133,7 @@ function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 	self:CheckValidSpawner()
 	if self:IsDead() then
@@ -135,6 +146,7 @@ function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 	return true
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:IsDead()
 	self:CheckValidSpawner()
 	if self.Pos[1] then
@@ -153,6 +165,7 @@ function UnlimitedArmySpawnGenerator:IsDead()
 	return IsDead(self.Generator)
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:ForceSpawn(num)
 	self:CheckValidSpawner()
 	for i=1, num do
@@ -162,6 +175,7 @@ function UnlimitedArmySpawnGenerator:ForceSpawn(num)
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:GetSpawnPos()
 	if self:IsDead() then
 		return nil
@@ -175,6 +189,7 @@ function UnlimitedArmySpawnGenerator:GetSpawnPos()
 	return self.Pos
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	self:CheckValidSpawner()
 	local spawningLeader = 1
@@ -197,11 +212,13 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:Remove()
 	self.Army.Spawner = nil
 	self.Army = nil
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, looped)
 	self:CheckValidSpawner()
 	local t = {
@@ -215,6 +232,7 @@ function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, l
 	table.insert(self.LeaderDesc, t)
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
 	self:CheckValidSpawner()
 	for i=table.getn(self.LeaderDesc),1,-1 do
@@ -224,6 +242,7 @@ function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
 	end
 end
 
+UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
 	self:CheckValidSpawner()
 	if type(ldesc.SpawnNum)=="number" then
@@ -232,3 +251,5 @@ function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
 		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
 	end
 end
+
+UnlimitedArmySpawnGenerator:FinalizeClass()
