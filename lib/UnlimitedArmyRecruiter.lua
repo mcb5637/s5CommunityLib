@@ -276,7 +276,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 		if self.UCats[1].CurrNum <= 0 then
 			local d = table.remove(self.UCats, 1)
 			if d.Looped then
-				d.CurrNum = d.SpawnNum
+				self:ResetUCatNum(d)
 				table.insert(self.UCats, d)
 			end
 		end
@@ -347,12 +347,13 @@ end
 
 function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
 	self:CheckValidSpawner()
-	table.insert(self.UCats, {
+	local t = {
 		UCat = assert(ucat),
 		SpawnNum = assert(spawnnum),
-		CurrNum = spawnnum,
 		Looped = looped,
-	})
+	}
+	self:ResetUCatNum(t)
+	table.insert(self.UCats, t)
 end
 
 function UnlimitedArmyRecruiter:RemoveUCat(ucat)
@@ -395,5 +396,14 @@ function UnlimitedArmyRecruiter:CheckAddRecruitment()
 		self.TriggerBuild = nil
 		self.TriggerType = nil
 		return
+	end
+end
+
+function UnlimitedArmyRecruiter:ResetUCatNum(ldesc)
+	self:CheckValidSpawner()
+	if type(ldesc.SpawnNum)=="number" then
+		ldesc.CurrNum = ldesc.SpawnNum
+	else
+		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
 	end
 end

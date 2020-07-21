@@ -187,7 +187,7 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	if self.LeaderDesc[spawningLeader].CurrNum <= 0 then
 		local d = table.remove(self.LeaderDesc, spawningLeader)
 		if d.Looped then
-			d.CurrNum = d.SpawnNum
+			self:ResetLeaderNum(d)
 			table.insert(self.LeaderDesc, d)
 		end
 	end
@@ -204,14 +204,15 @@ end
 
 function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, looped)
 	self:CheckValidSpawner()
-	table.insert(self.LeaderDesc, {
+	local t = {
 		LeaderType = assert(ety),
 		SoldierNum = assert(solnum),
 		SpawnNum = assert(spawnnum),
-		CurrNum = spawnnum,
 		Experience = exp,
 		Looped = looped,
-	})
+	}
+	self:ResetLeaderNum(t)
+	table.insert(self.LeaderDesc, t)
 end
 
 function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
@@ -220,5 +221,14 @@ function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
 		if self.LeaderDesc[i].LeaderType==ety then
 			table.remove(self.LeaderDesc, i)
 		end
+	end
+end
+
+function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
+	self:CheckValidSpawner()
+	if type(ldesc.SpawnNum)=="number" then
+		ldesc.CurrNum = ldesc.SpawnNum
+	else
+		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
 	end
 end
