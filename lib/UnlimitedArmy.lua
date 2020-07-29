@@ -150,6 +150,7 @@ function UnlimitedArmy:Tick()
 	if self:GetSize(true, true) == 0 then
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner then
 			self:Destroy()
+			return
 		end
 		if self.Spawner then
 			self.Spawner:Tick(self.SpawnerActive)
@@ -707,6 +708,7 @@ end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:Iterator(transit)
+	self:CheckValidArmy()
 	local k = table.getn(self.Leaders)+1
 	local t = self.Leaders
 	return function()
@@ -724,11 +726,12 @@ function UnlimitedArmy:Iterator(transit)
 end
 
 UnlimitedArmy:AMethod()
-function UnlimitedArmy:NormalizeSpeed(normalize)
-	if self.DoNotNormalizeSpeed then
+function UnlimitedArmy:NormalizeSpeed(normalize, forcerefresh)
+	self:CheckValidArmy()
+	if self.DoNotNormalizeSpeed and not forcerefresh then
 		return
 	end
-	if normalize then
+	if normalize and not self.DoNotNormalizeSpeed then
 		local lowest = nil
 		for id in self:Iterator() do
 			local s = UnlimitedArmy.GetEntitySpeed(id)
@@ -759,6 +762,13 @@ function UnlimitedArmy:NormalizeSpeed(normalize)
 			end
 		end
 	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetDoNotNormalizeSpeed(val)
+	self:CheckValidArmy()
+	self.DoNotNormalizeSpeed = val
+	self:NormalizeSpeed(self.Status==UnlimitedArmy.Status.Moving or self.Status==UnlimitedArmy.Status.MovingNoBattle, true)
 end
 
 UnlimitedArmy:AStatic()
