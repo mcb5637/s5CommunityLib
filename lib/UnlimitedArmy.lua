@@ -1283,7 +1283,7 @@ UnlimitedArmy:AStatic()
 UnlimitedArmy.Formations = {}
 function UnlimitedArmy.Formations.Chaotic(army, pos)
 	army.ChaotocCache = army.ChaotocCache or {}
-	local l = table.getn(army.Leaders)*100
+	local l = math.sqrt(table.getn(army.Leaders))*150
 	for _,id in ipairs(army.Leaders) do
 		if not army.ChaotocCache[id] then
 			army.ChaotocCache[id] = {X=GetRandom(-l, l), Y=GetRandom(-l, l), r=GetRandom(0,360)}
