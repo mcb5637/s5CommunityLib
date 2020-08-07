@@ -113,7 +113,7 @@ function UnlimitedArmy:Init(data)
 	self.HadOneLeader = false
 	self.PrepDefense = data.PrepDefense
 	self.DestroyBridges = data.DestroyBridges
-	self.LeaderFormation = data.LeaderFormation
+	self:SetLeaderFormation(data.LeaderFormation)
 	self.AIActive = data.AIActive
 	self.DefendDoNotHelpHeroes = data.DefendDoNotHelpHeroes
 	self.AutoRotateRange = data.AutoRotateRange
@@ -167,6 +167,9 @@ function UnlimitedArmy:Tick()
 		self.CurrentBattleTarget = UnlimitedArmy.GetNearestEnemyInArea(pos, self.Player, self.Area, true, false, self.AIActive)
 		if IsDestroyed(self.CurrentBattleTarget) then
 			self.CurrentBattleTarget = UnlimitedArmy.GetNearestEnemyInArea(pos, self.Player, self.Area, false, true, self.AIActive)
+			if IsDestroyed(self.CurrentBattleTarget) then
+				self.CurrentBattleTarget = UnlimitedArmy.GetNearestEnemyInArea(pos, self.Player, self.Area, false, false, self.AIActive)
+			end
 		end
 		self.CannonCommandCache = {}
 	end
@@ -769,6 +772,17 @@ function UnlimitedArmy:SetDoNotNormalizeSpeed(val)
 	self:CheckValidArmy()
 	self.DoNotNormalizeSpeed = val
 	self:NormalizeSpeed(self.Status==UnlimitedArmy.Status.Moving or self.Status==UnlimitedArmy.Status.MovingNoBattle, true)
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetLeaderFormation(form)
+	self:CheckValidArmy()
+	self.LeaderFormation = form
+	if form then
+		for id in self:Iterator(true) do
+			Logic.LeaderChangeFormationType(id, form)
+		end
+	end
 end
 
 UnlimitedArmy:AStatic()
