@@ -88,6 +88,7 @@ end --mcbPacker.ignore
 -- 																		(Berechnung ist base * weatherfactor * weatherfactor + techbonus).
 -- - MemoryManipulation.GetSettlerMovementSpeedFactor				Der speedfactor eines entities. (Set über Logic).
 -- - MemoryManipulation.Get/SetEntityTypeShurikenDamage				Der schaden der shuriken eines entitytypes.
+-- - MemoryManipulation.Get/SetEntityTypeSnipeDamageFactor			Der schadensfaktor der sniper ability eine entitytyps. (schaden ist max health * factor).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2893,6 +2894,8 @@ MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipula
 MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
 MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CShurikenAbilityProps.DamageAmount"'}
 MemoryManipulation.SetEntityTypeShurikenDamage = MemoryManipulation.GetEntityTypeShurikenDamage
+MemoryManipulation.GetEntityTypeSnipeDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CSniperAbilityProps.DamageFactor"'}
+MemoryManipulation.SetEntityTypeSnipeDamageFactor = MemoryManipulation.GetEntityTypeSnipeDamageFactor
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
