@@ -89,6 +89,8 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.GetSettlerMovementSpeedFactor				Der speedfactor eines entities. (Set über Logic).
 -- - MemoryManipulation.Get/SetEntityTypeShurikenDamage				Der schaden der shuriken eines entitytypes.
 -- - MemoryManipulation.Get/SetEntityTypeSnipeDamageFactor			Der schadensfaktor der sniper ability eine entitytyps. (schaden ist max health * factor).
+-- - MemoryManipulation.Get/SetEntityTypeRangedEffectDamageFactor	Der schadensfaktor des rangedeffects eines entitytypes.
+-- - MemoryManipulation.Get/SetEntityTypeRangedEffectArmorFactor	Der rüstungsfaktor des rangedeffects eines entitytypes.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2896,6 +2898,10 @@ MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation
 MemoryManipulation.SetEntityTypeShurikenDamage = MemoryManipulation.GetEntityTypeShurikenDamage
 MemoryManipulation.GetEntityTypeSnipeDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CSniperAbilityProps.DamageFactor"'}
 MemoryManipulation.SetEntityTypeSnipeDamageFactor = MemoryManipulation.GetEntityTypeSnipeDamageFactor
+MemoryManipulation.GetEntityTypeRangedEffectArmorFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.ArmorFactor"'}
+MemoryManipulation.SetEntityTypeRangedEffectArmorFactor = MemoryManipulation.GetEntityTypeRangedEffectArmorFactor
+MemoryManipulation.GetEntityTypeRangedEffectDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.DamageFactor"'}
+MemoryManipulation.SetEntityTypeRangedEffectDamageFactor = MemoryManipulation.GetEntityTypeRangedEffectDamageFactor
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
