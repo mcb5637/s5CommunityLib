@@ -9,7 +9,7 @@ end --mcbPacker.ignore
 --- author:mcb		current maintainer:mcb		v0.1b
 -- truppen rekrutierer für UnlimitedArmy.
 -- 
--- Recruiter = UnlimitedArmyRecruiter.New(army, {
+-- Recruiter = UnlimitedArmyRecruiter:New(army, {
 -- 			-- benötigt:
 -- 			Buildings = {id...},
 -- 			ArmySize,

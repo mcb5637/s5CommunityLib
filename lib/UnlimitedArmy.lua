@@ -73,6 +73,7 @@ end --mcbPacker.ignore
 -- 												erstellt einen leader und verbindet ihn mit der army.
 -- Army:Iterator(transit)						gibt einen iterator zurück, der über alle leader der armee iteriert, zu verwenden: for id in Army:Iterator() do.
 -- 													den zurückgegebenen iterator nicht speichern, enthält upvalues.
+-- Army:SetLeaderFormation(form)				setzt die formation die die soldier der leader der armee einnehmen. kann eine function(army, id) sein.
 -- 
 -- 
 -- Benötigt:
@@ -275,7 +276,7 @@ function UnlimitedArmy:AddLeader(id)
 		table.insert(self.LeaderTransit, id)
 	end
 	if self.LeaderFormation then
-		Logic.LeaderChangeFormationType(id, self.LeaderFormation)
+		self:SetLeaderFormationForLeader(id)
 	end
 	self.HadOneLeader = true
 end
@@ -652,61 +653,81 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandMove(p, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandMove(p, looped))
+	local t = UnlimitedArmy.CreateCommandMove(p, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandFlee(p, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandFlee(p, looped))
+	local t = UnlimitedArmy.CreateCommandFlee(p, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandDefend(defendPos, defendArea, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandDefend(defendPos, defendArea or self.Area, looped))
+	local t = UnlimitedArmy.CreateCommandDefend(defendPos, defendArea or self.Area, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandWaitForIdle(looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForIdle(looped))
+	local t = UnlimitedArmy.CreateCommandWaitForIdle(looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandWaitForTroopSize(size, lessthan, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForTroopSize(size, lessthan, looped))
+	local t = UnlimitedArmy.CreateCommandWaitForTroopSize(size, lessthan, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandLuaFunc(func, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandLuaFunc(func, looped))
+	local t = UnlimitedArmy.CreateCommandLuaFunc(func, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandAttackNearestTarget(maxrange, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped))
+	local t = UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandSetSpawnerStatus(status, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandSetSpawnerStatus(status, looped))
+	local t = UnlimitedArmy.CreateCommandSetSpawnerStatus(status, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandWaitForSpawnerFull(looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped))
+	local t = UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:AddCommandGuardEntity(target, looped)
 	self:CheckValidArmy()
-	table.insert(self.CommandQueue, UnlimitedArmy.CreateCommandGuardEntity(target, looped))
+	local t = UnlimitedArmy.CreateCommandGuardEntity(target, looped)
+	table.insert(self.CommandQueue, t)
+	return t
 end
 
 UnlimitedArmy:AMethod()
@@ -780,9 +801,19 @@ function UnlimitedArmy:SetLeaderFormation(form)
 	self.LeaderFormation = form
 	if form then
 		for id in self:Iterator(true) do
-			Logic.LeaderChangeFormationType(id, form)
+			self:SetLeaderFormationForLeader(id)
 		end
 	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetLeaderFormationForLeader(id, ...)
+	self:CheckValidArmy()
+	local f = self.LeaderFormation
+	if type(f)~="number" then
+		f = f(self, id, unpack(arg))
+	end
+	Logic.LeaderChangeFormationType(id, f)
 end
 
 UnlimitedArmy:AStatic()

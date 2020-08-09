@@ -7,7 +7,7 @@ end --mcbPacker.ignore
 --- author:mcb		current maintainer:mcb		v0.1b
 -- spawngenerator für UnlimitedArmy.
 -- 
--- Spawner = UnlimitedArmySpawnGenerator.New(army, {
+-- Spawner = UnlimitedArmySpawnGenerator:New(army, {
 -- 			-- benötigt:
 -- 			Position,
 -- 			ArmySize,

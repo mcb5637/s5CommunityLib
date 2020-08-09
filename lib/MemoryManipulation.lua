@@ -91,6 +91,8 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeSnipeDamageFactor			Der schadensfaktor der sniper ability eine entitytyps. (schaden ist max health * factor).
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectDamageFactor	Der schadensfaktor des rangedeffects eines entitytypes.
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectArmorFactor	Der rüstungsfaktor des rangedeffects eines entitytypes.
+-- - MemoryManipulation.Get/SetEntityTypeRangedEffectHealthRecoveryFactor
+-- 																	Der teil der max hp eines leaders die vom rangedeffect eines entitytypes geheilt werden.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2902,6 +2904,8 @@ MemoryManipulation.GetEntityTypeRangedEffectArmorFactor = {LibFuncBase=MemoryMan
 MemoryManipulation.SetEntityTypeRangedEffectArmorFactor = MemoryManipulation.GetEntityTypeRangedEffectArmorFactor
 MemoryManipulation.GetEntityTypeRangedEffectDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.DamageFactor"'}
 MemoryManipulation.SetEntityTypeRangedEffectDamageFactor = MemoryManipulation.GetEntityTypeRangedEffectDamageFactor
+MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.HealthRecoveryFactor"'}
+MemoryManipulation.SetEntityTypeRangedEffectHealthRecoveryFactor = MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
