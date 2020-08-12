@@ -114,7 +114,6 @@ function UnlimitedArmy:Init(data)
 	self.HadOneLeader = false
 	self.PrepDefense = data.PrepDefense
 	self.DestroyBridges = data.DestroyBridges
-	self:SetLeaderFormation(data.LeaderFormation)
 	self.AIActive = data.AIActive
 	self.DefendDoNotHelpHeroes = data.DefendDoNotHelpHeroes
 	self.AutoRotateRange = data.AutoRotateRange
@@ -130,6 +129,7 @@ function UnlimitedArmy:Init(data)
 	self.SpawnerActive = true
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(":Tick", self)
+	self:SetLeaderFormation(data.LeaderFormation)
 end
 
 UnlimitedArmy:AMethod()
