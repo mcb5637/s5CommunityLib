@@ -995,33 +995,7 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.IsValidTarget(id, enemypl, aiactive)
-	if IsDead(id) then
-		return false
-	end
-	if MemoryManipulation then
-		if MemoryManipulation.IsEntityInvisible(id) then
-			return false
-		end
-	else
-		if UnlimitedArmy.NoHookCheckInvisibility(id, enemypl, aiactive) then
-			return false
-		end
-	end
-	if UnlimitedArmy.IgnoreEtypes[Logic.GetEntityType(id)] then
-		return false
-	end
-	if Logic.IsWorker(id)==1 then
-		if Logic.IsSettlerAtWork(id)==1 then
-			return false, Logic.GetSettlersWorkBuilding(id)
-		end
-		if Logic.IsSettlerAtFarm(id)==1 then
-			return false, Logic.GetSettlersFarm(id)
-		end
-		if Logic.IsSettlerAtResidence(id)==1 then
-			return false, Logic.GetSettlersResidence(id)
-		end
-	end
-	return true
+	return TargetFilter.IsValidTarget(id, enemypl, aiactive)
 end
 
 UnlimitedArmy:AStatic()
@@ -1034,7 +1008,7 @@ function UnlimitedArmy.GetFirstEnemyInArea(p, player, area, leader, building, ai
 		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, building, aiactive, addCond)
 	end
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
-		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
+		PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray),
 		Predicate.InCircle(p.X, p.Y, area)
 	}
 	if leader then
@@ -1061,7 +1035,7 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building, 
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
-		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray)
+		PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray)
 	}
 	if area then
 		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
@@ -1094,7 +1068,7 @@ function UnlimitedArmy.GetFurthestEnemyInArea(p, player, area, leader, building,
 	end
 	local r, d = nil, nil
 	local pred = {PredicateHelper.GetEnemyPlayerPredicate(player),
-		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray)
+		PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray)
 	}
 	if area then
 		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
@@ -1139,7 +1113,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive, addCo
 	end
 	local num = 0
 	for id in S5Hook.EntityIterator(PredicateHelper.GetEnemyPlayerPredicate(player),
-		PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray),
+		PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray),
 		Predicate.InCircle(p.X, p.Y, area)
 	) do
 		if UnlimitedArmy.IsValidTarget(id, player, aiactive) and addCond(id) then
@@ -1193,29 +1167,6 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings, 
 		end
 	end
 	return repid
-end
-
-UnlimitedArmy:AStatic()
-function UnlimitedArmy.NoHookCheckInvisibility(id, enemypl, aiactive)
-	local ety = Logic.GetEntityType(id)
-	if not (ety==Entities.PU_Hero5 or ety==Entities.PU_Thief) then -- assume just ari and thieves are invisible
-		return false
-	end
-	local p = GetPosition(id)
-	local eid = AI.Army_SearchClosestEnemy(enemypl, 0, p.X, p.Y, 500)
-	if eid==id then
-		return false
-	end
-	if aiactive then
-		return true
-	end
-	if ety==Entities.PU_Hero5 then
-		if Logic.HeroGetAbiltityChargeSeconds(id, Abilities.AbilityCamouflage) < Logic.HeroGetAbilityRechargeTime(id, Abilities.AbilityCamouflage)/2 then
-			return true -- might be some false positive, but nothing better possible
-		end
-	elseif ety==Entities.PU_Thief then
-		return true -- just assume thieves are invisible
-	end
 end
 
 UnlimitedArmy:AStatic()
@@ -1603,31 +1554,7 @@ UnlimitedArmy.BridgeEntityTypes = {
 	Entities.XD_DrawBridgeOpen2,
 }
 
-UnlimitedArmy:AStatic()
-UnlimitedArmy.IgnoreEtypes = {
-	[Entities.PU_Hero1_Hawk] = true,
-	[Entities.PB_Tower2_Ballista] = true,
-	[Entities.PB_Tower3_Cannon] = true,
-	[Entities.PB_DarkTower2_Ballista] = true,
-	[Entities.PB_DarkTower3_Cannon] = true,
-	[Entities.PU_Hero2_Cannon1] = true,
-	[Entities.PU_Hero3_Trap] = true,
-	[Entities.PU_Hero3_TrapCannon] = true,
-}
-if Entities.CB_Evil_Tower1_ArrowLauncher then
-	UnlimitedArmy.IgnoreEtypes[Entities.CB_Evil_Tower1_ArrowLauncher] = true
-end
-
-UnlimitedArmy:AStatic()
-UnlimitedArmy.EntityTypeArray = {}
-
 UnlimitedArmy:FinalizeClass()
-
-for en, e in pairs(Entities) do
-	if string.find(en, "[PC][UBV]") and not UnlimitedArmy.IgnoreEtypes[e] then
-		table.insert(UnlimitedArmy.EntityTypeArray, e)
-	end
-end
 
 UnlimitedArmyFiller = {}
 UnlimitedArmyFiller = LuaObject:CreateSubClass("UnlimitedArmyFiller")

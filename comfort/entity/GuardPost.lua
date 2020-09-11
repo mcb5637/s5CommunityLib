@@ -1,28 +1,30 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
+mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsInCone")
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
+mcbPacker.require("s5CommunityLib/comfort/entity/SightLine")
 end --mcbPacker.ignore
 
 
 --- author:mcb		current maintainer:mcb		v0.1b
 -- Einfache möglichkeit um wachposten zu realisieren.
 -- 
--- - GuardPost.AddGuard(ids, range, cone, targets, callback, deadcallback, ...)			erzeugt einen/mehrere wachen.
+-- - GuardPost.AddGuard(ids, range, cone, targets, checkSightLine, callback, deadcallback, ...)			erzeugt einen/mehrere wachen.
 -- - ids			eine id/scriptname oder ein table von mehreren, die wachen.
 -- - range			sichtreichweite der wachen.
 -- - cone			der winkel von der richtung der wache in dem bemerkt wird (2 seitig).
 -- - targets		ein table mit zielen, oder playern (mit targets.player gesetzt), oder nil für alle feinde der ersten wache (zum zeitpunkt des aufrufes).
+-- - checkSightLine	true oder ein table mit entities, prüft sichtlinien (true benötigt hook).
 -- - callback		func(id, tid, unpack(arg))		wird aufgerufen, wenn die wache etwas bemerkt, id ist die wache, tid das bemerkte ziel.
 -- - deadcallback	func(unpack(arg)) oder nil		wird aufgerufen, wenn alle wachen tot sind (optional).
 -- gibt der callback true zurück, wird der job beendet.
 -- 
 -- Benötigt:
--- - UnlimitedArmy (Zielprüfung)
+-- - TargetFilter (Zielprüfung)
 -- - GetDistance
 -- - IsInCone
 -- - TriggerFix
@@ -31,7 +33,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation (nur bei Hook)
 GuardPost = {}
 
-function GuardPost.AddGuard(ids, range, cone, targets, callback, deadcallback, ...)
+function GuardPost.AddGuard(ids, range, cone, targets, checkSightLine, callback, deadcallback, ...)
 	if type(ids)~="table" then
 		ids = {ids}
 	end
@@ -58,6 +60,7 @@ function GuardPost.AddGuard(ids, range, cone, targets, callback, deadcallback, .
 		targets = targets,
 		callback = callback,
 		deadcallback = deadcallback,
+		checkSightLine = checkSightLine,
 		arg = arg,
 	}
 	if S5Hook then
@@ -84,10 +87,8 @@ function GuardPost.Job(t)
 					local tid = GetID(t.targets[j])
 					if IsDead(tid) then
 						table.remove(t.targets, j)
-					elseif GetDistance(id, tid)<= t.range and IsInCone(tid, id, r, t.cone) and GuardPost.IsValidTarget(tid) then
-						if t.callback(id, tid, unpack(t.arg)) then
-							return true
-						end
+					elseif GetDistance(id, tid)<= t.range and GuardPost.CheckEntity(t, id, r, GetPosition(id), tid) then
+						return true
 					end
 				end
 			end
@@ -103,21 +104,29 @@ end
 
 function GuardPost.CheckAreaHook(t, id, r)
 	local p = GetPosition(id)
-	for tid in S5Hook.EntityIterator(Predicate.OfAnyPlayer(unpack(t.targets)), PredicateHelper.GetETypePredicate(UnlimitedArmy.EntityTypeArray), Predicate.InCircle(p.X, p.Y, t.range)) do
-		if IsInCone(tid, p, r, t.cone) and GuardPost.IsValidTarget(tid) then
-			if t.callback(id, tid, unpack(t.arg)) then
-				return true
-			end
+	for tid in S5Hook.EntityIterator(Predicate.OfAnyPlayer(unpack(t.targets)), PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray), Predicate.InCircle(p.X, p.Y, t.range)) do
+		if GuardPost.CheckEntity(t, id, r, p, tid) then
+			return true
 		end
 	end
 end
 
 function GuardPost.CheckAreaNoHook(t, id, r)
 	local p = GetPosition(id)
-	local data = {Logic.GetPlayerEntitiesInArea(GetPlayer(id), 0, p.X, p.Y, r, 16)}
-	table.remove(data, 1)
-	for _,tid in ipairs(data) do
-		if IsInCone(tid, p, r, t.cone) and GuardPost.IsValidTarget(tid) then
+	for _,pl in ipairs(t.targets) do
+		local data = {Logic.GetPlayerEntitiesInArea(pl, 0, p.X, p.Y, r, 16)}
+		table.remove(data, 1)
+		for _,tid in ipairs(data) do
+			if GuardPost.CheckEntity(t, id, r, p, tid) then
+				return true
+			end
+		end
+	end
+end
+
+function GuardPost.CheckEntity(t, id, r, p, tid)
+	if IsInCone(tid, p, r, t.cone) and GuardPost.IsValidTarget(tid) then
+		if not t.checkSightLine or SightLine.CheckVisibility(p, GetPosition(tid), type(t.checkSightLine)=="table" and t.checkSightLine) then
 			if t.callback(id, tid, unpack(t.arg)) then
 				return true
 			end
@@ -126,5 +135,5 @@ function GuardPost.CheckAreaNoHook(t, id, r)
 end
 
 function GuardPost.IsValidTarget(id)
-	return UnlimitedArmy.IsValidTarget(id, nil, nil)
+	return TargetFilter.IsValidTarget(id, nil, nil)
 end

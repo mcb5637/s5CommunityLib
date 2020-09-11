@@ -93,6 +93,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectArmorFactor	Der rüstungsfaktor des rangedeffects eines entitytypes.
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectHealthRecoveryFactor
 -- 																	Der teil der max hp eines leaders die vom rangedeffect eines entitytypes geheilt werden.
+-- - MemoryManipulation.Get/SetEntityTypeNumBlockedPoints			Kleines blocking eines entitytypes (anzahl an 100scmq kästchen die geblockt sind).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2906,6 +2907,8 @@ MemoryManipulation.GetEntityTypeRangedEffectDamageFactor = {LibFuncBase=MemoryMa
 MemoryManipulation.SetEntityTypeRangedEffectDamageFactor = MemoryManipulation.GetEntityTypeRangedEffectDamageFactor
 MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.HealthRecoveryFactor"'}
 MemoryManipulation.SetEntityTypeRangedEffectHealthRecoveryFactor = MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor
+MemoryManipulation.GetEntityTypeNumBlockedPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.NumBlockedPoints"'}
+MemoryManipulation.SetEntityTypeNumBlockedPoints = MemoryManipulation.GetEntityTypeNumBlockedPoints
 
 function MemoryManipulation.CreateLibFuncs()
 	local tocompile = ""
