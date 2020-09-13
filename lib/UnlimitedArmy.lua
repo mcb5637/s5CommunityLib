@@ -979,6 +979,24 @@ function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
 			if IsDestroyed(com.Target) or self:GetSize(true, false)<=0 then
 				return true
 			end
+			self.CurrentBattleTarget = GetID(com.Target)
+			if self.Status ~= UnlimitedArmy.Status.Battle then
+				self.Status = UnlimitedArmy.Status.Battle
+				self.ReMove = true
+			end
+		end,
+	}
+end
+
+UnlimitedArmy:AStatic()
+function UnlimitedArmy.CreateCommandDirectAttack(target, looped)
+	return {
+		Looped = looped,
+		Target = target,
+		Command = function(self, com)
+			if IsDestroyed(com.Target) or self:GetSize(true, false)<=0 then
+				return true
+			end
 			local tp = GetPosition(com.Target)
 			if not self.Target or GetDistance(tp, self.Target)>250 then
 				self.Target = tp
