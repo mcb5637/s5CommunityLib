@@ -21,6 +21,7 @@ end --mcbPacker.ignore
 -- 			ResCheat,
 -- 			ReorderAllowed,
 -- 			RemoveUnavailable,
+-- 			RandomizeSpawn,
 -- 		})
 -- 	
 -- - Recruiter:Remove()									entfernt den spawner.
@@ -35,7 +36,7 @@ end --mcbPacker.ignore
 -- - UnlimitdArmy
 -- - GetDistance
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil,
+	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,
 }
 
 UnlimitedArmyRecruiter = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmyRecruiter")
@@ -60,6 +61,7 @@ function UnlimitedArmyRecruiter:Init(army, data)
 	self.Cannons = {}
 	self.ReorderAllowed = data.ReorderAllowed
 	self.RemoveUnavailable = data.RemoveUnavailable
+	self.RandomizeSpawn = data.RandomizeSpawn
 	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, ":CheckAddRecruitment", 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
@@ -233,8 +235,12 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 	if not self.UCats[1] then
 		return
 	end
-	local buyT = UnlimitedArmyRecruiter.UCatBuyTypes[self.UCats[1].UCat]
-	local cbuyT = UnlimitedArmyRecruiter.CannonBuyTypes[self.UCats[1].UCat]
+	local index = 1
+	if self.RandomizeSpawn then
+		index = GetRandom(1, table.getn(self.UCats))
+	end
+	local buyT = UnlimitedArmyRecruiter.UCatBuyTypes[self.UCats[index].UCat]
+	local cbuyT = UnlimitedArmyRecruiter.CannonBuyTypes[self.UCats[index].UCat]
 	local buyingAt = 0
 	local hasOneBuilding = false
 	if buyT then
@@ -267,15 +273,15 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 	end
 	if buyingAt ~= 0 then
 		local c = {}
-		Logic.FillLeaderCostsTable(self.Army.Player, self.UCats[1].UCat, c)
+		Logic.FillLeaderCostsTable(self.Army.Player, self.UCats[index].UCat, c)
 		if self:CheckResources(c, true) then
 			UnlimitedArmyRecruiter.NumCache[buyingAt] = UnlimitedArmyRecruiter.NumCache[buyingAt] + 1
 			if buyT then
-				self.TriggerType = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[1].UCat, self.Army.Player)
+				self.TriggerType = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
 				self.TriggerBuild = buyingAt
-				Logic.BarracksBuyLeader(buyingAt, self.UCats[1].UCat)
+				Logic.BarracksBuyLeader(buyingAt, self.UCats[index].UCat)
 			else
-				local ty = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[1].UCat, self.Army.Player)
+				local ty = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
 				if S5Hook then
 					PostEvent.FoundryConstructCannon(buyingAt, ty)
 				else
@@ -293,18 +299,18 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 				self.Cannons[buyingAt] = -1
 			end
 		end
-		self.UCats[1].CurrNum = self.UCats[1].CurrNum - 1
-		if self.UCats[1].CurrNum <= 0 then
-			local d = table.remove(self.UCats, 1)
+		self.UCats[index].CurrNum = self.UCats[index].CurrNum - 1
+		if self.UCats[index].CurrNum <= 0 then
+			local d = table.remove(self.UCats, index)
 			if d.Looped then
 				self:ResetUCatNum(d)
 				table.insert(self.UCats, d)
 			end
 		end
 	elseif not hasOneBuilding and self.RemoveUnavailable then
-		table.remove(self.UCats, 1)
+		table.remove(self.UCats, index)
 	elseif self.ReorderAllowed then
-		table.insert(self.UCats, table.remove(self.UCats, 1)) -- move ucat to end
+		table.insert(self.UCats, table.remove(self.UCats, index)) -- move ucat to end
 	end
 end
 
