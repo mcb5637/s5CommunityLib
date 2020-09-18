@@ -68,7 +68,7 @@ function GuardPost.AddGuard(ids, range, cone, targets, checkSightLine, callback,
 	else
 		t.CheckArea = GuardPost.CheckAreaNoHook
 	end
-	return StartSimpleHiResJob("GuardPost.Job", t)
+	return StartSimpleHiResJob("GuardPost.Job", t), t
 end
 
 function GuardPost.Job(t)
@@ -114,7 +114,7 @@ end
 function GuardPost.CheckAreaNoHook(t, id, r)
 	local p = GetPosition(id)
 	for _,pl in ipairs(t.targets) do
-		local data = {Logic.GetPlayerEntitiesInArea(pl, 0, p.X, p.Y, r, 16)}
+		local data = {Logic.GetPlayerEntitiesInArea(pl, 0, p.X, p.Y, t.range, 16)}
 		table.remove(data, 1)
 		for _,tid in ipairs(data) do
 			if GuardPost.CheckEntity(t, id, r, p, tid) then
