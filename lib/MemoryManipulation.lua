@@ -2964,7 +2964,7 @@ function MemoryManipulation.CreateLibFuncsUpval()
 				end
 				local b = nil
 				if base==MemoryManipulation.LibFuncBase.Entity then
-					b = id
+					b = GetID(id)
 				elseif base==MemoryManipulation.LibFuncBase.EntityType then
 					b = MemoryManipulation.GetETypePointer(id)
 				end
