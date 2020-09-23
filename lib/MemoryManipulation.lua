@@ -2777,163 +2777,252 @@ function MemoryManipulation.GetClassAndAllSubClassesAsTable(class, r)
 	return r
 end
 
-function MemoryManipulation.GetClassAndSubClassesAsStringFromTable(pre, t, post)
-	local r = nil
-	for _,c in ipairs(t) do
-		if r==nil then
-			r = "{"
-		else
-			r = r..", "
-		end
-		r = r..pre..c..post
+function MemoryManipulation.GetClassAndAllSubClassesAsPPTable(pre, class, post)
+	local t = MemoryManipulation.GetClassAndAllSubClassesAsTable(class)
+	for i,c in ipairs(t) do
+		t[i] = pre..c..post
 	end
-	return r.."}"
+	return t
 end
 
-function MemoryManipulation.GetClassAndAllSubClassesAsString(pre, class, post)
-	return MemoryManipulation.GetClassAndSubClassesAsStringFromTable(pre, MemoryManipulation.GetClassAndAllSubClassesAsTable(class), post)
+function MemoryManipulation.EscapeString(s)
+	local t = type(s)
+	if t=="number" then
+		return tostring(s)
+	elseif t=="string" then
+		return '"'..s..'"'
+	else
+		assert(false)
+	end
+end
+
+function MemoryManipulation.LibFuncsTableToString(t)
+	local s = "{"
+	for k,v in pairs(t) do
+		s = s.."["..MemoryManipulation.EscapeString(k).."]".."="..MemoryManipulation.EscapeString(v)..","
+	end
+	s = s.."}"
+	return s
 end
 
 -- lib funcs
 MemoryManipulation.LibFuncBase = {Entity=1, EntityType=2}
 
-MemoryManipulation.GetLeaderExperience = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLeaderBehavior.Experience"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.GetLeaderExperience = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CLeaderBehavior.Experience", checkleader=true}
 MemoryManipulation.SetLeaderExperience = MemoryManipulation.GetLeaderExperience
-MemoryManipulation.GetLeaderTroopHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.GetLeaderTroopHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CLeaderBehavior.TroopHealthCurrent", checkleader=true}
 MemoryManipulation.SetLeaderTroopHealth = MemoryManipulation.GetLeaderTroopHealth
-MemoryManipulation.GetSettlerMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetSettlerMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path={"BehaviorList.GGL_CLeaderMovement.MovementSpeed", "BehaviorList.GGL_CSettlerMovement.MovementSpeed", "BehaviorList.GGL_CSoldierMovement.MovementSpeed"}, checksettler=true}
 MemoryManipulation.SetSettlerMovementSpeed = MemoryManipulation.GetSettlerMovementSpeed
-MemoryManipulation.GetSettlerRotationSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetSettlerRotationSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path={"BehaviorList.GGL_CLeaderMovement.TurningSpeed", "BehaviorList.GGL_CSettlerMovement.TurningSpeed", "BehaviorList.GGL_CSoldierMovement.TurningSpeed"}, checksettler=true}
 MemoryManipulation.SetSettlerRotationSpeed = MemoryManipulation.GetSettlerRotationSpeed
-MemoryManipulation.GetLeaderOfSoldier = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"LeaderId"', check="\tassert(MemoryManipulation.IsSoldier(id))\n"}
-MemoryManipulation.GetMovementCheckBlockingFlag = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CSettlerMovement.BlockingFlag"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetLeaderOfSoldier = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="LeaderId", checksoldier=true}
+MemoryManipulation.GetMovementCheckBlockingFlag = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CSettlerMovement.BlockingFlag", checksettler=true}
 MemoryManipulation.SetMovementCheckBlockingFlag = MemoryManipulation.GetMovementCheckBlockingFlag
-MemoryManipulation.GetBarracksAutoFillActive = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CBarrackBehavior.AutoFillActive"', check="\tassert(Logic.IsBuilding(id)==1)\n"}
-MemoryManipulation.GetSoldierTypeOfLeaderType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType"'}
+MemoryManipulation.GetBarracksAutoFillActive = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CBarrackBehavior.AutoFillActive", checksettler=true}
+MemoryManipulation.GetSoldierTypeOfLeaderType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType"}
 MemoryManipulation.SetSoldierTypeOfLeaderType = MemoryManipulation.GetSoldierTypeOfLeaderType
-MemoryManipulation.GetEntityTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange"')}
+MemoryManipulation.GetEntityTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange')}
 MemoryManipulation.SetEntityTypeMaxRange = MemoryManipulation.GetEntityTypeMaxRange
-MemoryManipulation.GetEntityScale = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"Scale"', check="\tassert(IsValid(id))\n"}
+MemoryManipulation.GetEntityScale = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="Scale", checkvalid=true}
 MemoryManipulation.SetEntityScale = MemoryManipulation.GetEntityScale
-MemoryManipulation.GetBuildingHeight = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BuildingHeight"', check="\tassert(Logic.IsBuilding(id)==1)\n"}
+MemoryManipulation.GetBuildingHeight = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BuildingHeight", checkbuilding=true}
 MemoryManipulation.SetBuildingHeight = MemoryManipulation.GetBuildingHeight
-MemoryManipulation.GetSettlerOverheadWidget = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"OverheadWidget"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetSettlerOverheadWidget = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="OverheadWidget", checksettler=true}
 MemoryManipulation.SetSettlerOverheadWidget = MemoryManipulation.GetSettlerOverheadWidget
-MemoryManipulation.GetMovingEntityTargetPos = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TargetPosition"'}
+MemoryManipulation.GetMovingEntityTargetPos = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="TargetPosition"}
 MemoryManipulation.SetMovingEntityTargetPos = MemoryManipulation.GetMovingEntityTargetPos
-MemoryManipulation.GetEntityCamouflageRemaining = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining"', check="\tassert(Logic.IsLeader(id)==1)\n"}
+MemoryManipulation.GetEntityCamouflageRemaining = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining", checkleader=true}
 MemoryManipulation.SetEntityCamouflageRemaining = MemoryManipulation.GetEntityCamouflageRemaining
-MemoryManipulation.GetEntityTimeToCamouflage = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CThiefCamouflageBehavior.TimeToInvisibility"', check="\tassert(Logic.IsLeader(id)==1)\n"}
-MemoryManipulation.GetHeroResurrectionTime = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CHeroBehavior.ResurrectionTimePassed"', check="\tassert(Logic.IsHero(id)==1)\n"}
+MemoryManipulation.GetEntityTimeToCamouflage = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CThiefCamouflageBehavior.TimeToInvisibility", checkleader=true}
+MemoryManipulation.GetHeroResurrectionTime = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CHeroBehavior.ResurrectionTimePassed", checkhero=true}
 MemoryManipulation.SetHeroResurrectionTime = MemoryManipulation.GetHeroResurrectionTime
-MemoryManipulation.GetEntityLimitedLifespanRemainingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CLimitedLifespanBehavior.RemainingLifespanSeconds"'}
+MemoryManipulation.GetEntityLimitedLifespanRemainingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CLimitedLifespanBehavior.RemainingLifespanSeconds"}
 MemoryManipulation.SetEntityLimitedLifespanRemainingSeconds = MemoryManipulation.GetEntityLimitedLifespanRemainingSeconds
-MemoryManipulation.GetEntityTypeLimitedLifespanSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLimitedLifespanBehaviorProps.LifespanSeconds"'}
+MemoryManipulation.GetEntityTypeLimitedLifespanSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CLimitedLifespanBehaviorProps.LifespanSeconds"}
 MemoryManipulation.SetEntityTypeLimitedLifespanSeconds = MemoryManipulation.GetEntityTypeLimitedLifespanSeconds
-MemoryManipulation.GetLeaderTypeUpkeepCost = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CLeaderBehaviorProps.UpkeepCosts"'}
+MemoryManipulation.GetLeaderTypeUpkeepCost = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CLeaderBehaviorProps.UpkeepCosts"}
 MemoryManipulation.SetLeaderTypeUpkeepCost = MemoryManipulation.GetLeaderTypeUpkeepCost
-MemoryManipulation.GetEntityTypeMaxHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.MaxHealth"'}
+MemoryManipulation.GetEntityTypeMaxHealth = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.MaxHealth"}
 MemoryManipulation.SetEntityTypeMaxHealth = MemoryManipulation.GetEntityTypeMaxHealth
-MemoryManipulation.GetBuildingTypeKegEffectFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"KegEffectFactor"'}
+MemoryManipulation.GetBuildingTypeKegEffectFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="KegEffectFactor"}
 MemoryManipulation.SetBuildingTypeKegEffectFactor = MemoryManipulation.GetBuildingTypeKegEffectFactor
-MemoryManipulation.GetBuildingTypeAffectMotivation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CAffectMotivationBehaviorProps.MotivationEffect"'}
+MemoryManipulation.GetBuildingTypeAffectMotivation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CAffectMotivationBehaviorProps.MotivationEffect"}
 MemoryManipulation.SetBuildingTypeAffectMotivation = MemoryManipulation.GetBuildingTypeAffectMotivation
-MemoryManipulation.GetEntityTypeSuspensionAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CGLAnimationBehaviorExProps.SuspensionAnimation"'}
+MemoryManipulation.GetEntityTypeSuspensionAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CGLAnimationBehaviorExProps.SuspensionAnimation"}
 MemoryManipulation.SetEntityTypeSuspensionAnimation = MemoryManipulation.GetEntityTypeSuspensionAnimation
-MemoryManipulation.GetLeaderTypeHealingPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingPoints"')}
+MemoryManipulation.GetLeaderTypeHealingPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingPoints')}
 MemoryManipulation.SetLeaderTypeHealingPoints = MemoryManipulation.GetLeaderTypeHealingPoints
-MemoryManipulation.GetLeaderTypeHealingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingSeconds"')}
+MemoryManipulation.GetLeaderTypeHealingSeconds = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CLeaderBehaviorProps", '.HealingSeconds')}
 MemoryManipulation.SetLeaderTypeHealingSeconds = MemoryManipulation.GetLeaderTypeHealingSeconds
-MemoryManipulation.GetSettlerTypeDamageClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', {"GGL_CBattleBehaviorProps", "GGL_CAutoCannonBehaviorProps"}, '.DamageClass"')}
+MemoryManipulation.GetSettlerTypeDamageClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', {"GGL_CBattleBehaviorProps", "GGL_CAutoCannonBehaviorProps"}, '.DamageClass')}
 MemoryManipulation.SetSettlerTypeDamageClass = MemoryManipulation.GetSettlerTypeDamageClass
-MemoryManipulation.GetSettlerTypeBattleWaitUntil = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.BattleWaitUntil"')}
+MemoryManipulation.GetSettlerTypeBattleWaitUntil = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.BattleWaitUntil')}
 MemoryManipulation.SetSettlerTypeBattleWaitUntil = MemoryManipulation.GetSettlerTypeBattleWaitUntil
-MemoryManipulation.GetSettlerTypeMissChance = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MissChance"')}
+MemoryManipulation.GetSettlerTypeMissChance = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.MissChance')}
 MemoryManipulation.SetSettlerTypeMissChance = MemoryManipulation.GetSettlerTypeMissChance
-MemoryManipulation.GetSettlerTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange"')}
+MemoryManipulation.GetSettlerTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange')}
 MemoryManipulation.SetSettlerTypeMaxRange = MemoryManipulation.GetSettlerTypeMaxRange
-MemoryManipulation.GetSettlerTypeMinRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CBattleBehaviorProps", '.MinRange"')}
+MemoryManipulation.GetSettlerTypeMinRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.MinRange')}
 MemoryManipulation.SetSettlerTypeMinRange = MemoryManipulation.GetSettlerTypeMinRange
-MemoryManipulation.GetLeaderTypeAutoAttackRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsString('"BehaviorProps.', "GGL_CLeaderBehaviorProps", '.AutoAttackRange"')}
+MemoryManipulation.GetLeaderTypeAutoAttackRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CLeaderBehaviorProps", '.AutoAttackRange')}
 MemoryManipulation.SetLeaderTypeAutoAttackRange = MemoryManipulation.GetLeaderTypeAutoAttackRange
-MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.NumberOfAttractableSettlers"'}
+MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.NumberOfAttractableSettlers"}
 MemoryManipulation.SetBuildingTypeNumOfAttractableSettlers = MemoryManipulation.GetBuildingTypeNumOfAttractableSettlers
-MemoryManipulation.GetThiefTypeTimeToSteal = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.SecondsNeededToSteal"'}
+MemoryManipulation.GetThiefTypeTimeToSteal = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CThiefBehaviorProperties.SecondsNeededToSteal"}
 MemoryManipulation.SetThiefTypeTimeToSteal = MemoryManipulation.GetThiefTypeTimeToSteal
-MemoryManipulation.GetThiefTypeStealMax = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.MaximumAmountToSteal"'}
+MemoryManipulation.GetThiefTypeStealMax = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CThiefBehaviorProperties.MaximumAmountToSteal"}
 MemoryManipulation.SetThiefTypeStealMax = MemoryManipulation.GetThiefTypeStealMax
-MemoryManipulation.GetThiefTypeStealMin = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CThiefBehaviorProperties.MinimumAmountToSteal"'}
+MemoryManipulation.GetThiefTypeStealMin = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CThiefBehaviorProperties.MinimumAmountToSteal"}
 MemoryManipulation.SetThiefTypeStealMin = MemoryManipulation.GetThiefTypeStealMin
-MemoryManipulation.GetEntityTypeCamouflageDuration = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCamouflageBehaviorProps.DurationSeconds"'}
+MemoryManipulation.GetEntityTypeCamouflageDuration = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CCamouflageBehaviorProps.DurationSeconds"}
 MemoryManipulation.SetEntityTypeCamouflageDuration = MemoryManipulation.GetEntityTypeCamouflageDuration
-MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCamouflageBehaviorProps.DiscoveryRange"'}
+MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CCamouflageBehaviorProps.DiscoveryRange"}
 MemoryManipulation.SetEntityTypeCamouflageDiscoveryRange = MemoryManipulation.GetEntityTypeCamouflageDiscoveryRange
-MemoryManipulation.GetBuildingTypeDoorPos = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.DoorPos"'}
+MemoryManipulation.GetBuildingTypeDoorPos = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.DoorPos"}
 MemoryManipulation.SetBuildingTypeDoorPos = MemoryManipulation.GetBuildingTypeDoorPos
-MemoryManipulation.GetWorkerTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CWorkerBehaviorProps.ResourceToRefine"'}
+MemoryManipulation.GetWorkerTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CWorkerBehaviorProps.ResourceToRefine"}
 MemoryManipulation.SetWorkerTypeRefinerResourceType = MemoryManipulation.GetWorkerTypeRefinerResourceType
-MemoryManipulation.GetWorkerTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CWorkerBehaviorProps.TransportAmount"'}
+MemoryManipulation.GetWorkerTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CWorkerBehaviorProps.TransportAmount"}
 MemoryManipulation.SetWorkerTypeRefinerAmount = MemoryManipulation.GetWorkerTypeRefinerAmount
-MemoryManipulation.GetBuildingTypeRefinerSupplier = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.SupplierCategory"'}
+MemoryManipulation.GetBuildingTypeRefinerSupplier = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CResourceRefinerBehaviorProperties.SupplierCategory"}
 MemoryManipulation.SetBuildingTypeRefinerSupplier = MemoryManipulation.GetBuildingTypeRefinerSupplier
-MemoryManipulation.GetBuildingTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.ResourceType"'}
+MemoryManipulation.GetBuildingTypeRefinerResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CResourceRefinerBehaviorProperties.ResourceType"}
 MemoryManipulation.SetBuildingTypeRefinerResourceType = MemoryManipulation.GetBuildingTypeRefinerResourceType
-MemoryManipulation.GetBuildingTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CResourceRefinerBehaviorProperties.InitialFactor"'}
+MemoryManipulation.GetBuildingTypeRefinerAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CResourceRefinerBehaviorProperties.InitialFactor"}
 MemoryManipulation.SetBuildingTypeRefinerAmount = MemoryManipulation.GetBuildingTypeRefinerAmount
-MemoryManipulation.GetEntityTypeArmorClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.ArmorClass"'}
+MemoryManipulation.GetEntityTypeArmorClass = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.ArmorClass"}
 MemoryManipulation.SetEntityTypeArmorClass = MemoryManipulation.GetEntityTypeArmorClass
-MemoryManipulation.GetEntityTypeBlockingArea = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.BlockingArea"'}
+MemoryManipulation.GetEntityTypeBlockingArea = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.BlockingArea"}
 MemoryManipulation.SetEntityTypeBlockingArea = MemoryManipulation.GetEntityTypeBlockingArea
-MemoryManipulation.GetBuildingTypeBuilderSlots = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.ConstructionInfo.BuilderSlot"'}
+MemoryManipulation.GetBuildingTypeBuilderSlots = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.ConstructionInfo.BuilderSlot"}
 MemoryManipulation.SetBuildingTypeBuilderSlots = MemoryManipulation.GetBuildingTypeBuilderSlots
-MemoryManipulation.GetBlockingEntityTypeBuildBlock = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.BuildBlockArea"'}
+MemoryManipulation.GetBlockingEntityTypeBuildBlock = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.BuildBlockArea"}
 MemoryManipulation.SetBlockingEntityTypeBuildBlock = MemoryManipulation.GetBlockingEntityTypeBuildBlock
-MemoryManipulation.GetEntityTypeModel = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"DisplayProps.Model"'}
+MemoryManipulation.GetEntityTypeModel = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="DisplayProps.Model"}
 MemoryManipulation.SetEntityTypeModel = MemoryManipulation.GetEntityTypeModel
-MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CCircularAttackProps.Damage"'}
+MemoryManipulation.GetEntityTypeCircularAttackDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CCircularAttackProps.Damage"}
 MemoryManipulation.SetEntityTypeCircularAttackDamage = MemoryManipulation.GetEntityTypeCircularAttackDamage
-MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"BehaviorList.GGL_CGLBehaviorAnimationEx.Animation"', check="\tassert(Logic.IsSettler(id)==1)\n"}
-MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"TaskIndex"', check="\tassert(Logic.IsSettler(id)==1)\n"}
+MemoryManipulation.GetSettlerCurrentAnimation = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CGLBehaviorAnimationEx.Animation", checksettler=true}
+MemoryManipulation.GetSettlerTaskListIndex = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="TaskIndex", checksettler=true}
 MemoryManipulation.SetSettlerTaskListIndex = MemoryManipulation.GetSettlerTaskListIndex
-MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='"MovingSpeed"', check="\tassert(Logic.IsSettler(id)==1)\n"}
-MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path='{"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}', check="\tassert(Logic.IsSettler(id)==1)\n"}
-MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CShurikenAbilityProps.DamageAmount"'}
+MemoryManipulation.GetSettlerModifiedMovementSpeed = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="MovingSpeed", checksettler=true}
+MemoryManipulation.GetSettlerMovementSpeedFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path={"BehaviorList.GGL_CLeaderMovement.SpeedFactor", "BehaviorList.GGL_CSettlerMovement.SpeedFactor", "BehaviorList.GGL_CSoldierMovement.SpeedFactor"}, checksettler=true}
+MemoryManipulation.GetEntityTypeShurikenDamage = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CShurikenAbilityProps.DamageAmount"}
 MemoryManipulation.SetEntityTypeShurikenDamage = MemoryManipulation.GetEntityTypeShurikenDamage
-MemoryManipulation.GetEntityTypeSnipeDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CSniperAbilityProps.DamageFactor"'}
+MemoryManipulation.GetEntityTypeSnipeDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CSniperAbilityProps.DamageFactor"}
 MemoryManipulation.SetEntityTypeSnipeDamageFactor = MemoryManipulation.GetEntityTypeSnipeDamageFactor
-MemoryManipulation.GetEntityTypeRangedEffectArmorFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.ArmorFactor"'}
+MemoryManipulation.GetEntityTypeRangedEffectArmorFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CRangedEffectAbilityProps.ArmorFactor"}
 MemoryManipulation.SetEntityTypeRangedEffectArmorFactor = MemoryManipulation.GetEntityTypeRangedEffectArmorFactor
-MemoryManipulation.GetEntityTypeRangedEffectDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.DamageFactor"'}
+MemoryManipulation.GetEntityTypeRangedEffectDamageFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CRangedEffectAbilityProps.DamageFactor"}
 MemoryManipulation.SetEntityTypeRangedEffectDamageFactor = MemoryManipulation.GetEntityTypeRangedEffectDamageFactor
-MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"BehaviorProps.GGL_CRangedEffectAbilityProps.HealthRecoveryFactor"'}
+MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CRangedEffectAbilityProps.HealthRecoveryFactor"}
 MemoryManipulation.SetEntityTypeRangedEffectHealthRecoveryFactor = MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor
-MemoryManipulation.GetEntityTypeNumBlockedPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path='"LogicProps.NumBlockedPoints"'}
+MemoryManipulation.GetEntityTypeNumBlockedPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.NumBlockedPoints"}
 MemoryManipulation.SetEntityTypeNumBlockedPoints = MemoryManipulation.GetEntityTypeNumBlockedPoints
 
 function MemoryManipulation.CreateLibFuncs()
+	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetworkWrapper then
+		MemoryManipulation.CreateLibFuncsUpval() -- kimichuras server removes all elval options, so we have to use upvalues there
+	else
+		MemoryManipulation.CreateLibFuncsEval() -- compile the funcs, cause upvalues dont get saved
+	end
+end
+
+
+function MemoryManipulation.CreateLibFuncsUpval()
+	for name, desc in pairs(MemoryManipulation) do
+		if type(desc)=="table" and desc.LibFuncBase then
+			local st = string.sub(name, 1, 3)
+			local base = desc.LibFuncBase
+			local path = desc.path
+			local checkleader = desc.checkleader
+			local checksettler = desc.checksettler
+			local checksoldier = desc.checksoldier
+			local checkvalid = desc.checkvalid
+			local checkbuilding = desc.checkbuilding
+			local checkhero = desc.checkhero
+			
+			MemoryManipulation[name] = function(id, val)
+				if checkleader then
+					assert(Logic.IsLeader(id)==1)
+				end
+				if checksettler then
+					assert(Logic.IsSettler(id)==1)
+				end
+				if checksoldier then
+					assert(MemoryManipulation.IsSoldier(id))
+				end
+				if checkvalid then
+					assert(IsValid(id))
+				end
+				if checkbuilding then
+					assert(Logic.IsBuilding(id)==1)
+				end
+				if checkhero then
+					assert(Logic.IsHero(id)==1)
+				end
+				local b = nil
+				if base==MemoryManipulation.LibFuncBase.Entity then
+					b = id
+				elseif base==MemoryManipulation.LibFuncBase.EntityType then
+					b = MemoryManipulation.GetETypePointer(id)
+				end
+				assert(b)
+				if st=="Get" then
+					return MemoryManipulation.GetSingleValue(b, path)
+				elseif st=="Set" then
+					MemoryManipulation.SetSingleValue(b, path, val)
+				end
+			end
+		end
+	end
+end
+
+function MemoryManipulation.CreateLibFuncsEval()
 	local tocompile = ""
 	for name, desc in pairs(MemoryManipulation) do
 		if type(desc)=="table" and desc.LibFuncBase then
 			local st = string.sub(name, 1, 3)
+			local path = type(desc.path)=="table" and MemoryManipulation.LibFuncsTableToString(desc.path) or MemoryManipulation.EscapeString(desc.path)
+			local check = ""
+			if desc.checkleader then
+				check = check.."\tassert(Logic.IsLeader(id)==1)\n"
+			end
+			if desc.checksettler then
+				check = check.."\tassert(Logic.IsSettler(id)==1)\n"
+			end
+			if desc.checksoldier then
+				check = check.."\tassert(MemoryManipulation.IsSoldier(id))\n"
+			end
+			if desc.checkvalid then
+				check = check.."\tassert(IsValid(id))\n"
+			end
+			if desc.checkbuilding then
+				check = check.."\tassert(Logic.IsBuilding(id)==1)\n"
+			end
+			if desc.checkhero then
+				check = check.."\tassert(Logic.IsHero(id)==1)\n"
+			end
 			if desc.LibFuncBase==MemoryManipulation.LibFuncBase.Entity then
 				if st=="Get" then
-					tocompile = tocompile..("function MemoryManipulation."..name.."(id)\n\tid = GetID(id)\n"..(desc.check or "").."\treturn MemoryManipulation.GetSingleValue(id, "..desc.path..")\nend\n")
+					tocompile = tocompile..("function MemoryManipulation."..name.."(id)\n\tid = GetID(id)\n"..check.."\treturn MemoryManipulation.GetSingleValue(id, "..path..")\nend\n")
 				end
 				if st=="Set" then
-					tocompile = tocompile..("function MemoryManipulation."..name.."(id, val)\n\tid = GetID(id)\n"..(desc.check or "").."\tMemoryManipulation.SetSingleValue(id, "..desc.path..", val)\nend\n")
+					tocompile = tocompile..("function MemoryManipulation."..name.."(id, val)\n\tid = GetID(id)\n"..check.."\tMemoryManipulation.SetSingleValue(id, "..path..", val)\nend\n")
 				end
 			elseif desc.LibFuncBase==MemoryManipulation.LibFuncBase.EntityType then
 				if st=="Get" then
-					tocompile = tocompile..("function MemoryManipulation."..name.."(typ)\n"..(desc.check or "").."\treturn MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(typ), "..desc.path..")\nend\n")
+					tocompile = tocompile..("function MemoryManipulation."..name.."(typ)\n"..check.."\treturn MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(typ), "..path..")\nend\n")
 				end
 				if st=="Set" then
-					tocompile = tocompile..("function MemoryManipulation."..name.."(typ, val)\n"..(desc.check or "").."\tMemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), "..desc.path..", val)\nend\n")
+					tocompile = tocompile..("function MemoryManipulation."..name.."(typ, val)\n"..check.."\tMemoryManipulation.SetSingleValue(MemoryManipulation.GetETypePointer(typ), "..path..", val)\nend\n")
 				end
 			end
 		end
 	end
 	--LuaDebugger.Log(tocompile)
-	local comp = S5Hook.Eval(tocompile) -- upvalues dont work, but simply compiling it does ;)
+	local comp = S5Hook.Eval(tocompile)
 	assert(type(comp)=="function", comp)
 	comp()
 	MemoryManipulation.LibFuncsCreated = true
