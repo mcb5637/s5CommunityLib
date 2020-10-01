@@ -94,6 +94,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectHealthRecoveryFactor
 -- 																	Der teil der max hp eines leaders die vom rangedeffect eines entitytypes geheilt werden.
 -- - MemoryManipulation.Get/SetEntityTypeNumBlockedPoints			Kleines blocking eines entitytypes (anzahl an 100scmq kästchen die geblockt sind).
+-- - MemoryManipulation.GetEntityTypeResourceEntity					Das Resourcetype entity eines baumes.  
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -991,6 +992,10 @@ MemoryManipulation.ObjFieldInfo = {
 			{name="DeleteWhenBuiltOn", index={24}, datatype=MemoryManipulation.DataType.Bit, bitOffset=0, check={1,0}},
 			{name="NeedsPlayer", index={24}, datatype=MemoryManipulation.DataType.Bit, bitOffset=1, check={1,0}},
 			{name="BlockingArea", index={35}, datatype=MemoryManipulation.DataType.EmbeddedObjectList, vtableOverride="AARectangle", objectSize=4},
+			{name="ResourceEntity", index={38}, datatype=MemoryManipulation.DataType.Int, check=Entities},
+			{name="ResourceAmount", index={39}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="SummerEffect", index={40}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
+			{name="WinterEffect", index={41}, datatype=MemoryManipulation.DataType.Int, check=function(a) return a>=0 end},
 		},
 	},
 	[MemoryManipulation.ClassVTable.GGL_CEntityProperties] = {
@@ -2920,6 +2925,8 @@ MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor = {LibFuncBase=
 MemoryManipulation.SetEntityTypeRangedEffectHealthRecoveryFactor = MemoryManipulation.GetEntityTypeRangedEffectHealthRecoveryFactor
 MemoryManipulation.GetEntityTypeNumBlockedPoints = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.NumBlockedPoints"}
 MemoryManipulation.SetEntityTypeNumBlockedPoints = MemoryManipulation.GetEntityTypeNumBlockedPoints
+MemoryManipulation.GetEntityTypeResourceEntity = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.ResourceEntity"}
+MemoryManipulation.SetEntityTypeResourceEntity = MemoryManipulation.GetEntityTypeResourceEntity
 
 function MemoryManipulation.CreateLibFuncs()
 	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetworkWrapper then
