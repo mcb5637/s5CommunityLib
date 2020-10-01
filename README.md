@@ -1,14 +1,14 @@
 
 # Siedler5 CommunityLib
 
-Eine Sammlung von kleinen und größeren Svcriptteilen.
+Eine Sammlung von kleinen und größeren Scriptteilen.
 
 ## Benutzung
 - download:
 	- git submodule [https://git-scm.com/book/en/v2/Git-Tools-Submodules]
 	- oder: datei als zip runterladen
 	- einzelne dateien kopieren
-	- oder: mcbPacker.require nutzen
+	- oder: mcbPacker.require nutzen (packer/devLoad.lua)
 - benutzungsanleitung (1. kommentar der datei lesen)
 - requirements beachten (oder von mcbPacker verwalten lassen)
 
