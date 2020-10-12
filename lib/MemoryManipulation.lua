@@ -94,7 +94,10 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectHealthRecoveryFactor
 -- 																	Der teil der max hp eines leaders die vom rangedeffect eines entitytypes geheilt werden.
 -- - MemoryManipulation.Get/SetEntityTypeNumBlockedPoints			Kleines blocking eines entitytypes (anzahl an 100scmq kästchen die geblockt sind).
--- - MemoryManipulation.GetEntityTypeResourceEntity					Das Resourcetype entity eines baumes.  
+-- - MemoryManipulation.Get/SetEntityTypeResourceEntity				Das Resourcetype entity eines baumes.  
+-- - MemoryManipulation.Get/SetEntityTypeResourceEntityAmount		Die Resourcenmenge eines resourceenttities.
+-- - MemoryManipulation.Get/SetWorkerCurrentWorkTime				Die arbeitszeit eines arbeiters.
+-- - MemoryManipulation.Get/SetEntityTypeRangedEffectRange			Die reichweite (radius) des rangedeffects eines entitytypes.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2927,6 +2930,12 @@ MemoryManipulation.GetEntityTypeNumBlockedPoints = {LibFuncBase=MemoryManipulati
 MemoryManipulation.SetEntityTypeNumBlockedPoints = MemoryManipulation.GetEntityTypeNumBlockedPoints
 MemoryManipulation.GetEntityTypeResourceEntity = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.ResourceEntity"}
 MemoryManipulation.SetEntityTypeResourceEntity = MemoryManipulation.GetEntityTypeResourceEntity
+MemoryManipulation.GetEntityTypeResourceEntityAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.ResourceAmount"}
+MemoryManipulation.SetEntityTypeResourceEntityAmount = MemoryManipulation.GetEntityTypeResourceEntityAmount
+MemoryManipulation.GetWorkerCurrentWorkTime = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CWorkerBehavior.WorkTimeRemaining"}
+MemoryManipulation.SetWorkerCurrentWorkTime = MemoryManipulation.GetWorkerCurrentWorkTime
+MemoryManipulation.GetEntityTypeRangedEffectRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CRangedEffectAbilityProps.Range"}
+MemoryManipulation.SetEntityTypeRangedEffectRange = MemoryManipulation.GetEntityTypeRangedEffectRange
 
 function MemoryManipulation.CreateLibFuncs()
 	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetworkWrapper then
