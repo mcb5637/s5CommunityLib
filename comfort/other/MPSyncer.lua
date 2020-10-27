@@ -3,7 +3,7 @@ mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
---- author:mcb		current maintainer:mcb		v3.1
+--- author:mcb		current maintainer:mcb		v3.2
 -- Ermöglicht es, beliebige Lua-Ausdrücke auf allen verbundenen PCs zu parsen und synchron auszuführen.
 -- Wird das Script im SP geladen, wird keines Synchronisierung durchgeführt.
 -- 
@@ -322,7 +322,7 @@ function MPSyncer.ExecuteSynced(f, ...)
 		f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
 		assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
 		MPSyncer.Log("host mode: sended CNetwork call for "..f)
-		CNetwork.send_command("MPSyncer_recieved_syncedCall", f)
+		CNetwork.SendCommand("MPSyncer_recieved_syncedCall", f)
 		return
 	end
 	local cntxt = {}
@@ -441,7 +441,7 @@ function MPSyncer.recievedSingleFunc(f, sender)
 end
 
 function MPSyncer.IsMP()
-	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetworkWrapper then -- kimichuras server (better detection method?)
+	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetwork.EXTENDED_GameInformation_GetHost then -- kimichuras server (better detection method?)
 		return 3
 	elseif XNetworkUbiCom.Manager_DoesExist()==1 then
 		return 2
@@ -458,7 +458,7 @@ function MPSyncer.GetHost()
 		return GUI.GetPlayerID()
 	end
 	if mpmode == 3 then
-		local hostname = CNetwork.GameInformation_GetHost()
+		local hostname = XNetwork.EXTENDED_GameInformation_GetHost()
 		for pl=1,XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer() do
 			if XNetwork.GameInformation_GetLogicPlayerUserName(pl)==hostname then
 				return pl
@@ -715,18 +715,6 @@ function MPSyncer.VirtualFuncs.PatchLuaFunc(fname, ...)
 	_G[fname] = function(...)
 		MPSyncer.ExecuteSynced(vname, unpack(arg)) -- uses upvalue vname. never use this in SP!
 	end
-end
-
-function MPSyncer.VirtualFuncs.debug_createEval()
-	MPSyncer.VirtualFuncs.Create(function(s)
-		S5Hook.Eval(s)()
-	end, "Eval", {pattern = "\"(.*)\"",		-- . is greedy, takes as much as possible.
-		serialize = function(s)
-			return '"'..s..'"'
-		end, deserialize = function(s)
-			return s
-		end
-	})
 end
 
 MPSyncer.VirtualFuncsWithReturn = {nextIndex=0, returnList={}, spFuncs={}}
