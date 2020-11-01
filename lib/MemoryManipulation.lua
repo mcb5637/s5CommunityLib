@@ -2827,7 +2827,7 @@ MemoryManipulation.SetSettlerRotationSpeed = MemoryManipulation.GetSettlerRotati
 MemoryManipulation.GetLeaderOfSoldier = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="LeaderId", checksoldier=true}
 MemoryManipulation.GetMovementCheckBlockingFlag = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CSettlerMovement.BlockingFlag", checksettler=true}
 MemoryManipulation.SetMovementCheckBlockingFlag = MemoryManipulation.GetMovementCheckBlockingFlag
-MemoryManipulation.GetBarracksAutoFillActive = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CBarrackBehavior.AutoFillActive", checksettler=true}
+MemoryManipulation.GetBarracksAutoFillActive = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CBarrackBehavior.AutoFillActive", checkbuilding=true}
 MemoryManipulation.GetSoldierTypeOfLeaderType = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CLeaderBehaviorProps.SoldierType"}
 MemoryManipulation.SetSoldierTypeOfLeaderType = MemoryManipulation.GetSoldierTypeOfLeaderType
 MemoryManipulation.GetEntityTypeMaxRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path=MemoryManipulation.GetClassAndAllSubClassesAsPPTable('BehaviorProps.', "GGL_CBattleBehaviorProps", '.MaxRange')}
