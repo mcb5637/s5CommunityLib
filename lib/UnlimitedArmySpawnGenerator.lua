@@ -23,6 +23,7 @@ end --mcbPacker.ignore
 -- 			RefillSoldiers,
 -- 			RandomizeSpawn,
 -- 			RandomizeSpawnPoint,
+-- 			DoNotRemoveIfDeadOrEmpty,
 -- 		})
 -- 	
 -- - Spawner:Remove()									entfernt den spawner.
@@ -35,7 +36,7 @@ end --mcbPacker.ignore
 -- - CopyTable
 -- - UnlimitdArmy
 UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
-	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil,
+	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil, DoNotRemoveIfDeadOrEmpty=nil,
 }
 
 UnlimitedArmySpawnGenerator = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmySpawnGenerator")
@@ -56,6 +57,7 @@ function UnlimitedArmySpawnGenerator:Init(army, spawndata)
 	self.RefillSoldiers = spawndata.RefillSoldiers
 	self.RandomizeSpawn = spawndata.RandomizeSpawn
 	self.RandomizeSpawnPoint = spawndata.RandomizeSpawnPoint
+	self.DoNotRemoveIfDeadOrEmpty = spawndata.DoNotRemoveIfDeadOrEmpty
 	self.LeaderDesc = {}
 	army.Spawner = self
 	self.Army = army
@@ -74,7 +76,9 @@ UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:Tick(active)
 	self:CheckValidSpawner()
 	if self:IsDead() then
-		self:Remove()
+		if not self.DoNotRemoveIfDeadOrEmpty then
+			self:Remove()
+		end
 		return
 	end
 	self.CCounter = self.CCounter - 1
@@ -196,18 +200,22 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	if self.RandomizeSpawn then
 		spawningLeader = GetRandom(1, table.getn(self.LeaderDesc))
 	end
-	local p = self:GetSpawnPos()
-	self.Army:CreateLeaderForArmy(self.LeaderDesc[spawningLeader].LeaderType, self.LeaderDesc[spawningLeader].SoldierNum, p, self.LeaderDesc[spawningLeader].Experience)
-	self.LeaderDesc[spawningLeader].CurrNum = self.LeaderDesc[spawningLeader].CurrNum - 1
-	if self.LeaderDesc[spawningLeader].CurrNum <= 0 then
-		local d = table.remove(self.LeaderDesc, spawningLeader)
-		if d.Looped then
-			self:ResetLeaderNum(d)
-			table.insert(self.LeaderDesc, d)
+	if self.LeaderDesc[spawningLeader] then
+		local p = self:GetSpawnPos()
+		self.Army:CreateLeaderForArmy(self.LeaderDesc[spawningLeader].LeaderType, self.LeaderDesc[spawningLeader].SoldierNum, p, self.LeaderDesc[spawningLeader].Experience)
+		self.LeaderDesc[spawningLeader].CurrNum = self.LeaderDesc[spawningLeader].CurrNum - 1
+		if self.LeaderDesc[spawningLeader].CurrNum <= 0 then
+			local d = table.remove(self.LeaderDesc, spawningLeader)
+			if d.Looped then
+				self:ResetLeaderNum(d)
+				table.insert(self.LeaderDesc, d)
+			end
 		end
 	end
 	if not self.LeaderDesc[1] then
-		self:Remove()
+		if self.DoNotRemoveIfDeadOrEmpty then
+			self:Remove()
+		end
 		return true
 	end
 end

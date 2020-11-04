@@ -22,6 +22,7 @@ end --mcbPacker.ignore
 -- 			ReorderAllowed,
 -- 			RemoveUnavailable,
 -- 			RandomizeSpawn,
+-- 			DoNotRemoveIfDeadOrEmpty,
 -- 		})
 -- 	
 -- - Recruiter:Remove()									entfernt den spawner.
@@ -36,7 +37,7 @@ end --mcbPacker.ignore
 -- - UnlimitdArmy
 -- - GetDistance
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,
+	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,DoNotRemoveIfDeadOrEmpty=nil,
 }
 
 UnlimitedArmyRecruiter = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmyRecruiter")
@@ -62,6 +63,7 @@ function UnlimitedArmyRecruiter:Init(army, data)
 	self.ReorderAllowed = data.ReorderAllowed
 	self.RemoveUnavailable = data.RemoveUnavailable
 	self.RandomizeSpawn = data.RandomizeSpawn
+	self.DoNotRemoveIfDeadOrEmpty = data.DoNotRemoveIfDeadOrEmpty
 	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, ":CheckAddRecruitment", 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
@@ -95,7 +97,7 @@ function UnlimitedArmyRecruiter:Tick(active)
 	self:CheckValidSpawner()
 	self:CheckLeaders(self.Army, self.Army.AddLeader)
 	if self:IsDead() then
-		if (table.getn(self.InRecruitment) + self:GetCannonBuyNum())<=0 then
+		if (table.getn(self.InRecruitment) + self:GetCannonBuyNum())<=0 and not self.DoNotRemoveIfDeadOrEmpty then
 			self:Remove()
 		end
 		return
