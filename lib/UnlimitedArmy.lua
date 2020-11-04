@@ -93,6 +93,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
+	PosCacheTick=-100, PosCache=nil,
 }
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
 
@@ -162,6 +163,7 @@ function UnlimitedArmy:Tick()
 	if self.Spawner then
 		self.Spawner:Tick(self.SpawnerActive)
 	end
+	self:RefreshPosCache()
 	local pos = self:GetPosition()
 	local preventfurthercommands = false
 	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive) or GetDistance(pos, self.CurrentBattleTarget)>self.Area then
@@ -372,9 +374,20 @@ UnlimitedArmy:AMethod()
 function UnlimitedArmy:GetPosition()
 	self:CheckValidArmy()
 	self:RemoveAllDestroyedLeaders()
+	if self.PosCacheTick ~= Logic.GetTimeMs() then
+		self:RefreshPosCache()
+	end
+	return self.PosCache
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:RefreshPosCache()
+	self:CheckValidArmy()
+	self:RemoveAllDestroyedLeaders()
 	local num = table.getn(self.Leaders)
 	if num == 0 then
-		return invalidPosition
+		self.PosCache = invalidPosition
+		self.PosCacheTick = Logic.GetTimeMs()
 	end
 	local x,y = 0,0
 	for _,id in ipairs(self.Leaders) do
@@ -382,7 +395,8 @@ function UnlimitedArmy:GetPosition()
 		x = x + p.X
 		y = y + p.Y
 	end
-	return {X=x/num, Y=y/num}
+	self.PosCache = {X=x/num, Y=y/num}
+	self.PosCacheTick = Logic.GetTimeMs()
 end
 
 UnlimitedArmy:AMethod()
