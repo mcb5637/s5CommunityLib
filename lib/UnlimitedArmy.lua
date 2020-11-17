@@ -13,6 +13,7 @@ mcbPacker.require("s5CommunityLib/tables/LeaderFormations")
 mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
+mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
