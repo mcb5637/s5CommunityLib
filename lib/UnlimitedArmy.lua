@@ -375,6 +375,9 @@ UnlimitedArmy:AMethod()
 function UnlimitedArmy:GetPosition()
 	self:CheckValidArmy()
 	self:RemoveAllDestroyedLeaders()
+	if self:GetSize()<=0 then
+		return invalidPosition
+	end
 	if self.PosCacheTick ~= Logic.GetTimeMs() then
 		self:RefreshPosCache()
 	end
