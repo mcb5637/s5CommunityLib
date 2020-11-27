@@ -16,12 +16,14 @@ function GetRandom(_min, _max)
 	end
 	if not gvRandomseed then
 		gvRandomseed = true
-		local seed = XGUIEng.GetSystemTime()
-		local str = Framework.GetSystemTimeDateString()
-		for i=1, string.len(str) do
-			seed = seed + string.byte(str, i, i)
+		if XNetwork.Manager_DoesExist()==0 then
+			local seed = XGUIEng.GetSystemTime()
+			local str = Framework.GetSystemTimeDateString()
+			for i=1, string.len(str) do
+				seed = seed + string.byte(str, i, i)
+			end
+			math.randomseed(seed)
 		end
-		math.randomseed(seed)
 	end
 	assert(type(_min)=="number" and type(_max)=="number")
 	return math.random(_min, _max)

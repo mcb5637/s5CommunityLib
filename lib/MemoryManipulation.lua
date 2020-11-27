@@ -2693,7 +2693,15 @@ function MemoryManipulation.IsEntityInvisible(id)
 	assert(IsValid(id))
 	local w, t, a = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CCamouflageBehavior.InvisibilityRemaining", true)
 	MemoryManipulation.ReadObj(S5Hook.GetEntityMem(GetID(id)), w, nil, w)
-	return t[a] ~= true and t[a] > 0
+	if t[a] ~= true and t[a] > 0 then
+		return true
+	end
+	w, t, a = MemoryManipulation.ConvertToObjInfo("BehaviorList.GGL_CThiefCamouflageBehavior.InvisibilityRemaining", true)
+	MemoryManipulation.ReadObj(S5Hook.GetEntityMem(GetID(id)), w, nil, w)
+	if t[a] ~= true and t[a] > 0 then
+		return true
+	end
+	return false
 end
 
 function MemoryManipulation.HurtLeader(id, dmg, noKill)
