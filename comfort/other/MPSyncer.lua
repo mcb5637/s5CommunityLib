@@ -91,7 +91,7 @@ end --mcbPacker.ignore
 -- - S5Hook (Logging)
 -- - unpack-fix
 -- 
-MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}, NoJingleForTribute={}}
+MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}, NoJingleForTribute={}, NextScriptTribute=0}
 function MPSyncer.Init(player)
 	if not MPSyncer.IsMP() then
 		MPSyncer.allConnected = true
@@ -332,7 +332,7 @@ function MPSyncer.ExecuteSynced(f, ...)
 		end
 	end
 	local tId = MPSyncer.nextTribute
-	MPSyncer.nextTribute = MPSyncer.nextTribute + 8
+	MPSyncer.nextTribute = MPSyncer.nextTribute + 9
 	MPSyncer.playerAck[tId] = cntxt
 	f = MPSyncer.VirtualFuncs.serialize(f, unpack(arg))
 	assert(MPSyncer.VirtualFuncs.deserialize(f)) -- be sure, deserialisation is possible
@@ -467,6 +467,17 @@ function MPSyncer.GetHost()
 		return hostname
 	end
 	return XNetwork.GameInformation_GetPlayerIDByNetworkAddress(XNetwork.Host_UserInSession_GetHostNetworkAddress())
+end
+
+function MPSyncer.GetNextScriptTributeID()
+	local mp = MPSyncer.IsMP()
+	local t = MPSyncer.NextScriptTribute
+	if not mp or mp ==3 then
+		MPSyncer.NextScriptTribute = MPSyncer.NextScriptTribute + 1
+	else
+		MPSyncer.NextScriptTribute = MPSyncer.NextScriptTribute + 9
+	end
+	return t
 end
 
 function MPSyncer.IsPlayerAllowedToManipulatePlayer(pl, name)
