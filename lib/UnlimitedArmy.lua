@@ -504,6 +504,7 @@ function UnlimitedArmy:DoBattleCommands()
 		self:NormalizeSpeed(false)
 	end
 	local tpos = GetPosition(self.CurrentBattleTarget)
+	--Logic.CreateEffect(GGL_Effects.FXSalimHeal, tpos.X, tpos.Y, 0)
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, self.IgnoreFleeing)
 	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
@@ -1085,7 +1086,7 @@ function UnlimitedArmy.GetNearestEnemyInArea(p, player, area, leader, building, 
 		table.insert(pred, Predicate.InCircle(p.X, p.Y, area))
 	end
 	if leader then
-		table.insert(pred, Predicate.OfCategory(EntityCategories.Leader))
+		table.insert(pred, PredicateHelper.GetETypePredicate(TargetFilter.LeaderTypeArray))
 	end
 	if building then
 		table.insert(pred, Predicate.IsBuilding())

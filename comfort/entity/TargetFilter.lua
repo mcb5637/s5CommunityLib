@@ -22,14 +22,29 @@ TargetFilter.IgnoreEtypes = {
 	[Entities.PU_Hero3_Trap] = true,
 	[Entities.PU_Hero3_TrapCannon] = true,
 }
+TargetFilter.LeaderTypeArray = {
+	Entities.CU_BlackKnight,
+	Entities.CU_Mary_de_Mortfichet,
+}
+TargetFilter.IgnoreELeaderTypes = {
+	[Entities.PU_Hero2_Foundation1] = true,
+	[Entities.PU_Hero3_Trap] = true,
+}
+
 if Entities.CB_Evil_Tower1_ArrowLauncher then
 	TargetFilter.IgnoreEtypes[Entities.CB_Evil_Tower1_ArrowLauncher] = true
+	table.insert(TargetFilter.LeaderTypeArray, Entities.CU_Evil_Queen)
+	table.insert(TargetFilter.LeaderTypeArray, Entities.PU_Thief)
 end
 
 
 for en, e in pairs(Entities) do
 	if string.find(en, "[PC][UBV]") and not TargetFilter.IgnoreEtypes[e] then
 		table.insert(TargetFilter.EntityTypeArray, e)
+	end
+	if string.find(en, "[PC][UV]") and (string.find(en, "Leader") or string.find(en, "Hero") or string.find(en, "Cannon"))
+	and not TargetFilter.IgnoreEtypes[e] and not TargetFilter.IgnoreELeaderTypes[e] then
+		table.insert(TargetFilter.LeaderTypeArray, e)
 	end
 end
 
