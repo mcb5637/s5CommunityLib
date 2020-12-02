@@ -98,6 +98,7 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetEntityTypeResourceEntityAmount		Die Resourcenmenge eines resourceenttities.
 -- - MemoryManipulation.Get/SetWorkerCurrentWorkTime				Die arbeitszeit eines arbeiters.
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectRange			Die reichweite (radius) des rangedeffects eines entitytypes.
+-- - MemoryManipulation.Get/SetSettlerTypeFearless					Ob ein entitytyp immun gegen fear effekte (dario/kerberos/yuki) und bekehrungen (helias) ist.
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2944,6 +2945,9 @@ MemoryManipulation.GetWorkerCurrentWorkTime = {LibFuncBase=MemoryManipulation.Li
 MemoryManipulation.SetWorkerCurrentWorkTime = MemoryManipulation.GetWorkerCurrentWorkTime
 MemoryManipulation.GetEntityTypeRangedEffectRange = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="BehaviorProps.GGL_CRangedEffectAbilityProps.Range"}
 MemoryManipulation.SetEntityTypeRangedEffectRange = MemoryManipulation.GetEntityTypeRangedEffectRange
+MemoryManipulation.GetSettlerTypeFearless = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.Fearless"}
+MemoryManipulation.SetSettlerTypeFearless = MemoryManipulation.GetSettlerTypeFearless
+
 
 function MemoryManipulation.CreateLibFuncs()
 	if XNetworkUbiCom.Manager_DoesExist()==1 and XNetwork.EXTENDED_GameInformation_GetHost then

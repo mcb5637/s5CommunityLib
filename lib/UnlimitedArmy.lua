@@ -1294,7 +1294,7 @@ end
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.IsFearAffectableAndConvertable(id)
 	if S5Hook and MemoryManipulation then
-		return MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(Logic.GetEntityType(id)), "LogicProps.Fearless")==0
+		return MemoryManipulation.GetSettlerTypeFearless(Logic.GetEntityType(id))==0
 	end
 	if Logic.IsHero(id)==1 then
 		return false
