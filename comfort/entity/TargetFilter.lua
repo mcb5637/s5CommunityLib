@@ -25,6 +25,8 @@ TargetFilter.IgnoreEtypes = {
 TargetFilter.LeaderTypeArray = {
 	Entities.CU_BlackKnight,
 	Entities.CU_Mary_de_Mortfichet,
+	Entities.PU_Serf,
+	Entities.PU_BattleSerf,
 }
 TargetFilter.IgnoreELeaderTypes = {
 	[Entities.PU_Hero2_Foundation1] = true,
