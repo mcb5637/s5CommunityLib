@@ -1478,7 +1478,11 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityCircularAttack] = {
 	Combat = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
 	Use = function(army, id)
-		GUI.SettlerCircularAttack(id)
+		if CNetwork then
+			SendEvent.HeroCircularAttack(id)
+		else
+			GUI.SettlerCircularAttack(id)
+		end
 	end,
 	Range = 0,
 	IsInstant = false,
@@ -1507,7 +1511,11 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityInflictFear] = {
 	Combat = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
 	Use = function(army, id)
-		GUI.SettlerInflictFear(id)
+		if CNetwork then
+			SendEvent.HeroInflictFear(id)
+		else
+			GUI.SettlerInflictFear(id)
+		end
 	end,
 	Range = 0,
 	IsInstant = false,
@@ -1548,7 +1556,11 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 	Combat = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
 	Use = function(army, id)
-		GUI.SettlerAffectUnitsInArea(id)
+		if CNetwork then
+			SendEvent.HeroActivateAura(id)
+		else
+			GUI.SettlerAffectUnitsInArea(id)
+		end
 	end,
 	Range = 0,
 	PreventUse = function(army, id)
@@ -1597,7 +1609,11 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilitySummon] = {
 	Combat = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
 	Use = function(army, id)
-		GUI.SettlerSummon(id) -- TODO add summons to army
+		if CNetwork then
+			SendEvent.HeroSummon(id)
+		else
+			GUI.SettlerSummon(id) -- TODO add summons to army
+		end
 	end,
 	Range = 0,
 	IsInstant = true,
@@ -1609,7 +1625,11 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityMotivateWorkers] = {
 	PrepDefense = true,
 	TargetType = UnlimitedArmy.HeroAbilityTargetType.Self,
 	Use = function(army, id)
-		GUI.SettlerMotivateWorkers(id)
+		if CNetwork then
+			SendEvent.HeroMotivateWorkers(id)
+		else
+			GUI.SettlerMotivateWorkers(id)
+		end
 	end,
 	IsInstant = false,
 }
