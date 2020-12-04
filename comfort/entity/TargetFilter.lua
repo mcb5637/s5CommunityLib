@@ -41,7 +41,7 @@ end
 
 
 for en, e in pairs(Entities) do
-	if string.find(en, "[PC][UBV]") and not TargetFilter.IgnoreEtypes[e] then
+	if (string.find(en, "[PC][UBV]") or string.find(en, "XD_[Dark]*Wall.*")) and not TargetFilter.IgnoreEtypes[e] then
 		table.insert(TargetFilter.EntityTypeArray, e)
 	end
 	if string.find(en, "[PC][UV]") and (string.find(en, "Leader") or string.find(en, "Hero") or string.find(en, "Cannon"))

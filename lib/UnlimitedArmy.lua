@@ -14,6 +14,7 @@ mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
+mcbPacker.require("s5CommunityLib/fixes/PostEventMPServerFix")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -135,6 +136,7 @@ function UnlimitedArmy:Init(data)
 	self.Status = UnlimitedArmy.Status.Idle
 	self.Trigger = StartSimpleJob(":Tick", self)
 	self:SetLeaderFormation(data.LeaderFormation)
+	PostEventMPServerFix.Check()
 end
 
 UnlimitedArmy:AMethod()
@@ -1293,6 +1295,9 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.IsFearAffectableAndConvertable(id)
+	if Logic.IsSettler(id)==0 then
+		return false
+	end
 	if S5Hook and MemoryManipulation then
 		return MemoryManipulation.GetSettlerTypeFearless(Logic.GetEntityType(id))==0
 	end
@@ -1634,3 +1639,22 @@ UnlimitedArmyFiller:AMethod()
 UnlimitedArmyFiller.Remove = LuaObject_AbstractMethod
 
 UnlimitedArmyFiller:FinalizeClass()
+
+LazyUnlimitedArmy = UnlimitedArmy:CreateSubClass("LazyUnlimitedArmy")
+
+LazyUnlimitedArmy:AMethod()
+function LazyUnlimitedArmy:Init(data, tickdelta, tickfrequency)
+	self:CallBaseMethod("Init", LazyUnlimitedArmy, data)
+	self.tickdelta = tickdelta
+	self.tickfrequency = tickfrequency
+	-- dirty hack to save call base method
+	self.TickO = self.Tick
+	function self:Tick()
+		if math.mod(Logic.GetTime(), self.tickfrequency)==self.tickdelta then
+			Message("ticking")
+			self:TickO()
+		end
+	end
+end
+
+LazyUnlimitedArmy:FinalizeClass()
