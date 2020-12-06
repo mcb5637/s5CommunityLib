@@ -15,6 +15,7 @@ mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/fixes/PostEventMPServerFix")
+mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -92,6 +93,8 @@ end --mcbPacker.ignore
 -- - EntityIdChangedHelper
 -- - LuaObject
 -- - TargetFilter
+-- - IsValidPosition
+-- - PostEventMPServerFix (optional, hook+kimichuras server)
 UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, Spawner=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
@@ -312,6 +315,9 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:CreateLeaderForArmy(ety, sol, pos, experience)
 	self:CheckValidArmy()
+	assert(Logic.GetEntityTypeName(ety))
+	assert(IsValidPosition(pos))
+	assert(sol>=0)
 	self:AddLeader(AI.Entity_CreateFormation(self.Player, ety, nil, sol, pos.X, pos.Y, nil, nil, experience or 0, 0))
 end
 
@@ -469,8 +475,17 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.FreePos then
 						local p = GetPosition(id)
 						local a = math.floor(self.Area / 1000)
-						acf.Use(self, id, p.X+(GetRandom(a,a)*100), p.Y+(GetRandom(a,a)*100)) -- command should be ignored with invalid position
-						noninstant = not acf.IsInstant
+						local p2 = {}
+						local sec = Logic.GetSector(id)
+						for i=1,10 do
+							p2.X, p2.Y = p.X+(GetRandom(a,a)*100), p.Y+(GetRandom(a,a)*100)
+							local _,_,s = S5Hook.GetTerrainInfo(p2.X, p2.Y)
+							if IsValidPosition(p2) and sec==s then
+								acf.Use(self, id, p2.X, p2.Y) -- command should be ignored with invalid position
+								noninstant = not acf.IsInstant
+								break
+							end
+						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyEntity then
 						local tid = nil
 						if acf.PrefersBackline then
@@ -845,6 +860,7 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.CreateCommandMove(p, looped)
+	assert(IsValidPosition(p))
 	return {
 		Pos = p,
 		Looped = looped,
@@ -863,6 +879,7 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.CreateCommandFlee(p, looped)
+	assert(IsValidPosition(p))
 	return {
 		Pos = p,
 		Looped = looped,
@@ -877,6 +894,7 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.CreateCommandDefend(defendPos, defendArea, looped)
+	assert(defendPos==nil or IsValidPosition(defendPos))
 	return {
 		Looped = looped,
 		DistArea = defendArea,

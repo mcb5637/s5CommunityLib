@@ -2,6 +2,7 @@ if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
+mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -35,6 +36,8 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - CopyTable
 -- - UnlimitdArmy
+-- - IsValidPosition
+-- - GetRandom
 UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
 	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil, DoNotRemoveIfDeadOrEmpty=nil,
 }
@@ -64,6 +67,7 @@ function UnlimitedArmySpawnGenerator:Init(army, spawndata)
 	for _,d in ipairs(spawndata.LeaderDesc) do
 		self:AddLeaderType(d.LeaderType, d.SoldierNum, d.SpawnNum, d.Experience, d.Looped)
 	end
+	assert(IsValidPosition(self:GetSpawnPos()))
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
