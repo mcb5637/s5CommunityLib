@@ -1,7 +1,7 @@
 
 # Siedler5 CommunityLib
 
-Eine Sammlung von kleinen und größeren Scriptteilen.
+Eine Sammlung von kleinen und größeren Scriptteilen für Siedler 5 DedK.
 
 ## Benutzung
 - download:
