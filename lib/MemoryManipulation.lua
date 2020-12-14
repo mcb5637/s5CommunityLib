@@ -99,6 +99,11 @@ end --mcbPacker.ignore
 -- - MemoryManipulation.Get/SetWorkerCurrentWorkTime				Die arbeitszeit eines arbeiters.
 -- - MemoryManipulation.Get/SetEntityTypeRangedEffectRange			Die reichweite (radius) des rangedeffects eines entitytypes.
 -- - MemoryManipulation.Get/SetSettlerTypeFearless					Ob ein entitytyp immun gegen fear effekte (dario/kerberos/yuki) und bekehrungen (helias) ist.
+-- - MemoryManipulation.Get/SetMarketSellResourceType				Der resourcetyp den ein markt gerde verkauft.
+-- - MemoryManipulation.Get/SetMarketBuyResourceType				Der resourcetyp, den ein markt gerde kauft.
+-- - MemoryManipulation.Get/SetMarketBuyAmount						Die menge die ein markt gerade kauft.
+-- - MemoryManipulation.Get/SetMarketSellAmount						Die menge die ein markt gerade verkauft.
+-- - MemoryManipulation.Get/SetMarketProgressAmount					Der fortschritt des aktuellen handels (>=0, <=SetMarketBuyAmount+SetMarketSellAmount).
 -- 
 -- Spezielle Funktionen:
 -- - MemoryManipulation.HasEntityBehavior(id, beh)					Testet ob ein entity ein spezielles behavior (gegeben über vtable) hat.
@@ -2947,6 +2952,16 @@ MemoryManipulation.GetEntityTypeRangedEffectRange = {LibFuncBase=MemoryManipulat
 MemoryManipulation.SetEntityTypeRangedEffectRange = MemoryManipulation.GetEntityTypeRangedEffectRange
 MemoryManipulation.GetSettlerTypeFearless = {LibFuncBase=MemoryManipulation.LibFuncBase.EntityType, path="LogicProps.Fearless"}
 MemoryManipulation.SetSettlerTypeFearless = MemoryManipulation.GetSettlerTypeFearless
+MemoryManipulation.GetMarketSellResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CMarketBehavior.SellResourceType", checkbuilding=true}
+MemoryManipulation.SetMarketSellResourceType = MemoryManipulation.GetMarketSellResourceType
+MemoryManipulation.GetMarketBuyResourceType = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CMarketBehavior.BuyResourceType", checkbuilding=true}
+MemoryManipulation.SetMarketBuyResourceType = MemoryManipulation.GetMarketBuyResourceType
+MemoryManipulation.GetMarketBuyAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CMarketBehavior.BuyAmount", checkbuilding=true}
+MemoryManipulation.SetMarketBuyAmount = MemoryManipulation.GetMarketBuyAmount
+MemoryManipulation.GetMarketSellAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CMarketBehavior.SellAmount", checkbuilding=true}
+MemoryManipulation.SetMarketSellAmount = MemoryManipulation.GetMarketSellAmount
+MemoryManipulation.GetMarketProgressAmount = {LibFuncBase=MemoryManipulation.LibFuncBase.Entity, path="BehaviorList.GGL_CMarketBehavior.ProgressAmount", checkbuilding=true}
+MemoryManipulation.SetMarketProgressAmount = MemoryManipulation.GetMarketProgressAmount
 
 
 function MemoryManipulation.CreateLibFuncs()
