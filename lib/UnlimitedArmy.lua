@@ -523,7 +523,7 @@ function UnlimitedArmy:DoBattleCommands()
 	end
 	local tpos = GetPosition(self.CurrentBattleTarget)
 	--Logic.CreateEffect(GGL_Effects.FXSalimHeal, tpos.X, tpos.Y, 0)
-	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, self.IgnoreFleeing)
+	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing)
 	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
 		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id) or self.CannonCommandCache[id]==-1) and not UnlimitedArmy.IsNonCombatEntity(id) then
