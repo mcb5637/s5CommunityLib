@@ -79,6 +79,7 @@ end --mcbPacker.ignore
 -- Army:Iterator(transit)						gibt einen iterator zurück, der über alle leader der armee iteriert, zu verwenden: for id in Army:Iterator() do.
 -- 													den zurückgegebenen iterator nicht speichern, enthält upvalues.
 -- Army:SetLeaderFormation(form)				setzt die formation die die soldier der leader der armee einnehmen. kann eine function(army, id) sein.
+-- Army:IsLeaderPartOfArmy(id)					tested, ob ein leader teil der army ist.
 -- 
 -- 
 -- Benötigt:
@@ -848,6 +849,18 @@ function UnlimitedArmy:SetLeaderFormation(form)
 			self:SetLeaderFormationForLeader(id)
 		end
 	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:IsLeaderPartOfArmy(id)
+	self:CheckValidArmy()
+	id = GetID(id)
+	for i in self:Iterator(true) do
+		if i==id then
+			return true
+		end
+	end
+	return false
 end
 
 UnlimitedArmy:AMethod()
