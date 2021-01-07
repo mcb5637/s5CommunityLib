@@ -81,7 +81,7 @@ function ObserverInfo.Init(players, guipath)
 		CWidget.Transaction_Commit()
 	end
 	XGUIEng.ShowWidget("ObserverInfo", 1)
-	Input.KeyBindDown(Keys.F7, 'XGUIEng.ShowWidget("ObserverInfo", 1-XGUIEng.IsWidgetShown("ObserverInfo"))', 2)
+	Input.KeyBindDown(Keys.F9, 'XGUIEng.ShowWidget("ObserverInfo", 1-XGUIEng.IsWidgetShown("ObserverInfo"))', 2)
 end
 
 ObserverInfo.ShowBuildingsOfUCats = {
