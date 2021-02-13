@@ -874,7 +874,7 @@ function UnlimitedArmy:SetLeaderFormationForLeader(id, ...)
 end
 
 
-UnlimitedArmy:AMethod()
+UnlimitedArmy:AStatic()
 function UnlimitedArmy.HasHook()
   if UnlimitedArmy.ForceNoHook then
     return false
