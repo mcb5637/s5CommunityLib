@@ -286,7 +286,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 				Logic.BarracksBuyLeader(buyingAt, self.UCats[index].UCat)
 			else
 				local ty = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
-				if S5Hook then
+				if UnlimitedArmy.HasHook() then
 					PostEvent.FoundryConstructCannon(buyingAt, ty)
 				else
 					local playerId = GUI.GetPlayerID()

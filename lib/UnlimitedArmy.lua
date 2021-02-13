@@ -102,7 +102,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
-	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil
+	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil
 }
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
 
@@ -462,7 +462,7 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 				if acf.PreventUse and acf.PreventUse(self, id, combat, prepdefense) then
 					executeAbility = false
 				end
-				if acf.RequiresHook and not S5Hook then
+				if acf.RequiresHook and not UnlimitedArmy.HasHook() then
 					executeAbility = false
 				end
 				if executeAbility then
@@ -873,6 +873,15 @@ function UnlimitedArmy:SetLeaderFormationForLeader(id, ...)
 	Logic.LeaderChangeFormationType(id, f)
 end
 
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy.HasHook()
+  if UnlimitedArmy.ForceNoHook then
+    return false
+  end
+  return S5Hook
+end
+
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.CreateCommandMove(p, looped)
 	assert(IsValidPosition(p))
@@ -1087,7 +1096,7 @@ function UnlimitedArmy.GetTargetEnemiesInArea(p, player, area, aiactive, addCond
 		return nil
 	end
 	addCond = addCond or function() return true end
-	if not S5Hook then
+	if not UnlimitedArmy.HasHook() then
 		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, true, true, aiactive, addCond)
 	end
 	local lead, leaddis = nil, nil
@@ -1150,7 +1159,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive, addCo
 		return 0
 	end
 	addCond = addCond or function() return true end
-	if not S5Hook then
+	if not UnlimitedArmy.HasHook() then
 		local num = 0
 		for p2=1,8 do
 			if Logic.GetDiplomacyState(player, p2)==Diplomacy.Hostile then
@@ -1184,7 +1193,7 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes, aiactive)
 	if p == invalidPosition then
 		return nil
 	end
-	if not S5Hook then
+	if not UnlimitedArmy.HasHook() then
 		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, false, false, aiactive)
 	end
 	local r, d = nil, nil
@@ -1227,7 +1236,7 @@ end
 
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.GetEntitySpeed(id)
-	if S5Hook and MemoryManipulation then
+	if UnlimitedArmy.HasHook() and MemoryManipulation then
 		local s = MemoryManipulation.GetSettlerModifiedMovementSpeed(id) -- this does not include logic modifier
 		if s < 0 then -- seems some entities have speed of -1 when spawned, fallback to base speed in this case
 			return MemoryManipulation.GetSettlerMovementSpeed(id)
@@ -1301,7 +1310,7 @@ function UnlimitedArmy.IsFearAffectableAndConvertable(id)
 	if Logic.IsSettler(id)==0 then
 		return false
 	end
-	if S5Hook and MemoryManipulation then
+	if UnlimitedArmy.HasHook() and MemoryManipulation then
 		return MemoryManipulation.GetSettlerTypeFearless(Logic.GetEntityType(id))==0
 	end
 	if Logic.IsHero(id)==1 then

@@ -412,7 +412,7 @@ function TriggerFix.KillTrigger.Init()
 		if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
 			return
 		end
-		if not S5Hook or not S5Hook.HurtEntityTrigger_GetDamage then
+		if not S5Hook or not S5Hook.HurtEntityTrigger_GetDamage or S5Hook.Version == "Multiplayer" then
 			return
 		end
 		if not TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY][1] then
