@@ -528,7 +528,7 @@ function UnlimitedArmy:DoBattleCommands()
 	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
 		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id) or self.CannonCommandCache[id]==-1) and not UnlimitedArmy.IsNonCombatEntity(id) then
-			if DoCommands and Logic.IsEntityInCategory(id, EntityCategories.Cannon) then
+			if DoCommands and Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1 then
 				if not self.CannonCommandCache[id] or self.CannonCommandCache[id]==-1 or self.CannonCommandCache[id]<Logic.GetTime() then
 					self.CannonCommandCache[id] = Logic.GetTime()+1
 					Logic.GroupAttack(id, self.CurrentBattleTarget)
@@ -1044,7 +1044,7 @@ function UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped)
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
+function UnlimitedArmy.CreateCommandDirectAttack(target, looped)
 	return {
 		Looped = looped,
 		Target = target,
@@ -1062,7 +1062,7 @@ function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.CreateCommandDirectAttack(target, looped)
+function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
 	return {
 		Looped = looped,
 		Target = target,
@@ -1297,7 +1297,7 @@ end
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.IsRangedEntity(id)
 	return Logic.IsEntityInCategory(id, EntityCategories.LongRange)==1 or Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1
-	or IsEntityOfType(id, "PU_Hero5", "PU_Hero10", "CU_BanditLeaderBow1")
+	or IsEntityOfType(id, Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1)
 end
 
 UnlimitedArmy:AStatic()
