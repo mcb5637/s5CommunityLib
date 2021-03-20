@@ -541,7 +541,7 @@ function MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()
-	return {pattern = "\{([%w%.%-%[%]\"=,]*)}",
+	return {pattern = "\\{([%w%.%-%[%]\"=,]*)}",
 		serialize = function(t)
 		local s = "{"
 		local function f(x)
