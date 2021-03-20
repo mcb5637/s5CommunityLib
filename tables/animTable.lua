@@ -776,7 +776,7 @@ animTable = {
 		hit = 1114,
 		dead = 1115,
 		bomb = 1116,
-		run1 = 1117,
+		run2 = 1117,
 	},
 	CU_Trader = {
 		walk = 233,
