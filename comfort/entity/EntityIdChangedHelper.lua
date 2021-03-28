@@ -3,31 +3,21 @@ mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
 --- EntityIdChangedHelper		mcb			1.0
--- Speichert Id-Änderungen (z.B. durch SetPosition oder ChangePlayer) für 3 Sekunden und macht sie abrufbar
--- 
--- .Init()			in der FMA aufrufen
--- .GetNewID(oid)	wenn diese Id in den letzten 3 Sekunden ersetzt wurde, wird die neue Id zurückgegeben
+-- fügt trigger SCRIPT_EVENT_ON_ENTITY_ID_CHANGED hinzu.
 -- 
 -- Benötigt:
 -- 		Trigger-Fix
 EntityIdChangedHelper = {}
 function EntityIdChangedHelper.Init()
-	EntityIdChangedHelper.idChanges = {}
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_ID_CHANGED")
 	EntityIdChangedHelper.GroupSelection_EntityIDChanged = GroupSelection_EntityIDChanged
 	GroupSelection_EntityIDChanged = function(ol, ne)
 		EntityIdChangedHelper.GroupSelection_EntityIDChanged(ol, ne)
-		EntityIdChangedHelper.idChanges[ol] = {ne, 2}
+		local e = TriggerFix.CreateEmptyEvent()
+		e.GetEntityID1 = ol
+		e.GetEntityID2 = ne
+		TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, e)
 	end
-	StartSimpleJob(function()
-		for ol, t in pairs(EntityIdChangedHelper.idChanges) do
-			if t[2] <= 0 then
-				EntityIdChangedHelper.idChanges[ol] = nil
-			else
-				t[2] = t[2] - 1
-			end
-		end
-	end)
 end
-function EntityIdChangedHelper.GetNewID(ol)
-	return EntityIdChangedHelper.idChanges[ol] and EntityIdChangedHelper.idChanges[ol][1]
-end
+
+AddMapStartCallback(EntityIdChangedHelper.Init)

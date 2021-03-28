@@ -38,6 +38,7 @@ end --mcbPacker.ignore
 -- - UnlimitdArmy
 -- - IsValidPosition
 -- - GetRandom
+--- @class UnlimitedArmySpawnGenerator : UnlimitedArmyFiller
 UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
 	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil, DoNotRemoveIfDeadOrEmpty=nil,
 }

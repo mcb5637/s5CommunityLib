@@ -38,6 +38,7 @@ end --mcbPacker.ignore
 -- - GetDistance
 -- - EntityIdChangedHelper
 -- - GetRandom
+--- @class UnlimitedArmyRecruiter : UnlimitedArmyFiller
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
 	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,DoNotRemoveIfDeadOrEmpty=nil,
 }

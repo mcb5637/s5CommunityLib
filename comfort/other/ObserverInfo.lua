@@ -1,5 +1,4 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/table/KeyOf")
 end --mcbPacker.ignore
 
@@ -237,12 +236,11 @@ function ObserverInfo.GetShowLine(r)
 end
 
 function ObserverInfo.ReadPlayerKillStats(p)
-	local sv = S5Hook.GetRawMem(8758176)[0][10][p*2+1]
-	return sv[82]:GetInt(), sv[83]:GetInt(), sv[84]:GetInt(), sv[85]:GetInt()
+	return CppLogic.Logic.PlayerGetKillStatistics(p)
 end
 
 function ObserverInfo.ReadBuildProgress(id)
-	return S5Hook.GetEntityMem(id)[76]:GetFloat()
+	return CppLogic.Entity.Building.GetHeight(id)
 end
 
 function ObserverInfo.GetNextETypeInUCat(ety)

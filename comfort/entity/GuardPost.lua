@@ -3,9 +3,7 @@ mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsInCone")
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("s5CommunityLib/comfort/entity/SightLine")
 end --mcbPacker.ignore
 
@@ -28,9 +26,8 @@ end --mcbPacker.ignore
 -- - GetDistance
 -- - IsInCone
 -- - TriggerFix
--- - S5Hook (optional, verbessert erkennung)
--- - PredicateHelper (nur bei Hook)
--- - MemoryManipulation (nur bei Hook)
+-- - CppLogic (optional, verbessert erkennung)
+-- - PredicateHelper (nur bei CppLogic)
 GuardPost = {}
 
 function GuardPost.AddGuard(ids, range, cone, targets, checkSightLine, callback, deadcallback, ...)
@@ -63,7 +60,7 @@ function GuardPost.AddGuard(ids, range, cone, targets, checkSightLine, callback,
 		checkSightLine = checkSightLine,
 		arg = arg,
 	}
-	if S5Hook then
+	if CppLogic then
 		t.CheckArea = GuardPost.CheckAreaHook
 	else
 		t.CheckArea = GuardPost.CheckAreaNoHook
@@ -104,7 +101,7 @@ end
 
 function GuardPost.CheckAreaHook(t, id, r)
 	local p = GetPosition(id)
-	for tid in S5Hook.EntityIterator(Predicate.OfAnyPlayer(unpack(t.targets)), PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray), Predicate.InCircle(p.X, p.Y, t.range)) do
+	for tid in CppLogic.Entity.EntityIterator(CppLogic.Entity.Predicates.OfAnyPlayer(unpack(t.targets)), PredicateHelper.GetETypePredicate(TargetFilter.EntityTypeArray), CppLogic.Entity.Predicates.InCircle(p.X, p.Y, t.range)) do
 		if GuardPost.CheckEntity(t, id, r, p, tid) then
 			return true
 		end

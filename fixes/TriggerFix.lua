@@ -17,6 +17,7 @@
 --   LowPriorityJobs werden sehr unregelmäßig aufgerufen, solange es mehrere von ihnen gibt
 --	Fügt Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY hinzu, funktioniert nur mit S5Hook.HurtEntityTrigger_GetDamage,
 --		Event wie normaler Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, ids der soldiers sind austauschbar (da die sterbereihenfolge nicht unbedingt klar ist)
+-- Fügt Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED und Events.SCRIPT_EVENT_ON_DO_INITIALIZATION hinzu.
 --
 -- TriggerFix.ProtectedCall(func, ...)	Ruft eine Funktion geschützt auf, und leitet Fehler an TriggerFix.ShowErrorMessage
 -- TriggerFix.ShowErrorMessage(txt)		Standard - Fehlerausgabe (über DebugWindow)
@@ -26,9 +27,11 @@
 --   Im Debugger-Modus werden weitere Trigger nicht aufgerufen, wenn einer einen Fehler wirft
 --
 -- Benötigt:
--- 	- S5Hook (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
+-- 	- CEntity/CppLogic (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
-TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil}
+TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
+	ScriptTriggers={}, TriggersToDelete={},
+}
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
 
 function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
@@ -54,6 +57,14 @@ end
 
 function TriggerFix.RemoveTrigger(tid)
 	local t = TriggerFix.idToTrigger[tid]
+	if not t then
+		return
+	end
+	if TriggerFix.TriggersToDelete[t.event] then
+		table.insert(TriggerFix.TriggersToDelete[t.event], t)
+		t.active = 0
+		return
+	end
 	local ev = TriggerFix.triggers[t.event]
 	for i=table.getn(ev),1,-1 do
 		if ev[i]==t then
@@ -96,11 +107,10 @@ end
 function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
-		cev = {}
-		for k,v in pairs(TriggerFix.event) do
-			cev[k] = v()
-		end
+		cev = TriggerFix.CreateCopyEvent()
 	end
+	local deleteBack = TriggerFix.TriggersToDelete[event]
+	TriggerFix.TriggersToDelete[event] = {}
 	local ev = TriggerFix.triggers[event]
 	local rem, remi = {}, 1
 	for _, t in ipairs(ev) do
@@ -114,6 +124,10 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 				remi = remi + 1
 			end
 		end
+	end
+	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
+	for _,t in ipairs(deleteBack) do
+		TriggerFix.RemoveTrigger(t.tid)
 	end
 	for _,tid in ipairs(rem) do
 		TriggerFix.RemoveTrigger(tid)
@@ -135,11 +149,10 @@ end
 function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
-		cev = {}
-		for k,v in pairs(TriggerFix.event) do
-			cev[k] = v()
-		end
+		cev = TriggerFix.CreateCopyEvent()
 	end
+	local deleteBack = TriggerFix.TriggersToDelete[event]
+	TriggerFix.TriggersToDelete[event] = {}
 	local ev = TriggerFix.triggers[event]
 	local rem, remi = {}, 1
 	for _, t in ipairs(ev) do
@@ -157,6 +170,10 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			end
 		end
 	end
+	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
+	for _,t in ipairs(deleteBack) do
+		TriggerFix.RemoveTrigger(t.tid)
+	end
 	for _,tid in ipairs(rem) do
 		TriggerFix.RemoveTrigger(tid)
 	end
@@ -172,8 +189,8 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 end
 
 function TriggerFix.ShowErrorMessage(txt)
-	if S5Hook then
-		S5Hook.Log("TriggerFix error catched: "..txt)
+	if CppLogic then
+		CppLogic.API.Log("TriggerFix error catched: "..txt)
 	end
 	Message("@color:255,0,0 Err:")
 	Message(txt)
@@ -268,9 +285,44 @@ function TriggerFix.HackTrigger()
 			return TriggerFix.event[name]()
 		end
 	end
+	setmetatable(Event, {
+		__index = function(_, name)
+			if TriggerFix.currentEvent then
+				return TriggerFix.currentEvent[name]
+			end
+		end,
+	})
+	for ev,id in pairs(TriggerFix.ScriptTriggers) do
+		Events[ev] = id
+	end
 	for _,f in ipairs(TriggerFix.onHackTrigger) do
 		f()
 	end
+end
+
+function TriggerFix.AddScriptTrigger(name)
+	assert(not Events[name])
+	TriggerFix.ScriptTriggers[name] = name
+	Events[name] = name
+	if not TriggerFix.triggers[name] then
+		TriggerFix.triggers[name] = {}
+	end
+end
+
+function TriggerFix.CreateCopyEvent()
+	local cev = {}
+	for k,v in pairs(TriggerFix.event) do
+		cev[k] = v()
+	end
+	return cev
+end
+
+function TriggerFix.CreateEmptyEvent()
+	local cev = {}
+	for k,v in pairs(TriggerFix.event) do
+		cev[k] = 0
+	end
+	return cev
 end
 
 function TriggerFix.ProtectedCall(func, ...)
@@ -296,12 +348,17 @@ function TriggerFix.CheckTriggerRuntime()
 	return ct
 end
 
+function TriggerFix.AllScriptsLoaded()
+	TriggerFix_action(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, TriggerFix.CreateEmptyEvent())
+end
+
 function TriggerFix.Init()
 	TriggerFix_action = TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode]
 	TriggerFix.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
 	Mission_OnSaveGameLoaded = function()
 		TriggerFix.HackTrigger()
 		TriggerFix.Mission_OnSaveGameLoaded()
+		TriggerFix_action(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, TriggerFix.CreateEmptyEvent())
 	end
 	TriggerFix.HackTrigger()
 	for _,event in ipairs{
@@ -331,6 +388,8 @@ function TriggerFix.Init()
 	StartHiResJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, "Condition_"..f, "Action_"..f, 1, arg, arg)
 	end
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_SAVEGAME_LOADED")
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_DO_INITIALIZATION")
 end
 TriggerFix.Init()
 
@@ -379,7 +438,7 @@ function TriggerFix.LowPriorityJob.Run()
 end
 
 function TriggerFix.LowPriorityJob.Init()
-	Events.SCRIPT_EVENT_LOW_PRIORITY = "mcb_lpj"
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_LOW_PRIORITY")
 	if not TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY] then
 		TriggerFix.triggers[Events.SCRIPT_EVENT_LOW_PRIORITY] = {}
 	end
@@ -404,38 +463,27 @@ TriggerFix.LowPriorityJob.Init()
 TriggerFix.KillTrigger = {}
 
 function TriggerFix.KillTrigger.Init()
-	Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY = "mcb_kill"
-	if not TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY] then
-		TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY] = {}
-	end
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY")
 	table.insert(TriggerFix.afterTriggerCB, function(event)
 		if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
 			return
 		end
-		if not S5Hook or not S5Hook.HurtEntityTrigger_GetDamage or S5Hook.Version == "Multiplayer" then
-			return
-		end
-		if not TriggerFix.triggers[Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY][1] then
-			S5Hook.HurtEntityTrigger_Reset()
+		if not CEntity or not CppLogic then
 			return
 		end
 		TriggerFix.KillTrigger.Run()
-		S5Hook.HurtEntityTrigger_Reset()
-	end)
-	table.insert(TriggerFix.onHackTrigger, function()
-		Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY = "mcb_kill"
 	end)
 end
 
 function TriggerFix.KillTrigger.Run()
 	local id = Event.GetEntityID2()
-	local dmg = S5Hook.HurtEntityTrigger_GetDamage()
-	if MemoryManipulation.IsSoldier(id) then
-		id = MemoryManipulation.GetLeaderOfSoldier(id)
+	local dmg = CEntity.TriggerGetDamage()
+	if CppLogic.Entity.IsSoldier(id) then
+		id = CppLogic.Entity.Settler.GetLeaderOfSoldier(id)
 	end
 	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>=1 then
-		local solth = MemoryManipulation.GetLeaderTroopHealth(id)
-		local solph = MemoryManipulation.GetEntityTypeMaxHealth(Logic.LeaderGetSoldiersType(id))
+		local solth = CppLogic.Entity.Leader.GetTroopHealth(id)
+		local solph = CppLogic.EntityType.GetMaxHealth(Logic.LeaderGetSoldiersType(id))
 		if solth == -1 then
 			solth = (Logic.LeaderGetNumberOfSoldiers(id)) * solph
 		end
@@ -444,13 +492,10 @@ function TriggerFix.KillTrigger.Run()
 		local newsolh = solth - dmg
 		for i,sid in ipairs(sols) do
 			if ((Logic.LeaderGetNumberOfSoldiers(id)-i) * solph) > newsolh then
-				local t = {}
-				for k,v in pairs(TriggerFix.event) do
-					t[k] = 0
-				end
+				local t = TriggerFix.CreateEmptyEvent()
 				t.GetEntityID1 = Event.GetEntityID1()
 				t.GetEntityID2 = sid
-				TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode](Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
+				TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
 			else
 				break
 			end
@@ -458,13 +503,19 @@ function TriggerFix.KillTrigger.Run()
 		dmg = math.max(0, -newsolh)
 	end
 	if Logic.GetEntityHealth(id) <= dmg then
-		local t = {}
-		for k,v in pairs(TriggerFix.event) do
-			t[k] = 0
-		end
+		local t = TriggerFix.CreateEmptyEvent()
 		t.GetEntityID1 = Event.GetEntityID1()
 		t.GetEntityID2 = id
-		TriggerFix["ExecuteAllTriggersOfEvent"..TriggerFix_mode](Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
+		TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
 	end
 end
 TriggerFix.KillTrigger.Init()
+
+function AddMapStartCallback(f)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1)
+end
+
+function AddMapStartAndSaveLoadedCallback(f)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, nil, f, 1)
+end

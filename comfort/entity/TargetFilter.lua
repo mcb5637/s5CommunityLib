@@ -1,7 +1,11 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
+	mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
+
+EntityCategories.TargetFilter_TargetType = 100
+EntityCategories.TargetFilter_TargetTypeLeader = 101
+EntityCategories.TargetFilter_CustomRanged = 102
+EntityCategories.TargetFilter_NonCombat = 103
 
 --- author:mcb		current maintainer:mcb		v0.1b
 -- Filtert entities nach passenden zielen für angriffe.
@@ -10,7 +14,7 @@ end --mcbPacker.ignore
 -- TargetFilter.IsValidTarget(id, enemypl, aiactive)	Prüft ein entity, enemypl und aiactive werden nur ohne hook verwendet und verbessern unsichtbarkeits erkennung.
 -- 
 -- Benötigt:
--- - S5Hook / MemoryManipulation (optional, verbessert unsichtbarkeits erkennung)
+-- - CppLogic (optional, verbessert unsichtbarkeits erkennung)
 TargetFilter = {EntityTypeArray={}}
 TargetFilter.IgnoreEtypes = {
 	[Entities.PU_Hero1_Hawk] = true,
@@ -39,23 +43,57 @@ if Entities.CB_Evil_Tower1_ArrowLauncher then
 	table.insert(TargetFilter.LeaderTypeArray, Entities.PU_Thief)
 end
 
+AddMapStartCallback(function()
+	local skipCpp = false
+	if not CppLogic then
+		skipCpp = true
+	elseif Logic.IsEntityTypeInCategory(Entities.PU_Hero2, EntityCategories.TargetFilter_TargetType)==1 then
+		skipCpp = true
+	end
+	
+	for en, e in pairs(Entities) do
+		if (string.find(en, "[PC][UBV]") or string.find(en, "XD_[Dark]*Wall.*")) and not TargetFilter.IgnoreEtypes[e] then
+			table.insert(TargetFilter.EntityTypeArray, e)
+			if not skipCpp then
+				CppLogic.EntityType.AddEntityCategory(e, EntityCategories.TargetFilter_TargetType)
+			end
+		end
+		if string.find(en, "[PC][UV]") and (string.find(en, "Leader") or string.find(en, "Hero") or string.find(en, "Cannon"))
+		and not TargetFilter.IgnoreEtypes[e] and not TargetFilter.IgnoreELeaderTypes[e] then
+			table.insert(TargetFilter.LeaderTypeArray, e)
+			if not skipCpp then
+				CppLogic.EntityType.AddEntityCategory(e, EntityCategories.TargetFilter_TargetTypeLeader)
+			end
+		end
+	end
 
-for en, e in pairs(Entities) do
-	if (string.find(en, "[PC][UBV]") or string.find(en, "XD_[Dark]*Wall.*")) and not TargetFilter.IgnoreEtypes[e] then
-		table.insert(TargetFilter.EntityTypeArray, e)
+	if skipCpp then
+		return
 	end
-	if string.find(en, "[PC][UV]") and (string.find(en, "Leader") or string.find(en, "Hero") or string.find(en, "Cannon"))
-	and not TargetFilter.IgnoreEtypes[e] and not TargetFilter.IgnoreELeaderTypes[e] then
-		table.insert(TargetFilter.LeaderTypeArray, e)
+	for nam, id in pairs(TaskLists) do
+		if (string.sub(nam, -5, -1)=="_IDLE") then
+			CppLogic.UA.AddIdleTaskList(id)
+		end
 	end
-end
+
+	for _, ty in ipairs{Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1} do
+		if ty  then
+			CppLogic.EntityType.AddEntityCategory(ty, EntityCategories.TargetFilter_CustomRanged)
+		end
+	end
+	for _, ty in ipairs{Entities.PU_Thief, Entities.PU_Scout} do
+		if ty  then
+			CppLogic.EntityType.AddEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
+		end
+	end
+end)
 
 function TargetFilter.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then
 		return false
 	end
-	if MemoryManipulation then
-		if MemoryManipulation.IsEntityInvisible(id) then
+	if CppLogic then
+		if not CppLogic.Entity.Settler.IsVisible(id) then
 			return false
 		end
 	else

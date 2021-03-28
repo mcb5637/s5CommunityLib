@@ -9,7 +9,7 @@ end --mcbPacker.ignore
 -- - MPSyncer.ExecuteSynced("Eval", "Message('test'")		eval + execute synchron
 function MPSyncer_Debug_CreateEval()
 	MPSyncer.VirtualFuncs.Create(function(s)
-		S5Hook.Eval(s)()
+		CppLogic.API.Eval(s)()
 	end, "Eval", {pattern = "\"(.*)\"",		-- . is greedy, takes as much as possible.
 		serialize = function(s)
 			return '"'..s..'"'

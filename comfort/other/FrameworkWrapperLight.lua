@@ -1,6 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 end --mcbPacker.ignore
 
 
@@ -31,11 +30,10 @@ end --mcbPacker.ignore
 -- DoSaveInternal							intern, nicht benutzen!
 -- DoSave(slot, name, cb)					Startet einen Job, der das Spiel speichert, sobald möglich. cb wird aufgerufen, nachdem gespeichert wurde.
 --
--- Callbacks:
--- FrameworkWrapper.Mapfile.LeaveMapCallback	Table mit funktionen, die aufgerufen werden, wenn die Map aus irgendeinem Grund beendet wird.
--- 													Der Grund wird als Parameter übergeben ("startMap", "loadSave", "restartMap", "quitMap", "quitGame").
--- FrameworkWrapper.Savegame.PreSaveCallback	Table mit funktionen die vor dem Anlegen eines Savegames aufgerufen werden. Parameter ist der slot.
--- FrameworkWrapper.Savegame.PostSaveCallback	Table mit funktionen die nach dem Anlegen eines Savegames aufgerufen werden. Parameter ist der slot.
+-- Trigger:
+-- Events.SCRIPT_EVENT_ON_LEAVE_MAP     	Der Grund wird als Event.Reason übergeben ("startMap", "loadSave", "restartMap", "quitMap", "quitGame").
+-- Events.SCRIPT_EVENT_ON_PRE_SAVE  	    Wird vor dem Anlegen eines Savegames aufgerufen. Event.Slot is der slot.
+-- Events.SCRIPT_EVENT_ON_POST_SAVE	        Wird nach dem Anlegen eines Savegames aufgerufen. Event.Slot is der slot.
 -- 
 -- Anderes:
 -- FrameworkWrapper.Savegame.DoNotSaveGlobals	Table mit keys, die während dem speichern nicht aus _G erreichbar sind.
@@ -48,6 +46,11 @@ end --mcbPacker.ignore
 -- benötigt:
 -- Trigger-Fix
 FrameworkWrapper={Mapfile={},Savegame={}}
+
+TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_LEAVE_MAP")
+TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_PRE_SAVE")
+TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_POST_SAVE")
+
 function FrameworkWrapper.Mapfile.IsValidMap(name, typ, cm)
 	if type(name)~="string" then return false end
 	return Framework.GetIndexOfMapName(name, typ or 3, cm)~=-1
@@ -83,20 +86,17 @@ function FrameworkWrapper.Mapfile.GetCampaignTypAndName(t)
 	local t2 = {cMain="Main",cNebel="Extra1",cLeg1="Extra2_1",cLeg2="Extra2_2",cLeg3="Extra2_3",cLeg4="Extra2_4"}
 	return t1[t], t2[t]
 end
-FrameworkWrapper.Mapfile.LeaveMapCallback = {}
 function FrameworkWrapper.Mapfile.DoLeaveMapCallback(reason)
-	for _, f in ipairs(FrameworkWrapper.Mapfile.LeaveMapCallback) do
-		xpcall(function()
-			f(reason)
-		end, TriggerFix and TriggerFix.ShowErrorMessage or Message)
-	end
+	local ev = TriggerFix.CreateEmptyEvent()
+    ev.Reason = reason
+    TriggerFix_action(Events.SCRIPT_EVENT_ON_LEAVE_MAP, ev)
 end
 
 function FrameworkWrapper.GetOSTimeAsInt()
 	local str = Framework.GetSystemTimeDateString()
 	local _, _, year, month, day, hour, min, sec = string.find(str, "(%d+)-(%d+)-(%d+)-(%d+)-(%d+)-(%d+)")
-	if S5Hook and S5Hook.SetPreciseFPU then
-		S5Hook.SetPreciseFPU()
+	if CppLogic then
+		CppLogic.Memory.SetFPU()
 	end
 	year = year - 2000 -- to get the number to manageable levels
 	month = month + year*12
@@ -131,22 +131,16 @@ function FrameworkWrapper.Savegame.IsSaveAllowed()
 	end
 	return true
 end
-FrameworkWrapper.Savegame.DoNotSaveGlobals = {"LuaDebugger"}
-FrameworkWrapper.Savegame.PreSaveCallback = {}
+FrameworkWrapper.Savegame.DoNotSaveGlobals = {"LuaDebugger", "CppLogic"}
 function FrameworkWrapper.Savegame.DoPreSaveCallback(slot)
-	for _, f in ipairs(FrameworkWrapper.Savegame.PreSaveCallback) do
-		xpcall(function()
-			f(slot)
-		end, TriggerFix and TriggerFix.ShowErrorMessage or Message)
-	end
+	local ev = TriggerFix.CreateEmptyEvent()
+    ev.Slot = slot
+    TriggerFix_action(Events.SCRIPT_EVENT_ON_PRE_SAVE, ev)
 end
-FrameworkWrapper.Savegame.PostSaveCallback = {}
 function FrameworkWrapper.Savegame.DoPostSaveCallback(slot)
-	for _, f in ipairs(FrameworkWrapper.Savegame.PostSaveCallback) do
-		xpcall(function()
-			f(slot)
-		end, TriggerFix and TriggerFix.ShowErrorMessage or Message)
-	end
+	local ev = TriggerFix.CreateEmptyEvent()
+    ev.Slot = slot
+    TriggerFix_action(Events.SCRIPT_EVENT_ON_POST_SAVE, ev)
 end
 function FrameworkWrapper.Savegame.DoSaveInternal(slot, name, nomessage, cb, ...)
 	if FrameworkWrapper.Savegame.PreventMultiSave then
@@ -200,9 +194,7 @@ function FrameworkWrapper.Savegame.CreateSavegameName()
 	return FrameworkWrapper.Mapfile.GetCurrentMapNameAndDescription().." - "..Framework.GetSystemTimeDateString()
 end
 
-FrameworkWrapper.Savegame.GameCallback_LocalSetDefaultValues = GameCallback_LocalSetDefaultValues
-function GameCallback_LocalSetDefaultValues()
-	FrameworkWrapper.Savegame.GameCallback_LocalSetDefaultValues()
+AddMapStartCallback(function()
 	function MainWindow_LoadGame_DoLoadGame(i)
 		i = MainWindow_SaveGame_LoadListOffset + i
 		if i < table.getn(MainWindow_LoadGame_NameList) then
@@ -278,31 +270,31 @@ function GameCallback_LocalSetDefaultValues()
 			Framework.ExitGame()	
 		end
 	end
-end
 
-function QuickLoad()
-	if Logic.PlayerGetGameState(GUI.GetPlayerID())  ~= 1 then
-		return
-	end
-	if Framework.GetCurrentMapName() == "00_Tutorial1" then
-		return
-	end 
-	if XNetwork == nil or XNetwork.Manager_DoesExist() == 0 then
-		FrameworkWrapper.Savegame.LoadSave("quicksave")
-		GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_GameLoaded"))
-	end
-end
-function QuickSave()
-	if Logic.PlayerGetGameState(GUI.GetPlayerID())  ~= 1 then
-		return
-	end
-	if Framework.GetCurrentMapName() == "00_Tutorial1"  then
-		return
-	end
-	if XNetwork == nil or XNetwork.Manager_DoesExist() == 0 then
-		local desc = "(*) - " .. MainWindow_SaveGame_CreateSaveGameDescription()
-		if FrameworkWrapper.Savegame.DoSaveInternal("quicksave", desc)== false then
-			Message(str.FrameworkWrapper_noSave)
-		end
-	end
-end
+    function QuickLoad()
+        if Logic.PlayerGetGameState(GUI.GetPlayerID())  ~= 1 then
+            return
+        end
+        if Framework.GetCurrentMapName() == "00_Tutorial1" then
+            return
+        end 
+        if XNetwork == nil or XNetwork.Manager_DoesExist() == 0 then
+            FrameworkWrapper.Savegame.LoadSave("quicksave")
+            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_GameLoaded"))
+        end
+    end
+    function QuickSave()
+        if Logic.PlayerGetGameState(GUI.GetPlayerID())  ~= 1 then
+            return
+        end
+        if Framework.GetCurrentMapName() == "00_Tutorial1"  then
+            return
+        end
+        if XNetwork == nil or XNetwork.Manager_DoesExist() == 0 then
+            local desc = "(*) - " .. MainWindow_SaveGame_CreateSaveGameDescription()
+            if FrameworkWrapper.Savegame.DoSaveInternal("quicksave", desc)== false then
+                Message(str.FrameworkWrapper_noSave)
+            end
+        end
+    end
+end)

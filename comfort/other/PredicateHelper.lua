@@ -1,5 +1,4 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v1.0
@@ -9,13 +8,13 @@ end --mcbPacker.ignore
 -- - PredicateHelper.GetFriendlyPlayerPredicate(pl)		Erstellt ein Predicate.OfAnyPlayer aller player die zu pl freundlich sind (pl inklusive).
 -- 
 -- Benötigt:
--- - S5Hook
+-- - CppLogic
 PredicateHelper = {}
 function PredicateHelper.GetETypePredicate(tab)
 	if tab.predicate then
 		return tab.predicate
 	end
-	tab.predicate = Predicate.OfAnyType(unpack(tab))
+	tab.predicate = CppLogic.Entity.Predicates.OfAnyEntityType(unpack(tab))
 	return tab.predicate
 end
 
@@ -27,7 +26,7 @@ function PredicateHelper.GetEnemyPlayerPredicate(pl)
 		end
 	end
 	--LuaDebugger.Break()
-	return Predicate.OfAnyPlayer(unpack(p))
+	return CppLogic.Entity.Predicates.OfAnyPlayer(unpack(p))
 end
 
 function PredicateHelper.GetFriendlyPlayerPredicate(pl)
@@ -38,5 +37,5 @@ function PredicateHelper.GetFriendlyPlayerPredicate(pl)
 		end
 	end
 	--LuaDebugger.Break()
-	return Predicate.OfAnyPlayer(unpack(p))
+	return CppLogic.Entity.Predicates.OfAnyPlayer(unpack(p))
 end

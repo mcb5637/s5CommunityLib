@@ -12,7 +12,7 @@ end --mcbPacker.ignore
 -- - S5Hook
 -- - TriggerFix
 function ConvertEntityCallback(id, tid, cb, ...)
-	PostEvent.HeroConvertSettlerAbility(id, tid)
+	SendEvent.HeroConvertSettler(id, tid)
 	local d = {id=id,tid=tid,t=Logic.GetTimeMs(), cb=cb, a=arg}
 	d.ctr = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, function(d)
 		if Logic.GetTimeMs() <= d.t then

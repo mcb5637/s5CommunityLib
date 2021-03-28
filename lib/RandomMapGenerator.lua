@@ -837,7 +837,7 @@ function RandomMapGenerator.CreateResourceEntity(generationData, entityType, pos
 end
 
 function RandomMapGenerator.DestroyUnwantedEntities(generationData, posX, posY, size)
-	for id in S5Hook.EntityIterator(Predicate.OfPlayer(0), Predicate.InCircle(posX, posY, size)) do
+	for id in CppLogic.Entity.EntityIterator(CppLogic.Entity.Predicates.OfPlayer(0), CppLogic.Entity.Predicates.InCircle(posX, posY, size)) do
 		DestroyEntity(id)
 	end
 end

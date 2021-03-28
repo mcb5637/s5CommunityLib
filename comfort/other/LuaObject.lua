@@ -29,7 +29,8 @@
 -- visibility rules (like public and private) do not exist, cause they would be hard to implement and only work with metatables.
 -- also make sure you dont override members of a parent class, there is no way to separate them.
 -- 
-LuaObject = {Methods = {}, Base = nil, Statics={}, Creators={}}
+--- @class LuaObject
+LuaObject = {Methods = {}, Base = nil, Statics={}, Creators={}, Class=nil}
 
 LuaObjectDatabase = {LuaObject = LuaObject}
 
@@ -56,6 +57,7 @@ function LuaObject.Methods.Init()
 	
 end
 
+--- @return LuaObject
 function LuaObject.Statics:New(...)
 	local t = {}
 	for k,v in pairs(self.Methods) do

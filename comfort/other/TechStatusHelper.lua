@@ -1,7 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("lib/mcbBrief")
 mcbPacker.require("s5CommunityLib/tables/TechState")
 end --mcbPacker.ignore
@@ -24,14 +22,12 @@ TechStatusHelper.reverseRequirementCache = nil
 function TechStatusHelper.RebuildRequirementCache()
 	TechStatusHelper.reverseRequirementCache = {}
 	for _, t in pairs(Technologies) do
-		local tdata = MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(t), nil, MemoryManipulation.ObjFieldInfo.Technology, {
-			TecConditions = true,
-		})
+		local _,_,_, tdata = CppLogic.Technology.GetRequirements(t)
 		for _,tre in ipairs(tdata.TecConditions) do
-			if not TechStatusHelper.reverseRequirementCache[tre.TecType] then
-				TechStatusHelper.reverseRequirementCache[tre.TecType] = {}
+			if not TechStatusHelper.reverseRequirementCache[tre] then
+				TechStatusHelper.reverseRequirementCache[tre] = {}
 			end
-			table.insert(TechStatusHelper.reverseRequirementCache[tre.TecType], t)
+			table.insert(TechStatusHelper.reverseRequirementCache[tre], t)
 		end
 	end
 end
@@ -56,10 +52,7 @@ function TechStatusHelper.GetColoredEntityTypeName(ety, am, pl)
 end
 
 function TechStatusHelper.GetColoredUpgradeCategoryTypeName(ucat, am, pl)
-	local num = 0
-	for id in S5Hook.EntityIterator(Predicate.OfPlayer(pl), Predicate.OfUpgradeCategory(ucat)) do
-		num = num + 1
-	end
+	local num = CppLogic.Entity.EntityIteratorCount(CppLogic.Entity.OfPlayer(pl), CppLogic.Entity.Predicates.OfUpgradeCategory(ucat))
 	local r = " @color:gruen "
 	if num<am then
 		r = " @color:gelb "
@@ -72,45 +65,38 @@ function TechStatusHelper.GetTechnologyDescStrings(t, p)
 	local title = " @color:tit "..TechStatusHelper.GetTechName(t).." @color:weis "
 	local requires = " @color:req benötigt: @color:weis "
 	local requiredfor = " @color:req ermöglicht: @color:weis "
-	local tdata = MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(t), nil, MemoryManipulation.ObjFieldInfo.Technology, {
-		RequiredTecConditions = true,
-		TecConditions = true,
-		RequiredEntityConditions = true,
-		EntityConditions = true,
-		RequiredUpgradeCategoryConditions = true,
-		UpgradeCategoryConditions = true,
-	})
-	if tdata.RequiredTecConditions > 0 then
-		requires = requires..tdata.RequiredTecConditions.." von ( "
+	local nent, ent, ntech, tech, nucat, ucat = CppLogic.Technology.GetRequirements(t)
+	if ntech > 0 then
+		requires = requires..ntech.." von ( "
 	end
-	for _,tre in ipairs(tdata.TecConditions) do
-		requires = requires..TechStatusHelper.GetColoredTechName(tre.TecType, p)
+	for _,tre in ipairs(tech) do
+		requires = requires..TechStatusHelper.GetColoredTechName(tre, p)
 	end
-	if tdata.RequiredTecConditions > 0 then
+	if ntech > 0 then
 		requires = requires.." @color:weis ) "
 	end
-	if tdata.RequiredEntityConditions > 0 then
-		requires = requires.." @color:weis "..tdata.RequiredEntityConditions.." von ( "
+	if nent > 0 then
+		requires = requires.." @color:weis "..nent.." von ( "
 	end
-	for _,tre in ipairs(tdata.EntityConditions) do
-		requires = requires..TechStatusHelper.GetColoredEntityTypeName(tre.EntityType, tre.Amount, p)
+	for et,am in pairs(ent) do
+		requires = requires..TechStatusHelper.GetColoredEntityTypeName(et, am, p)
 	end
-	if tdata.RequiredEntityConditions > 0 then
+	if nent > 0 then
 		requires = requires.." @color:weis ) "
 	end
-	if tdata.RequiredUpgradeCategoryConditions > 0 then
-		requires = requires.." @color:weis "..tdata.RequiredUpgradeCategoryConditions.." von ( "
+	if nucat > 0 then
+		requires = requires.." @color:weis "..nucat.." von ( "
 	end
-	for _,tre in ipairs(tdata.UpgradeCategoryConditions) do
-		requires = requires..TechStatusHelper.GetColoredUpgradeCategoryTypeName(tre.UpgradeCategory, tre.Amount, p)
+	for uc,am in pairs(ucat) do
+		requires = requires..TechStatusHelper.GetColoredUpgradeCategoryTypeName(uc, am, p)
 	end
-	if tdata.RequiredUpgradeCategoryConditions > 0 then
+	if nucat > 0 then
 		requires = requires.." @color:weis ) "
 	end
 	if not TechStatusHelper.reverseRequirementCache then
 		TechStatusHelper.RebuildRequirementCache()
 	end
-	tdata = TechStatusHelper.reverseRequirementCache[t] or {}
+	local tdata = TechStatusHelper.reverseRequirementCache[t] or {}
 	for _,tre in ipairs(tdata) do
 		requiredfor = requiredfor..TechStatusHelper.GetColoredTechName(tre, p)
 	end
@@ -123,34 +109,31 @@ function TechStatusHelper.GetTechTooltip(t, p)
 	return s
 end
 --TechStatusHelper.GetEntityTypeTechBoni(Entities.PU_LeaderBow1, 1, "ModifyDamage", "DamageModifier")
-function TechStatusHelper.GetEntityTypeTechBoni(ety, player, techListKey, bonusKey)
-	local techlist = MemoryManipulation.GetSingleValue(MemoryManipulation.GetETypePointer(ety), "LogicProps."..techListKey)
+function TechStatusHelper.GetEntityTypeTechBoni(ety, player, techList, bonus)
 	local s = ""
-	for _,t in pairs(techlist.TechList) do
-		local techmod = MemoryManipulation.ReadObj(MemoryManipulation.GetTechnologyPointer(t), nil, MemoryManipulation.ObjFieldInfo.Technology, {
-			[bonusKey] = true,
-		})[bonusKey]
-		s = s..TechStatusHelper.GetColoredTechName(t, player).." @color:255,255,255 "..string.char(techmod.Operator).." "..techmod.Value.." @cr "
+	for _,t in pairs(techList) do
+		local op, val = bonus(t)
+		s = s..TechStatusHelper.GetColoredTechName(t, player).." @color:255,255,255 "..string.char(op).." "..val.." @cr "
 	end
 	return s
 end
 
 function TechStatusHelper.GetEntityTypeDamageTechBoni(ety, player)
-	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyDamage", "DamageModifier")
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, CppLogic.EntityType.Settler.GetDamageModifierTechs(ety), CppLogic.Technology.GetDamageModifier)
 end
 
 function TechStatusHelper.GetEntityTypeArmorTechBoni(ety, player)
-	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyArmor", "ArmorModifier")
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, CppLogic.EntityType.GetArmorModifierTechs(ety), CppLogic.Technology.GetArmorModifier)
 end
 
 function TechStatusHelper.GetEntityTypeRangeTechBoni(ety, player)
-	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyMaxRange", "RangeModifier")
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, CppLogic.EntityType.Settler.GetMaxRangeModifierTechs(ety), CppLogic.Technology.GetRangeModifier)
 end
 
 function TechStatusHelper.GetEntityTypeExplorationTechBoni(ety, player)
-	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifyExploration", "ExplorationModifier")
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, CppLogic.EntityType.GetExplorationModifierTechs(ety), CppLogic.Technology.GetExplorationModifier)
 end
 
 function TechStatusHelper.GetEntityTypeSpeedTechBoni(ety, player)
-	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, "ModifySpeed", "SpeedModifier")
+	return TechStatusHelper.GetEntityTypeTechBoni(ety, player, CppLogic.EntityType.Settler.GetSpeedModifierTechs(ety), CppLogic.Technology.GetSpeedModifier)
 end

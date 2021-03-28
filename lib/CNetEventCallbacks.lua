@@ -1,7 +1,5 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 end --mcbPacker.ignore
 
 
@@ -15,9 +13,9 @@ end --mcbPacker.ignore
 -- 
 -- Aufgerufen werden die Callbacks mit nur einem Parameter, einem table in dem alle Informationen stehen.
 -- Informatonen hängen vom Eventtyp ab, und können in der Liste unten eingesehen werden.
--- Wenn Informationen im table geändert werden und einer der Callbacks true zurückgibt,
--- werden alle Infos zurück in das CNetEvent geschrieben.
--- (Einige wenige infos können nicht geschrieben werden: EventTypeId, PositionList und ListOfSerfs)
+-- Ein cb kann 2 werte zurückgeben: write, ignore.
+-- wenn ignore gesetzt ist, wird das event danach ignoriert (im c++ code).
+-- wenn write gesetzt ist, werden darin enthaltene werte zurück in das event geschrieben.
 -- 
 -- Liste der CNetEvents:
 -- - CNetEventSubclass:									(prameter list)
@@ -157,29 +155,32 @@ function CNetEventCallbacks.Remove(eventid, func)
 	end
 end
 
-function CNetEventCallbacks.DoCB(sv, id)
-	local read = MemoryManipulation.ReadObj(sv)
-	if not read or read=="todo" then
-		return
-	end
-	local doWrite = false
+function CNetEventCallbacks.DoCB(id, ev)
+	local doWrite, ignore = false, false
 	if CNetEventCallbacks.cbs.all then
 		for _,cb in ipairs(CNetEventCallbacks.cbs.all) do
-			doWrite = doWrite or cb(read)
+			local w, i = cb(id, ev)
+			doWrite = doWrite or w
+			ignore = ignore or i
 		end
 	end
-	if CNetEventCallbacks.cbs[id] then
-		for _,cb in ipairs(CNetEventCallbacks.cbs[id]) do
-			doWrite = doWrite or cb(read)
+	if CNetEventCallbacks.cbs.all then
+		for _,cb in ipairs(CNetEventCallbacks.cbs.all) do
+			local w, i = cb(ev)
+			doWrite = doWrite or w
+			ignore = ignore or i
 		end
+	end
+	if ignore then
+		return true
 	end
 	if doWrite then
-		MemoryManipulation.WriteObj(sv, read, nil, true)
+		return doWrite
 	end
 end
 
-table.insert(S5HookLoader.cb, function()
-	S5Hook.SetNetEventTrigger(CNetEventCallbacks.DoCB)
+AddMapStartAndSaveLoadedCallback(function()
+	CppLogic.Logic.UICommands.SetCallback(CNetEventCallbacks.DoCB)
 end)
 
 CNetEventCallbacks.CNetEvents = {

@@ -1,6 +1,4 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("s5CommunityLib/comfort/math/Polygon")
 end --mcbPacker.ignore
 
@@ -12,7 +10,7 @@ end --mcbPacker.ignore
 -- 
 -- benötigt:
 -- - Polygon
--- - S5Hook / MemoryManipulation				(optional) Unbekannte sichtblocker/blockinggrößen table bauen
+-- - CppLogic				(optional) Unbekannte sichtblocker/blockinggrößen table bauen
 SightLine = {}
 
 function SightLine.CheckVisibility(pos1, pos2, blockers)
@@ -24,7 +22,7 @@ function SightLine.CheckVisibility(pos1, pos2, blockers)
 		end
 		return true
 	else -- TODO check actual blocking, to account for non circular blocking
-		for id in S5Hook.EntityIterator(Predicate.InCircle((pos1.X+pos2.X)/2, (pos1.Y+pos2.Y)/2, GetDistance(pos1, pos2))) do
+		for id in CppLogic.Entity.EntityIterator(CppLogic.Entity.Predicates.InCircle((pos1.X+pos2.X)/2, (pos1.Y+pos2.Y)/2, GetDistance(pos1, pos2))) do
 			if SightLine.CheckEntity(pos1, pos2, id) then
 				return false
 			end
@@ -53,7 +51,7 @@ function SightLine.BuildTables()
 end
 
 function SightLine.CalculateDistance(ty)
-	local bl = MemoryManipulation.GetEntityTypeBlockingArea(ty)
+	local bl, points = CppLogic.EntityType.GetBlocking(ty)
 	local di = -1
 	local z = {X=0,Y=0}
 	for _,ps in ipairs(bl) do
@@ -64,9 +62,8 @@ function SightLine.CalculateDistance(ty)
 			end
 		end
 	end
-	bl = MemoryManipulation.GetEntityTypeNumBlockedPoints(ty)
-	if bl > 0 then
-		di = math.sqrt(bl)*100
+	if points > 0 then
+		di = math.sqrt(points)*100
 	end
 	return di
 end

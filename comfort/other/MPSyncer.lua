@@ -1,5 +1,4 @@
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
@@ -301,8 +300,8 @@ function MPSyncer.Log(txt)
 	if LuaDebugger.Log then
 		LuaDebugger.Log(txt)
 	end
-	if S5Hook then
-		S5Hook.Log("MPSyncer: "..txt)
+	if CppLogic then
+		CppLogic.API.Log("MPSyncer: "..txt)
 	end
 	if CLogger then
 		CLogger.Log("MPSyncer: "..txt)
