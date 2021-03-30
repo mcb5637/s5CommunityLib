@@ -80,6 +80,7 @@ end --mcbPacker.ignore
 -- 													den zurückgegebenen iterator nicht speichern, enthält upvalues.
 -- Army:SetLeaderFormation(form)				setzt die formation die die soldier der leader der armee einnehmen. kann eine function(army, id) sein.
 -- Army:IsLeaderPartOfArmy(id)					tested, ob ein leader teil der army ist.
+-- Army:SetIgnoreFleeing(b)						setzt, ob fliehende einheiten ignoriert werden.
 -- 
 -- 
 -- Benötigt:
@@ -156,7 +157,10 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:CheckUACore()
 	if UnlimitedArmy.HasHook() and not self.UACore then
-		self.UACore = CppLogic.UA.New(self.Player, function()
+		self.UACore = CppLogic.UA.New(self.Player, function(r)
+			if self.AutoRotateRange then
+				self.FormationRotation = r
+			end
 			self:Formation(self.Target)
 		end, function()
 			self:ProcessCommandQueue()
@@ -171,6 +175,8 @@ function UnlimitedArmy:CheckUACore()
 			self.UACore:ReadTable(self.UASaveData)
 		else
 			self.UACore:SetArea(self.Area)
+			self.UACore:SetIgnoreFleeing(self.IgnoreFleeing)
+			self.UACore:SetAutoRotateFormation(self.AutoRotateRange or -1)
 		end
 	end
 end
@@ -187,7 +193,7 @@ function UnlimitedArmy:Tick()
 	self:CheckUACore()
 	if self.UACore then
 		self.UACore:Tick()
-		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner and self.UACore:GetSize(true, false)==0 then
+		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner and self.UACore:GetSize(true, true)==0 then
 			self:Destroy()
 			return
 		end
@@ -221,7 +227,7 @@ function UnlimitedArmy:Tick()
 	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive)
 	or GetDistance(pos, self.CurrentBattleTarget)>self.Area
 	or (self.IgnoreFleeing and UnlimitedArmy.IsEntityFleeingFrom(self.CurrentBattleTarget, pos)) then
-		self.CurrentBattleTarget = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
+		self.CurrentBattleTarget = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.Area, self.AIActive, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
 		self.CannonCommandCache = {}
 	end
 	if not preventfurthercommands and self.Status ~= UnlimitedArmy.Status.MovingNoBattle and IsValid(self.CurrentBattleTarget) then
@@ -237,7 +243,7 @@ function UnlimitedArmy:Tick()
 	if not preventfurthercommands then
 		self:CheckStatus(UnlimitedArmy.Status.Idle)
 		if self.AutoRotateRange then
-			local _, _, tid = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
+			local tid = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.AutoRotateRange, self.AIActive, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
 			if tid and math.abs(GetAngleBetween(pos, GetPosition(tid))-self.FormationRotation)>10 then
 				self.FormationRotation = GetAngleBetween(pos, GetPosition(tid))
 				self.ReMove = true
@@ -261,12 +267,6 @@ function UnlimitedArmy:HandleTransit()
 		local p = self:GetPosition()
 		for i=table.getn(self.LeaderTransit),1,-1 do
 			if IsDestroyed(self.LeaderTransit[i]) then
-				local nid = EntityIdChangedHelper.GetNewID(self.LeaderTransit[i])
-				if nid then
-					self.LeaderTransit[i] = nid
-				end
-			end
-			if IsDestroyed(self.LeaderTransit[i]) then
 				table.remove(self.LeaderTransit, i)
 			elseif IsDead(self.LeaderTransit[i]) and Logic.IsHero(self.Leaders[i])==1 then
 				table.insert(self.DeadHeroes, table.remove(self.LeaderTransit, i))
@@ -287,12 +287,6 @@ function UnlimitedArmy:HandleTransit()
 	end
 	if self.DeadHeroes[1] then
 		for i=table.getn(self.DeadHeroes),1,-1 do
-			if IsDestroyed(self.DeadHeroes[i]) then
-				local nid = EntityIdChangedHelper.GetNewID(self.DeadHeroes[i])
-				if nid then
-					self.DeadHeroes[i] = nid
-				end
-			end
 			if IsDestroyed(self.DeadHeroes[i]) then
 				table.remove(self.DeadHeroes, i)
 			elseif IsAlive(self.DeadHeroes[i]) then
@@ -358,6 +352,11 @@ function UnlimitedArmy:RemoveLeader(id)
 				table.remove(self.LeaderTransit, i)
 			end
 		end
+		for i=table.getn(self.DeadHeroes),1,-1 do
+			if self.DeadHeroes[i] == id then
+				table.remove(self.DeadHeroes, i)
+			end
+		end
 		self:RequireNewFormat()
 	end
 end
@@ -391,13 +390,8 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 	self:CheckValidArmy()
 	for i=table.getn(self.Leaders),1,-1 do
 		if IsDestroyed(self.Leaders[i]) then
-			local nid = EntityIdChangedHelper.GetNewID(self.Leaders[i])
-			if nid then
-				self.Leaders[i] = nid
-			else
-				table.remove(self.Leaders, i)
-				self:RequireNewFormat()
-			end
+			table.remove(self.Leaders, i)
+			self:RequireNewFormat()
 		elseif IsDead(self.Leaders[i]) and Logic.IsHero(self.Leaders[i])==1 then
 			table.insert(self.DeadHeroes, table.remove(self.Leaders, i))
 			self:RequireNewFormat()
@@ -462,7 +456,7 @@ function UnlimitedArmy:GetPosition()
 		if self:GetSize()<=0 then
 			return invalidPosition
 		end
-		if self.PosCacheTick ~= Logic.GetTimeMs() then
+		if self.PosCacheTick ~= Logic.GetCurrentTurn() then
 			self:RefreshPosCache()
 		end
 		return self.PosCache
@@ -475,7 +469,7 @@ function UnlimitedArmy:RefreshPosCache()
 	local num = table.getn(self.Leaders)
 	if num == 0 then
 		self.PosCache = invalidPosition
-		self.PosCacheTick = Logic.GetTimeMs()
+		self.PosCacheTick = Logic.GetCurrentTurn()
 	end
 	local x,y = 0,0
 	for _,id in ipairs(self.Leaders) do
@@ -484,7 +478,7 @@ function UnlimitedArmy:RefreshPosCache()
 		y = y + p.Y
 	end
 	self.PosCache = {X=x/num, Y=y/num}
-	self.PosCacheTick = Logic.GetTimeMs()
+	self.PosCacheTick = Logic.GetCurrentTurn()
 end
 
 UnlimitedArmy:AMethod()
@@ -493,15 +487,15 @@ function UnlimitedArmy:CheckHeroTargetingCache(tid, d)
 	if not d then
 		return true
 	end
-	if not self.HeroTargetingCache[tid] or self.HeroTargetingCache[tid] < Logic.GetTime() then
-		self.HeroTargetingCache[tid] = Logic.GetTime() + d
+	if not self.HeroTargetingCache[tid] or self.HeroTargetingCache[tid] < Logic.GetCurrentTurn() then
+		self.HeroTargetingCache[tid] = Logic.GetCurrentTurn() + d
 		return true
 	end
 	return false
 end
 
 UnlimitedArmy:AMethod()
-function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
+function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense) --TODO
 	self:CheckValidArmy()
 	if Logic.IsHero(id)==0 and not UnlimitedArmy.IsNonCombatEntity(id) then
 		return false
@@ -514,7 +508,7 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 				if combat and acf.Combat then
 					if acf.RequiredEnemiesInArea then
 						if acf.RequiredRange then
-							if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange, self.AIActive, acf.AreaCondition, self.IgnoreFleeing) < acf.RequiredEnemiesInArea then
+							if UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), self.Player, acf.RequiredRange, self.IgnoreFleeing) < acf.RequiredEnemiesInArea then
 								executeAbility = false
 							end
 						else
@@ -557,7 +551,7 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 							end
 						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyEntity then
-						local lea, bui, all = UnlimitedArmy.GetTargetEnemiesInArea(GetPosition(id), self.Player, self.Area, self.AIActive, nil,
+						local lea, bui, all = UnlimitedArmy.GetTargetEnemiesInArea(GetPosition(id), self.Player, self.Area, self.AIActive,
 							self.IgnoreFleeing, acf.PrefersBackline and UnlimitedArmy.EntitySorterOrderFurthest or UnlimitedArmy.EntitySorterOrderNearest
 						)
 						local tid = lea
@@ -566,7 +560,7 @@ function UnlimitedArmy:DoHeroAbilities(id, nume, combat, prepdefense)
 							noninstant = not acf.IsInstant
 						end
 					elseif acf.TargetType == UnlimitedArmy.HeroAbilityTargetType.EnemyBuilding then
-						local lea, bui, all = UnlimitedArmy.GetTargetEnemiesInArea(GetPosition(id), self.Player, self.Area, self.AIActive, nil,
+						local lea, bui, all = UnlimitedArmy.GetTargetEnemiesInArea(GetPosition(id), self.Player, self.Area, self.AIActive,
 							self.IgnoreFleeing, acf.PrefersBackline and UnlimitedArmy.EntitySorterOrderFurthest or UnlimitedArmy.EntitySorterOrderNearest
 						)
 						local tid = bui
@@ -593,13 +587,13 @@ function UnlimitedArmy:DoBattleCommands()
 	end
 	local tpos = GetPosition(self.CurrentBattleTarget)
 	--Logic.CreateEffect(GGL_Effects.FXSalimHeal, tpos.X, tpos.Y, 0)
-	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing)
+	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.IgnoreFleeing)
 	for num,id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume, true, false)
 		if (self.ReMove or not UnlimitedArmy.IsLeaderInBattle(id) or self.CannonCommandCache[id]==-1) and not UnlimitedArmy.IsNonCombatEntity(id) then
 			if DoCommands and Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1 then
-				if not self.CannonCommandCache[id] or self.CannonCommandCache[id]==-1 or self.CannonCommandCache[id]<Logic.GetTime() then
-					self.CannonCommandCache[id] = Logic.GetTime()+1
+				if not self.CannonCommandCache[id] or self.CannonCommandCache[id]==-1 or self.CannonCommandCache[id]<Logic.GetCurrentTurn() then
+					self.CannonCommandCache[id] = Logic.GetCurrentTurn()+1
 					Logic.GroupAttack(id, self.CurrentBattleTarget)
 				else
 					Logic.GroupAttackMove(id, tpos.X, tpos.Y, -1)
@@ -643,7 +637,7 @@ function UnlimitedArmy:DoFormationCommands()
 	if self.ReMove then
 		self:NormalizeSpeed(false)
 		self:Formation(self.Target)
-	elseif self.PrepDefense and self:IsIdle() then
+	elseif self.PrepDefense and self:IsIdle() then -- TODO remove after implememted in cpp
 		for _,id in ipairs(self.Leaders) do
 			if Logic.LeaderGetCurrentCommand(id)~=10 then
 				local p = GetPosition(id)
@@ -696,11 +690,7 @@ UnlimitedArmy:AMethod()
 function UnlimitedArmy:GetFirstEnemyInArmyRange()
 	self:CheckValidArmy()
 	self:CheckUACore()
-	if self.UACore then
-		return CppLogic.UA.GetNearestEnemyInArea(self.Player, self:GetPosition(), self.Area)
-	else
-		return UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
-	end
+	return UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
 end
 
 UnlimitedArmy:AMethod()
@@ -743,7 +733,7 @@ function UnlimitedArmy:IsDead()
 		if not self.HadOneLeader then
 			return 3
 		end
-		if self.DeadHeroes[1] then
+		if self.UACore and self.UACore.GetFirstDeadHero() or self.DeadHeroes[1] then
 			return 4
 		end
 		return 1
@@ -1023,6 +1013,25 @@ function UnlimitedArmy:SetCurrentBattleTarget(id)
 end
 
 UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetIgnoreFleeing(b)
+	self:CheckUACore()
+	if self.UACore then
+		self.UACore:SetIgnoreFleeing(b)
+	else
+		self.IgnoreFleeing = b
+	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetAutoRotateRange(r)
+	self:CheckUACore()
+	if self.UACore then
+		self.UACore:SetAutoRotateFormation(r or -1)
+	end
+	self.AutoRotateRange = r
+end
+
+UnlimitedArmy:AMethod()
 function UnlimitedArmy:OnIdChanged()
 	self:CheckValidArmy()
 	local ol, ne = Event.GetEntityID1(), Event.GetEntityID2()
@@ -1113,22 +1122,28 @@ function UnlimitedArmy.CreateCommandDefend(defendPos, defendArea, looped)
 			if com.Pos == nil then
 				com.Pos = self:GetPosition()
 			end
+			local dhid = nil
+			if self.UACore then
+				dhid = self.UACore:GetFirstDeadHero()
+			else
+				dhid = self.DeadHeroes[1]
+			end
 			if self:GetSize(true, false)<=0 then
 				self:SetTarget(com.Pos)
 				return true
-			elseif GetDistance(self:GetPosition(), com.Pos) > com.DistArea then
+			elseif not dhid and GetDistance(self:GetPosition(), com.Pos) > com.DistArea then
 				self:SetStatus(UnlimitedArmy.Status.MovingNoBattle)
 				self:SetTarget(com.Pos)
 				self:SetReMove(true)
 			elseif self:GetStatus() ~= UnlimitedArmy.Status.Battle then
-				local tid = UnlimitedArmy.GetTargetEnemiesInArea(com.Pos, self.Player, self.Area, self.AIActive, nil, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
+				local tid = UnlimitedArmy.GetTargetEnemiesInArea(com.Pos, self.Player, self.Area, self.AIActive, self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest)
 				if IsValid(tid) then
 					self:SetTarget(GetPosition(tid))
 					self:SetReMove(true)
 					self:SetStatus(UnlimitedArmy.Status.Moving)
-				elseif self.DeadHeroes[1] and not self.DefendDoNotHelpHeroes then -- TODO
-					if GetDistance(self.Target, self.DeadHeroes[1])>100 then
-						self:SetTarget(GetPosition(self.DeadHeroes[1]))
+				elseif dhid and not self.DefendDoNotHelpHeroes then
+					if GetDistance(self.Target, dhid)>100 then
+						self:SetTarget(GetPosition(dhid))
 						self:SetReMove(true)
 						self:SetStatus(UnlimitedArmy.Status.Moving)
 					end
@@ -1189,8 +1204,8 @@ function UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
 			if self:GetSize(true, false)<=0 then
 				return true
 			else
-				local tid = UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, nil,
-					self.IgnoreFleeing, acf.PrefersBackline and UnlimitedArmy.EntitySorterOrderFurthest or UnlimitedArmy.EntitySorterOrderNearest
+				local tid = UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive,
+					self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest
 				)
 				if IsValid(tid) then
 					self:SetTarget(GetPosition(tid))
@@ -1282,19 +1297,18 @@ end
 
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.GetTargetEnemiesInArea(p, player, area, aiactive, addCond, excludeFleeing, order)
+function UnlimitedArmy.GetTargetEnemiesInArea(p, player, area, aiactive, excludeFleeing, order)
 	if p == invalidPosition then
 		return nil
 	end
-	addCond = addCond or function() return true end
 	if not UnlimitedArmy.HasHook() then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, true, true, aiactive, addCond)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
 	end
-	return CppLogic.UA.GetNearestEnemyInArea(player, p, area)
+	return CppLogic.UA.GetNearestEnemyInArea(player, p, area, excludeFleeing)
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.EntitySorterOrderNearest(id, dis, i, p)
+function UnlimitedArmy.EntitySorterOrderNearest(id, dis, i, p) -- TODO
 	local d = GetDistance(p, i)
 	if dis==nil or dis < d then
 		return i, d
@@ -1312,11 +1326,10 @@ function UnlimitedArmy.EntitySorterOrderFurthest(id, dis, i, p)
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive, addCond, excludeFleeing)
+function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, excludeFleeing)
 	if p == invalidPosition then
 		return 0
 	end
-	addCond = addCond or function() return true end
 	if not UnlimitedArmy.HasHook() then
 		local num = 0
 		for p2=1,8 do
@@ -1324,7 +1337,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive, addCo
 				local d = {Logic.GetPlayerEntitiesInArea(p2, 0, p.X, p.Y, area, 16)}
 				table.remove(d, 1)
 				for _,id in ipairs(d) do
-					if (Logic.IsSettler(id)==1 or Logic.IsBuilding(id)==1) and addCond(id) then
+					if (Logic.IsSettler(id)==1 or Logic.IsBuilding(id)==1) then
 						num = num + 1
 					end
 				end
@@ -1332,7 +1345,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, aiactive, addCo
 		end
 		return num
 	end
-	return CppLogic.UA.CountTargetEntitiesInArea(player, p, area)
+	return CppLogic.UA.CountTargetEntitiesInArea(player, p, area, excludeFleeing)
 end
 
 UnlimitedArmy:AStatic()
@@ -1341,22 +1354,21 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes, aiactive)
 		return nil
 	end
 	if not UnlimitedArmy.HasHook() then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, false, false, aiactive)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
 	end
 	return CppLogic.Entity.EntityIteratorGetNearest(PredicateHelper.GetETypePredicate(etypes), CppLogic.Entity.Predicates.InCircle(p.X, p.Y, area))
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, leader, buildings, aiactive, addCond)
+function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
 	local repid = nil
-	addCond = addCond or function() return true end
 	for i=1, 8 do
 		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
 				local b, rid = UnlimitedArmy.IsValidTarget(id, player, aiactive)
-				if b and addCond(id) then
+				if b then
 					return id
 				end
 				repid = repid or rid
@@ -1648,7 +1660,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityConvertSettlers] = {
 	IsInstant = false,
 	RequiredEnemiesInArea = 3,
 	TargetCooldown = 30,
-	TargetCondition = UnlimitedArmy.IsFearAffectableAndConvertable,
+	TargetCondition = UnlimitedArmy.IsFearAffectableAndConvertable, -- TODO no longer supported
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityInflictFear] = {
 	RequiresHook = false,
@@ -1665,7 +1677,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityInflictFear] = {
 	IsInstant = false,
 	RequiredEnemiesInArea = 5,
 	RequiredRange = 1000,
-	AreaCondition = UnlimitedArmy.IsFearAffectableAndConvertable,
+	AreaCondition = UnlimitedArmy.IsFearAffectableAndConvertable, -- TODO no longer supported
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityPlaceBomb] = {
 	RequiresHook = true,
@@ -1718,7 +1730,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 			return true
 		end
 		local r = Logic.GetEntityType(id)==Entities.PU_Hero10 and 2500 or 1000
-		return UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), army.Player, r, army.AIActive, nil, army.IgnoreFleeing) < 5
+		return UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), army.Player, r, army.IgnoreFleeing) < 5
 	end,
 	IsInstant = true,
 	--RequiredEnemiesInArea = 5,
@@ -1820,13 +1832,13 @@ function LazyUnlimitedArmy:Init(data, tickdelta, tickfrequency)
 	self.TickO = self.Tick
 	if data.HiResJob then
 		function self:Tick()
-			if math.mod(Logic.GetTimeMs(), self.tickfrequency)==self.tickdelta then
+			if math.mod(Logic.GetCurrentTurn(), self.tickfrequency)==self.tickdelta then
 				self:TickO()
 			end
 		end
 	else
 		function self:Tick()
-			if math.mod(Logic.GetTime(), self.tickfrequency)==self.tickdelta then
+			if math.mod(Logic.GetCurrentTurn()/10, self.tickfrequency)==self.tickdelta then
 				self:TickO()
 			end
 		end
