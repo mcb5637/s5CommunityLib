@@ -86,6 +86,8 @@ AddMapStartCallback(function()
 			CppLogic.EntityType.AddEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
 		end
 	end
+	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero2, Entities.PU_Hero2_Foundation1, Entities.PU_Hero2_Cannon1)
+	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero3, Entities.PU_Hero3_Trap, Entities.PU_Hero3_TrapCannon)
 end)
 
 function TargetFilter.IsValidTarget(id, enemypl, aiactive)

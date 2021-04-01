@@ -2,7 +2,6 @@ if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
-mcbPacker.require("s5CommunityLib/lib/MemoryManipulation")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
 mcbPacker.require("s5CommunityLib/comfort/entity/ConvertEntityCallback")
@@ -14,8 +13,8 @@ mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
-mcbPacker.require("s5CommunityLib/fixes/PostEventMPServerFix")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -103,7 +102,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
 	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil, UACore=nil, UASaveData=nil, TroopsPerLine=nil, ChaoticCache=nil, EntityChangedTriggerId=nil,
-	PreSaveTriggerId=nil,
+	PreSaveTriggerId=nil, ConversionTrigger=nil
 }
 --- @type UnlimitedArmyFiller
 UnlimitedArmy.Spawner = nil
@@ -150,6 +149,7 @@ function UnlimitedArmy:Init(data)
 	end
 	self.EntityChangedTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, ":OnIdChanged", 1, nil, {self})
 	self.PreSaveTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_PRE_SAVE, nil, ":OnPreSave", 1, nil, {self})
+	self.ConversionTrigger = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, nil, ":OnConversion", 1, nil, {self})
 	self:SetLeaderFormation(data.LeaderFormation)
 	self:CheckUACore()
 end
@@ -424,6 +424,7 @@ function UnlimitedArmy:Destroy()
 	EndJob(self.Trigger)
 	EndJob(self.EntityChangedTriggerId)
 	EndJob(self.PreSaveTriggerId)
+	EndJob(self.ConversionTrigger)
 	if self.Spawner then
 		self.Spawner:Remove()
 	end
@@ -1062,6 +1063,21 @@ function UnlimitedArmy:OnPreSave()
 	self:CheckValidArmy()
 	if self.UACore then
 		self.UASaveData = self.UACore:DumpTable()
+	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:OnConversion()
+	self:CheckValidArmy()
+	if self.Player ~= Event.GetPlayerID() then
+		return
+	end
+	local helias = Event.GetEntityID()
+	local conv = Event.GetEntityID2()
+	if self:IsLeaderPartOfArmy(helias) then
+		self:AddLeader(conv)
+	else
+		Message(helias)
 	end
 end
 
