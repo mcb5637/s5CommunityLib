@@ -288,7 +288,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 			else
 				local ty = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
 				if UnlimitedArmy.HasHook() then
-					PostEvent.FoundryConstructCannon(buyingAt, ty)
+					CppLogic.Entity.Building.CommandFoundryBuildCannon(buyingAt, ty)
 				else
 					local playerId = GUI.GetPlayerID()
 					local selected = {GUI.GetSelectedEntities()}
