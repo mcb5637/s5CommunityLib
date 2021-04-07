@@ -106,6 +106,7 @@ UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=n
 }
 --- @type UnlimitedArmyFiller
 UnlimitedArmy.Spawner = nil
+--- @type UnlimitedArmy
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
 
 UnlimitedArmy:AStatic()
@@ -1462,8 +1463,8 @@ UnlimitedArmy.Formations = {}
 --- @param army UnlimitedArmy
 function UnlimitedArmy.Formations.Chaotic(army, pos)
 	army.ChaoticCache = army.ChaoticCache or {}
-	local l = math.sqrt(table.getn(army.Leaders))*150
-	for _,id in ipairs(army.Leaders) do
+	local l = math.sqrt(army:GetSize(false, false))*150
+	for id in army:Iterator(false) do
 		if not army.ChaoticCache[id] then
 			army.ChaoticCache[id] = {X=GetRandom(-l, l), Y=GetRandom(-l, l), r=GetRandom(0,360)}
 		end
@@ -1502,10 +1503,12 @@ end
 function UnlimitedArmy.Formations.Lines(army, pos)
 	local pl = army.TroopsPerLine or 3
 	local abst = 500
-	if table.getn(army.Leaders)==1 then
-		UnlimitedArmy.MoveAndSetTargetRotation(army.Leaders[1], pos, 0 + army.FormationRotation)
+	if army:GetSize(false,false)==1 then
+		for id in army:Iterator(false) do
+			UnlimitedArmy.MoveAndSetTargetRotation(id, pos, 0 + army.FormationRotation)
+		end
 	else
-		local numOfLi = math.ceil(table.getn(army.Leaders)/pl)
+		local numOfLi = math.ceil(army:GetSize(false,false)/pl)
 		local getModLi=function(i)
 			i=i-1
 			local d = -(math.floor(i/pl)-math.floor(numOfLi/2))*abst
@@ -1551,7 +1554,7 @@ function UnlimitedArmy.Formations.Spear(army, pos)
 		end
 		table.insert(edgepositions, getP(line, line))
 		if line ~= 0 then table.insert(edgepositions, getP(line, -line)) end
-		if table.getn(edgepositions)+table.getn(inpositions) >= table.getn(army.Leaders) then
+		if table.getn(edgepositions)+table.getn(inpositions) >= army:GetSize(false,false) then
 			break
 		end
 		line = line + 1
@@ -1559,10 +1562,12 @@ function UnlimitedArmy.Formations.Spear(army, pos)
 	for i=1, table.getn(edgepositions) do
 		table.insert(inpositions, 1, 0)
 	end
-	for i2, id in ipairs(army.Leaders) do
-		local i = table.getn(army.Leaders)-i2+1
+	local i2 = 1
+	for id in army:Iterator(false) do
+		local i = army:GetSize(false,false)-i2+1
 		local p = edgepositions[i] and edgepositions[i] or inpositions[i]
 		UnlimitedArmy.MoveAndSetTargetRotation(id, p, rot)
+		i2 = i2 + 1
 	end
 end
 
@@ -1625,7 +1630,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilitySummon] = {
 		if CNetwork then
 			SendEvent.HeroSummon(id)
 		else
-			GUI.SettlerSummon(id) -- TODO add summons to army
+			GUI.SettlerSummon(id)
 		end
 	end,
 	Range = 0,

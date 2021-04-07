@@ -40,9 +40,14 @@ end --mcbPacker.ignore
 -- - GetRandom
 --- @class UnlimitedArmyRecruiter : UnlimitedArmyFiller
 UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,DoNotRemoveIfDeadOrEmpty=nil,
+	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,DoNotRemoveIfDeadOrEmpty=nil, IdChangedTrigger=nil
 }
+--- @type UnlimitedArmyRecruiterUCat[]
+UnlimitedArmyRecruiter.UCats=nil
+--- @type UnlimitedArmyRecruiterInRec[]
+UnlimitedArmyRecruiter.InRecruitment=nil
 
+--- @type UnlimitedArmyRecruiter
 UnlimitedArmyRecruiter = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmyRecruiter")
 
 
@@ -68,6 +73,7 @@ function UnlimitedArmyRecruiter:Init(army, data)
 	self.RandomizeSpawn = data.RandomizeSpawn
 	self.DoNotRemoveIfDeadOrEmpty = data.DoNotRemoveIfDeadOrEmpty
 	self.AddTrigger = Trigger.RequestTrigger(Events.LOGIC_EVENT_ENTITY_CREATED, nil, ":CheckAddRecruitment", 1, nil, {self})
+	self.IdChangedTrigger = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, ":OnIdChanged", 1, nil, {self})
 	self.Army = army
 	army.Spawner = self
 	for _,d in ipairs(data.UCats) do
@@ -143,13 +149,8 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 				self.Cannons[self.Buildings[i]] = nil
 				UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] = UnlimitedArmyRecruiter.NumCache[self.Buildings[i]] - 1
 			end
-			local nid = EntityIdChangedHelper.GetNewID(self.Buildings[i])
-			if IsValid(nid) then
-				self.Buildings[i] = nid
-			else
-				table.remove(self.Buildings, i)
-				alive = false
-			end
+			table.remove(self.Buildings, i)
+			alive = false
 		end
 		if alive and self.Cannons[self.Buildings[i]] then
 			local c = Logic.GetLeaderTrainingAtBuilding(self.Buildings[i])
@@ -166,18 +167,27 @@ function UnlimitedArmyRecruiter:CheckLeaders(obj, f)
 	end
 	for i=table.getn(self.InRecruitment),1,-1 do
 		if IsDestroyed(self.InRecruitment[i].Id) then
-			local nid = EntityIdChangedHelper.GetNewID(self.InRecruitment[i].Id)
-			if nid then
-				self.InRecruitment[i].Id = nid
-			end
-		end
-		if IsDestroyed(self.InRecruitment[i].Id) then
 			local d = table.remove(self.InRecruitment, i)
 			UnlimitedArmyRecruiter.NumCache[d.Building] = UnlimitedArmyRecruiter.NumCache[d.Building] - 1
 		elseif Logic.LeaderGetBarrack(self.InRecruitment[i].Id)==0 then
 			local d = table.remove(self.InRecruitment, i)
 			f(obj, d.Id)
 			UnlimitedArmyRecruiter.NumCache[d.Building] = UnlimitedArmyRecruiter.NumCache[d.Building] - 1
+		end
+	end
+end
+
+UnlimitedArmyRecruiter:AMethod()
+function UnlimitedArmyRecruiter:OnIdChanged()
+	local ol, ne = Event.GetEntityID1(), Event.GetEntityID2()
+	for i,id in ipairs(self.Buildings) do
+		if id==ol then
+			self.Buildings[i] = ne
+		end
+	end
+	for _,t in ipairs(self.InRecruitment) do
+		if t.Id==ol then
+			t.Id = ne
 		end
 	end
 end
@@ -364,6 +374,7 @@ function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
 		self.Army = nil
 	end
 	EndJob(self.AddTrigger)
+	EndJob(self.IdChangedTrigger)
 end
 
 UnlimitedArmyRecruiter:AMethod()
@@ -385,10 +396,12 @@ end
 UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
 	self:CheckValidSpawner()
+	--- @class UnlimitedArmyRecruiterUCat
 	local t = {
 		UCat = assert(ucat),
 		SpawnNum = assert(spawnnum),
 		Looped = looped,
+		CurrNum = nil,
 	}
 	self:ResetUCatNum(t)
 	table.insert(self.UCats, t)
@@ -405,6 +418,7 @@ function UnlimitedArmyRecruiter:RemoveUCat(ucat)
 end
 
 UnlimitedArmyRecruiter:AStatic()
+--- @type Position[]
 UnlimitedArmyRecruiter.SpawnOffset = {
 	[Entities.PB_Barracks1] = {X=-800,Y=-300},
 	[Entities.PB_Barracks2] = {X=-800,Y=-300},
@@ -425,7 +439,9 @@ function UnlimitedArmyRecruiter:CheckAddRecruitment()
 	local tp = GetPosition(self.TriggerBuild)
 	local off = UnlimitedArmyRecruiter.SpawnOffset[Logic.GetEntityType(self.TriggerBuild)]
 	if GetDistance(ep, {X=tp.X+off.X, Y=tp.Y+off.Y}) <= 200 then
-		table.insert(self.InRecruitment, {Id=id, Building=self.TriggerBuild})
+		--- @class UnlimitedArmyRecruiterInRec
+		local t = {Id=id, Building=self.TriggerBuild}
+		table.insert(self.InRecruitment, t)
 		if self.ResCheat then
 			local c = {}
 			Logic.FillSoldierCostsTable(self.Army.Player, Logic.LeaderGetSoldierUpgradeCategory(id), c)

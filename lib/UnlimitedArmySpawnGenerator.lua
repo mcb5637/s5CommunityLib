@@ -42,6 +42,8 @@ end --mcbPacker.ignore
 UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
 	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil, DoNotRemoveIfDeadOrEmpty=nil,
 }
+--- @type UnlimitedArmySpawnGeneratorLT[]
+UnlimitedArmySpawnGenerator.LeaderDesc=nil
 
 UnlimitedArmySpawnGenerator = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmySpawnGenerator")
 
@@ -149,7 +151,7 @@ function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 		return false
 	end
 	if self.FreeArea then
-		local id = UnlimitedArmy.GetFirstEnemyInArea(self.Pos, self.Army.Player, self.FreeArea)
+		local id = UnlimitedArmy.GetTargetEnemiesInArea(self.Pos, self.Army.Player, self.FreeArea)
 		return IsDead(id)
 	end
 	return true
@@ -165,6 +167,7 @@ function UnlimitedArmySpawnGenerator:IsDead()
 			end
 		end
 	end
+---@diagnostic disable-next-line: undefined-field
 	if not self.Pos[1] and not self.Pos.X then
 		return true
 	end
@@ -234,12 +237,14 @@ end
 UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, looped)
 	self:CheckValidSpawner()
+	--- @class UnlimitedArmySpawnGeneratorLT
 	local t = {
 		LeaderType = assert(ety),
 		SoldierNum = assert(solnum),
 		SpawnNum = assert(spawnnum),
 		Experience = exp,
 		Looped = looped,
+		CurrNum = nil
 	}
 	self:ResetLeaderNum(t)
 	table.insert(self.LeaderDesc, t)
