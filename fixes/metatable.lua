@@ -7,6 +7,7 @@
 -- Ist ein table nur noch im Speicher für die Wiederherstellung, wird es trotzdem vom gc gelöscht (weak table).
 -- Achtung, im Gegensatz zu setmetatable, wird das metatable kopiert, nicht referenziert!
 -- 
+---@diagnostic disable-next-line: lowercase-global
 metatable = {weak = {}, metas = {}, key = 0}
 function metatable.set(tab, meta)
 	assert(type(tab)=="table", "metatables koennen nur fuer tables gesetzt werden! "..tostring(tab))

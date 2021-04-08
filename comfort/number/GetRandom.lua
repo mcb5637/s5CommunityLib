@@ -14,8 +14,8 @@ function GetRandom(_min, _max)
 		_max = _min
 		_min = 1
 	end
-	if not gvRandomseed then
-		gvRandomseed = true
+	if not GvRandomseed then
+		GvRandomseed = true
 		if XNetwork.Manager_DoesExist()==0 then
 			local seed = XGUIEng.GetSystemTime()
 			local str = Framework.GetSystemTimeDateString()

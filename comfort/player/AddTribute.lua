@@ -29,9 +29,9 @@ AddTribute = function( _tribute )
 	if MPSyncer then
 		_tribute.Tribute = MPSyncer.GetNextScriptTributeID()
 	else
-	    uniqueTributeCounter = uniqueTributeCounter or 1;
-	    _tribute.Tribute = uniqueTributeCounter;
-	    uniqueTributeCounter = uniqueTributeCounter + 1;
+	    UniqueTributeCounter = UniqueTributeCounter or 1;
+	    _tribute.Tribute = UniqueTributeCounter;
+	    UniqueTributeCounter = UniqueTributeCounter + 1;
     end
 
     local tResCost = {};

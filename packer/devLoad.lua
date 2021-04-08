@@ -11,6 +11,7 @@
 -- mcbPacker.mainPath = "data/maps/externalmap/"									--am besten, wenn eine map als s5x gepackt wird.
 -- mcbPacker.require("s5CommunityLib/fixes/TriggerFix")								--zum laden eines scriptes.
 -- 
+---@diagnostic disable-next-line: lowercase-global
 mcbPacker = {loaded={}, mainPath=GDB.IsKeyValid("workspace") and GDB.GetString("workspace") or "data/maps/externalmap/"}
 
 function mcbPacker.require(file)

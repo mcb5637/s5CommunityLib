@@ -8,6 +8,7 @@
 -- 
 -- 
 -- veraltet, S5Hook verwenden!
+---@diagnostic disable-next-line: lowercase-global
 animTable = {
 	CU_AfraidAlchemist = {
 		walk = 183,
@@ -1889,6 +1890,7 @@ animTable = {
 -- Benötigt:  
 -- - GetRandom (mit tableunterstützung)  
 -- - animTable  
+---@diagnostic disable-next-line: lowercase-global
 function getRandomAnim(etyp, name)
 	local t = animTable[etyp]
 	local ra = {}

@@ -385,7 +385,7 @@ function RandomMapGenerator.GenerateMap(generationData, generateAsLPJ, finishedC
     
 	SimplexNoise.seedP(generationData.Seed)
 	math.randomseed(generationData.Seed)
-	gvRandomseed = true -- prevent GetRandom from reseeding
+	GvRandomseed = true -- prevent GetRandom from reseeding
 
 	local mapsize = Logic.WorldGetSize()/100
 
