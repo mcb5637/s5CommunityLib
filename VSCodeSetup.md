@@ -1,0 +1,13 @@
+Empfohlenes setup für Visual Studio Code:
+- Installiere VSCode & git
+- Installiere VSCode Extensions:
+    - https://marketplace.visualstudio.com/items?itemName=sumneko.lua (IDE für Lua)
+    - https://marketplace.visualstudio.com/items?itemName=Koihik.vscode-lua-format (Auto formatierung)
+- Ein Workspace erstellen und als git repo initialisieren
+- Dateien hinzufügen: (als git submodule, oder direkt kopieren)
+    - https://github.com/mcb5637/s5LuaReference.git (Referenzen für Siedler C++ funktionen)
+    - Scripte aus bbas entpacken und dann in s5LuaReference/Script einfügen
+    - https://github.com/mcb5637/s5CommunityLib.git (häufig benötigte Funktionen)
+- Für jede map ein Script im workspace anlegen (eventuell im Unterordner)
+- Das Script über `Script.Load` laden
+- Für release der map alles per bbaTool in eine s5x packen
