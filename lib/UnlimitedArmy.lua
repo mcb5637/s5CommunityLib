@@ -1002,7 +1002,7 @@ function UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
 				return true
 			else
 				local lea, bui, all = UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive, nil,
-					self.IgnoreFleeing, acf.PrefersBackline and UnlimitedArmy.EntitySorterOrderFurthest or UnlimitedArmy.EntitySorterOrderNearest
+					self.IgnoreFleeing, UnlimitedArmy.EntitySorterOrderNearest
 				)
 				local tid = UnlimitedArmy.EvalTargetEntities(lea, bui, all)
 				if IsValid(tid) then
