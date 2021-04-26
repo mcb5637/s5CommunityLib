@@ -73,7 +73,7 @@ end --mcbPacker.ignore
 -- 		CommandScoutFindResources			GUI.ScoutPointToResources
 -- 		69648
 -- 		69649
---		69651
+--		69651  Logic.LeaderGetOneSoldier
 --		69652
 --		69666
 -- 

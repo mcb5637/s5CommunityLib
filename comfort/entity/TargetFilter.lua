@@ -70,11 +70,6 @@ AddMapStartCallback(function()
 	if skipCpp then
 		return
 	end
-	for nam, id in pairs(TaskLists) do
-		if (string.sub(nam, -5, -1)=="_IDLE") then
-			CppLogic.UA.AddIdleTaskList(id)
-		end
-	end
 
 	for _, ty in ipairs{Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1} do
 		if ty  then
