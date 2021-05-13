@@ -1172,14 +1172,14 @@ end
 UnlimitedArmy:AStatic()
 function UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
 	return {
-		MaxRange = maxrange,
+		MaxRange = maxrange or Logic.WorldGetSize()*100,
 		Looped = looped,
 		--- @param self UnlimitedArmy
 		Command = function(self, com)
 			if self:GetSize(true, false)<=0 then
 				return true
 			else
-				local tid = UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.AIActive,
+				local tid = UnlimitedArmy.GetTargetEnemiesInArea(self:GetPosition(), self.Player, com.MaxRange, self.AIActive,
 					self.IgnoreFleeing
 				)
 				if IsValid(tid) then
