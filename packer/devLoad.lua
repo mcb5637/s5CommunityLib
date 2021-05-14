@@ -45,9 +45,6 @@ function mcbPacker.load(file)
 		for _,lp in ipairs(mcbPacker.Paths) do
 			if CppLogic.API.DoesFileExist(lp[1]..file..lp[2]) then
 				p = lp
-				if LuaDebugger.Log then
-					LuaDebugger.Log(lp[1])
-				end
 				break
 			end
 		end
