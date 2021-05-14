@@ -1,6 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-mcbPacker.require("comfort/FrameworkWrapper")
+mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
 end --mcbPacker.ignore
 
 if not CppLogic then

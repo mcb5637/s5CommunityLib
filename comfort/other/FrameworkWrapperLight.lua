@@ -2,6 +2,12 @@ if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end --mcbPacker.ignore
 
+-- try to load full version, if you do, just return and dont load this one
+mcbPacker.require("comfort/FrameworkWrapper")
+if FrameworkWrapper then
+	return
+end
+
 
 --- author:mcb		current maintainer:mcb		v0.1b
 -- FrameworkWrapper.Mapfile.			Funktionen um maps zu prüfen & starten.
