@@ -1,0 +1,16 @@
+MouseEvents = {
+	MouseMove = 512,
+	LButtonDown = 513,
+	LButtonUp = 514,
+	LButtonDBl = 515,
+	RButtonDown = 516,
+	RButtonUp = 517,
+	RButtonDBl = 518,
+	MButtonDown = 519,
+	MButtonUp = 520,
+	MButtonDBl = 521,
+	MouseWheel = 522,
+	XButtonDown = 523,
+	XButtonUp = 524,
+	XButtonDBl = 525,
+}

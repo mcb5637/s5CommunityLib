@@ -17,7 +17,12 @@ end
 
 function TriggerFixCppLogicExtension.AddLeaveTrigger()
     Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, "CppLogic.OnLeaveMap", 1)
+    Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, "TriggerFixCppLogicExtension.OnIdChanged", 1)
     return true
+end
+
+function TriggerFixCppLogicExtension.OnIdChanged()
+    CppLogic.Entity.CloneOverrideData(Event.GetEntityID1(), Event.GetEntityID2())
 end
 
 function TriggerFixCppLogicExtension.Hook(targetId, player, newid, converterId)

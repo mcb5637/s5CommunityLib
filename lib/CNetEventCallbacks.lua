@@ -164,8 +164,8 @@ function CNetEventCallbacks.DoCB(id, ev)
 			ignore = ignore or i
 		end
 	end
-	if CNetEventCallbacks.cbs.all then
-		for _,cb in ipairs(CNetEventCallbacks.cbs.all) do
+	if CNetEventCallbacks.cbs[id] then
+		for _,cb in ipairs(CNetEventCallbacks.cbs[id]) do
 			local w, i = cb(ev)
 			doWrite = doWrite or w
 			ignore = ignore or i
