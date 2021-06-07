@@ -1,6 +1,8 @@
 
---- author:???		current maintainer:mcb		v1.0
+--- author:Flodder		current maintainer:mcb		v1.0
 -- Berechnet einen winkel zwischen 2 positionen.
+-- Hieß im original Winkel.
+--- @return number angle
 function GetAngleBetween(_Pos1,_Pos2)
 	local delta_X = 0;
 	local delta_Y = 0;
