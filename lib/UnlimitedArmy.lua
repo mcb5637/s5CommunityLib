@@ -1,10 +1,8 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
-mcbPacker.require("s5CommunityLib/comfort/other/S5HookLoader")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
-mcbPacker.require("s5CommunityLib/comfort/entity/ConvertEntityCallback")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetCirclePosition")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetAngleBetween")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")

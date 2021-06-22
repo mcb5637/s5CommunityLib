@@ -1,4 +1,4 @@
-
+--mcbPacker.returnIfDef:CopyToOneFile
 
 ---author:mcb		current maintainer:mcb		v1.0b
 -- Einfache implementierung von require.
@@ -21,9 +21,9 @@ mcbPacker.Paths = {
 	{"data/maps/externalmap/", ".lua"},
 	{"data/maps/externalmap/", ".luac"}
 }
-if GDB.IsKeyValid("workspace") then
-	table.insert(mcbPacker.Paths, 1, {GDB.GetString("workspace"), ".lua"})
-end
+if GDB.IsKeyValid("workspace") then --mcbPacker.ignore
+	table.insert(mcbPacker.Paths, 1, {GDB.GetString("workspace"), ".lua"}) --mcbPacker.ignore
+end --mcbPacker.ignore
 
 function mcbPacker.require(file)
 	if not mcbPacker.loaded[file] then

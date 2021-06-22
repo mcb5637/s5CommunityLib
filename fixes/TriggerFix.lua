@@ -357,7 +357,9 @@ function TriggerFix.Init()
 	TriggerFix.Mission_OnSaveGameLoaded = Mission_OnSaveGameLoaded
 	Mission_OnSaveGameLoaded = function()
 		TriggerFix.HackTrigger()
-		TriggerFix.Mission_OnSaveGameLoaded()
+		if TriggerFix.Mission_OnSaveGameLoaded then
+			TriggerFix.Mission_OnSaveGameLoaded()
+		end
 		TriggerFix_action(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, TriggerFix.CreateEmptyEvent())
 	end
 	TriggerFix.HackTrigger()

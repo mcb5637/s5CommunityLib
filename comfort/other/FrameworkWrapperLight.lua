@@ -4,6 +4,7 @@ end --mcbPacker.ignore
 
 -- try to load full version, if you do, just return and dont load this one
 mcbPacker.require("comfort/FrameworkWrapper")
+--mcbPacker.returnIfDef:FrameworkWrapper
 if FrameworkWrapper then
 	return
 end
