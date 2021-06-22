@@ -513,11 +513,15 @@ function TriggerFix.KillTrigger.Run()
 end
 TriggerFix.KillTrigger.Init()
 
-function AddMapStartCallback(f)
-	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1)
+function AddMapStartCallback(f, ...)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1, nil, arg)
 end
 
-function AddMapStartAndSaveLoadedCallback(f)
-	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1)
-	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, nil, f, 1)
+function AddMapStartAndSaveLoadedCallback(f, ...)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_DO_INITIALIZATION, nil, f, 1, nil, arg)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, nil, f, 1, nil, arg)
+end
+
+function AddSaveLoadedCallback(f, ...)
+	Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_SAVEGAME_LOADED, nil, f, 1, nil, arg)
 end
