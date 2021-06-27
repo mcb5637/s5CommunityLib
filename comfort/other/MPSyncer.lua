@@ -481,7 +481,7 @@ end
 
 function MPSyncer.IsPlayerAllowedToManipulatePlayer(pl, name)
 	if MPSyncer.IsMP()==3 then
-		return CNetwork.isAllowedToManipulatePlayer(name, pl)
+		return CNetwork.IsAllowedToManipulatePlayer(name, pl)
 	else
 		return name==pl
 	end
