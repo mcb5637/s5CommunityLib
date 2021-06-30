@@ -453,9 +453,6 @@ function TriggerFix.LowPriorityJob.Init()
 		end
 		TriggerFix.LowPriorityJob.Run()
 	end)
-	table.insert(TriggerFix.onHackTrigger, function()
-		Events.SCRIPT_EVENT_LOW_PRIORITY = "mcb_lpj"
-	end)
 	StartSimpleLowPriorityJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.SCRIPT_EVENT_LOW_PRIORITY, nil, f, 1, nil, arg)
 	end
