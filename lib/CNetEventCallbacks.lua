@@ -1,5 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
+mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 end --mcbPacker.ignore
 
 
@@ -19,109 +20,109 @@ end --mcbPacker.ignore
 -- 
 -- Liste der CNetEvents:
 -- - CNetEventSubclass:									(prameter list)
--- 		CommandName							Optionen, dasselbe in Lua zu erreichen								Wann der callback aufgerufen wird (== im MP automatisch synchronisiert), leer => immer
+-- 		CommandName							Optionen, dasselbe in Lua zu erreichen
 -- 
--- - EGL::CNetEvent2Entities:							{EventTypeId, ActorId, TargetId}
--- 		CommandEntityAttackEntity			Logic.GroupAttack													Nur GUI
---		CommandSerfConstructBuilding		PostEvent.SerfConstructBuilding
---		CommandSerfRepairBuilding			PostEvent.SerfRepairBuilding
---		CommandEntityGuardEntity			Logic.GroupGuard													Nur GUI
---		CommandHeroConvertSettler			PostEvent.HeroConvertSettlerAbility
---		CommandThiefStealFrom				PostEvent.ThiefStealFrom
---		CommandThiefCarryStolenStuffToHQ	PostEvent.ThiefCarryStolenStuffToHQ
---		CommandThiefSabotageBuilding		PostEvent.ThiefSabotage
---		CommandThiefDefuseKeg				PostEvent.ThiefDefuse
---		CommandHeroSnipeSettler				PostEvent.HeroSniperAbility
---		CommandHeroThrowShurikenAt			PostEvent.HeroShurikenAbility
+-- - EGL::CNetEvent2Entities:							{ActorId, TargetId}
+-- 		CommandEntityAttackEntity			Logic.GroupAttack
+--		CommandSerfConstructBuilding		CppLogic.Entity.Settler.CommandSerfConstructBuilding
+--		CommandSerfRepairBuilding			CppLogic.Entity.Settler.CommandSerfRepairBuilding
+--		CommandEntityGuardEntity			Logic.GroupGuard
+--		CommandHeroConvertSettler			CppLogic.Entity.Settler.CommandConvert
+--		CommandThiefStealFrom				CppLogic.Entity.Settler.CommandStealFrom
+--		CommandThiefCarryStolenStuffToHQ	CppLogic.Entity.Settler.CommandSecureGoods
+--		CommandThiefSabotageBuilding		CppLogic.Entity.Settler.CommandSabotage
+--		CommandThiefDefuseKeg				CppLogic.Entity.Settler.CommandDefuse
+--		CommandHeroSnipeSettler				CppLogic.Entity.Settler.CommandSnipe
+--		CommandHeroThrowShurikenAt			CppLogic.Entity.Settler.CommandShuriken
 --		69688
 --		69693
 -- 
--- - GGL::CNetEventCannonCreator:						{EventTypeId, EntityId, BottomType, TopType, Position}
---		CommandHeroPlaceCannonAt			PostEvent.HeroPlaceCannonAbility
+-- - GGL::CNetEventCannonCreator:						{EntityId, BottomType, TopType, Position}
+--		CommandHeroPlaceCannonAt			CppLogic.Entity.Settler.CommandPlaceCannon
 -- 
--- - EGL::CNetEventEntityAndPos:						{EventTypeId, EntityId, Position}
--- 		CommandHeroPlaceBombAt				PostEvent.HeroPlaceBombAbility
--- 		CommandEntityAttackPos				Logic.GroupAttackMove												Nur GUI
--- 		CommandHeroSendHawkToPos			GUI.SendHawk
--- 		CommandScoutUseBinocularsAt			PostEvent.ScoutBinocular
--- 		CommandScoutPlaceTorchAtPos			PostEvent.ScoutPlaceTorch
+-- - EGL::CNetEventEntityAndPos:						{EntityId, Position}
+-- 		CommandHeroPlaceBombAt				CppLogic.Entity.Settler.CommandPlaceBomb
+-- 		CommandEntityAttackPos				Logic.GroupAttackMove
+-- 		CommandHeroSendHawkToPos			GUI.SendHawk/CppLogic.Entity.Settler.CommandSendHawk
+-- 		CommandScoutUseBinocularsAt			CppLogic.Entity.Settler.CommandBinocular
+-- 		CommandScoutPlaceTorchAtPos			CppLogic.Entity.Settler.CommandPlaceTorch
 -- 
--- - EGL::CNetEventEntityAndPosArray:					{EventTypeId, EntityId, PositionList}
--- 		CommandEntityMove					Logic.MoveSettler													Nur GUI
--- 		CommandEntityPatrol					Logic.GroupAddPatrolPoint & Logic.GroupPatrol?						Nur GUI, nachdem letzte position gewählt
+-- - EGL::CNetEventEntityAndPosArray:					{EntityId, Positions, Rotation}
+-- 		CommandEntityMove					Logic.MoveSettler
+-- 		CommandEntityPatrol					Logic.GroupPatrol + Logic.GroupAddPatrolPoint
 -- 
--- - EGL::CNetEventEntityID:							{EventTypeId, EntityId}
--- 		CommandBuildingStartUpgrade			GUI.UpgradeSingleBuilding
--- 		CommandLeaderBuySoldier				PostEvent.LeaderBuySoldier
--- 		CommandSettlerExpell				PostEvent.ExpellSettler
--- 		CommandBuildingCancelResearch		GUI.CancelResearch
--- 		CommandMarketCancelTrade			GUI.CancelTransaction
--- 		CommandBuildingCancelUpgrade		GUI.CancelBuildingUpgrade
--- 		CommandLeaderHoldPosition			Logic.GroupStand													Nur GUI
--- 		CommandLeaderDefend					Logic.GroupDefend													Nur GUI
--- 		CommandBattleSerfTurnToSerf			GUI.ChangeToSerf
--- 		CommandSerfTurnToBattleSerf			GUI.ChangeToBattleSerf
+-- - EGL::CNetEventEntityID:							{EntityId}
+-- 		CommandBuildingStartUpgrade			GUI.UpgradeSingleBuilding/CppLogic.Entity.Building.StartUpgrade
+-- 		CommandLeaderBuySoldier				CppLogic.Entity.Building.BarracksBuySoldierForLeader
+-- 		CommandSettlerExpell				CppLogic.Entity.Settler.CommandExpell
+-- 		CommandBuildingCancelResearch		GUI.CancelResearch/CppLogic.Entity.Building.CancelResearch
+-- 		CommandMarketCancelTrade			GUI.CancelTransaction/CppLogic.Entity.Building.MarketCancelTrade
+-- 		CommandBuildingCancelUpgrade		GUI.CancelBuildingUpgrade/CppLogic.Entity.Building.CancelUpgrade
+-- 		CommandLeaderHoldPosition			Logic.GroupStand
+-- 		CommandLeaderDefend					Logic.GroupDefend
+-- 		CommandBattleSerfTurnToSerf			GUI.ChangeToSerf/CppLogic.Entity.Settler.CommandTurnBattleSerfToSerf
+-- 		CommandSerfTurnToBattleSerf			GUI.ChangeToBattleSerf/CppLogic.Entity.Settler.CommandTurnSerfToBattleSerf
 -- 		CommandHeroActivateCamouflage		GUI.SettlerCamouflage
--- 		CommandHeroActivateSummon			GUI.SettlerSummon
--- 		CommandBuildingToggleOvertime		GUI.ToggleOvertimeAtBuilding
--- 		CommandHeroAffectEntities			GUI.SettlerAffectUnitsInArea
--- 		CommandHeroCircularAttack			GUI.SettlerCircularAttack
--- 		CommandHeroInflictFear				GUI.SettlerInflictFear
--- 		CommandBarracksRecruitGroups		GUI.DeactivateAutoFillAtBarracks
--- 		CommandBarracksRecruitLeaderOnly	GUI.ActivateAutoFillAtBarracks
--- 		CommandHeroMotivateWorkers			GUI.SettlerMotivateWorkers
--- 		CommandScoutFindResources			GUI.ScoutPointToResources
+-- 		CommandHeroActivateSummon			GUI.SettlerSummon/CppLogic.Entity.Settler.CommandSummon
+-- 		CommandBuildingToggleOvertime		GUI.ToggleOvertimeAtBuilding/CppLogic.Entity.Building.ActivateOvertime/CppLogic.Entity.Building.DeactivateOvertime
+-- 		CommandHeroAffectEntities			GUI.SettlerAffectUnitsInArea/CppLogic.Entity.Settler.CommandHeroAffectEntities
+-- 		CommandHeroCircularAttack			GUI.SettlerCircularAttack/CppLogic.Entity.Settler.CommandCircularAttack
+-- 		CommandHeroInflictFear				GUI.SettlerInflictFear/CppLogic.Entity.Settler.CommandInflictFear
+-- 		CommandBarracksRecruitGroups		GUI.DeactivateAutoFillAtBarracks/CppLogic.Entity.Building.BarracksRecruitLeaders
+-- 		CommandBarracksRecruitLeaderOnly	GUI.ActivateAutoFillAtBarracks/CppLogic.Entity.Building.BarracksRecruitGroups
+-- 		CommandHeroMotivateWorkers			GUI.SettlerMotivateWorkers/CppLogic.Entity.Settler.CommandHeroMotivateWorkers
+-- 		CommandScoutFindResources			GUI.ScoutPointToResources/CppLogic.Entity.Settler.CommandScoutFindResources
 -- 		69648
 -- 		69649
---		69651  Logic.LeaderGetOneSoldier
+--		69651								Logic.LeaderGetOneSoldier
 --		69652
 --		69666
 -- 
--- - GGL::CNetEventBuildingCreator:						{EventTypeId, PlayerId, UprgadeCategory, Position{X,Y,r}, ListOfSerfs}
--- 		CommandPlaceBuilding				Logic.CreateConstructionSite + PostEvent.SerfConstructBuilding		Nur GUI
+-- - GGL::CNetEventBuildingCreator:						{PlayerId, UpgradeCategory, Position{X,Y,r}, Serfs{id1,id2,...}}
+-- 		CommandPlaceBuilding				Logic.CreateConstructionSite + CppLogic.Entity.Settler.CommandSerfConstructBuilding
 -- 
--- - EGL::CNetEventEntityIDAndPlayerID:					{EventTypeId, PlayerId, EntityId}
--- 		CommandHQBuySerf					PostEvent.BuySerf
--- 		CommandBuildingSell					PostEvent.SellBuilding
+-- - EGL::CNetEventEntityIDAndPlayerID:					{PlayerId, EntityId}
+-- 		CommandHQBuySerf					CppLogic.Entity.Building.HQBuySerf
+-- 		CommandBuildingSell					CppLogic.Entity.Building.SellBuilding
 -- 		69639
 -- 
--- - EGL::CNetEventPlayerID:							{EventTypeId, PlayerId}
--- 		CommandPlayerActivateAlarm			?
--- 		CommandPlayerDeactivateAlarm		?
+-- - EGL::CNetEventPlayerID:							{PlayerId}
+-- 		CommandPlayerActivateAlarm			CppLogic.Logic.PlayerActivateAlarm
+-- 		CommandPlayerDeactivateAlarm		CppLogic.Logic.PlayerDeactivateAlarm
 -- 		69637
 -- 		69645
 -- 		69674
 -- 		69675
 -- 
--- - EGL::CNetEventIntegerAndPlayerID:					{EventTypeId, PlayerId, Int}
--- 		PlayerUpgradeSettlerCategory		GUI.UpgradeSettlerCategory
--- 		CommandPlayerSetTaxes				GUI.SetTaxLevel
--- 		CommandWeathermachineChangeWeather	GUI.SetWeather ?
--- 		CommandMonasteryBlessSettlerGroup	GUI.BlessByBlessCategory
+-- - EGL::CNetEventIntegerAndPlayerID:					{PlayerId, Int}
+-- 		PlayerUpgradeSettlerCategory		GUI.UpgradeSettlerCategory/CppLogic.Logic.PlayerUpgradeSettlerCategory
+-- 		CommandPlayerSetTaxes				GUI.SetTaxLevel/CppLogic.Logic.PlayerSetTaxLevel
+-- 		CommandWeathermachineChangeWeather	GUI.SetWeather/CppLogic.Logic.PlayerActivateWeatherMachine
+-- 		CommandMonasteryBlessSettlerGroup	GUI.BlessByBlessCategory/CppLogic.Logic.PlayerBlessSettlers
 -- 		69641
 -- 
--- - EGL::CNetEventPlayerIDAndInteger:					{EventTypeId, PlayerId, Int}
+-- - EGL::CNetEventPlayerIDAndInteger:					{PlayerId, Int}
 --  	CommandPlayerPayTribute				GUI.PayTribute
 -- 
 -- - EGL::CNetEvent2PlayerIDsAndInteger:				???
 -- 		69671
 -- 
--- - GGL::CNetEventEntityIDAndUpgradeCategory:			{EventTypeId, EntityId, UprgadeCategory}
--- 		CommandBarracksBuyLeader			Logic.BarracksBuyLeader												Nur GUI
+-- - GGL::CNetEventEntityIDAndUpgradeCategory:			{EntityId, UprgadeCategory}
+-- 		CommandBarracksBuyLeader			Logic.BarracksBuyLeader
 -- 
--- - EGL::CNetEventEntityIDAndInteger:					{EventTypeId, EntityId, Int}
--- 		CommandLeaderSetFormation			Logic.LeaderChangeFormationType										Nur GUI
--- 		CommandBuildingSetCurrentMaxWorkers	Logic.SetCurrentMaxNumWorkersInBuilding								Nur GUI
--- 		CommandFoundryBuildCannon			PostEvent.FoundryConstructCannon
+-- - EGL::CNetEventEntityIDAndInteger:					{EntityId, Int}
+-- 		CommandLeaderSetFormation			Logic.LeaderChangeFormationType
+-- 		CommandBuildingSetCurrentMaxWorkers	Logic.SetCurrentMaxNumWorkersInBuilding
+-- 		CommandFoundryBuildCannon			PostEvent.FoundryConstructCannon/CppLogic.Entity.Building.CommandFoundryBuildCannon
 -- 
--- - GGL::CNetEventExtractResource:						{EventTypeId, EntityId, ResourceType, TargetPosition}
--- 		CommandSerfExtractResource			PostEvent.SerfExtractResource
+-- - GGL::CNetEventExtractResource:						{EntityId, ResourceType, Position}
+-- 		CommandSerfExtractResource			CppLogic.Entity.Settler.CommandSerfExtract
 -- 
--- - GGL::CNetEventTechnologyAndEntityID:				{EventTypeId, EntityId, Technology}
--- 		CommandBuildingStartResearch		GUI.StartResearch
+-- - GGL::CNetEventTechnologyAndEntityID:				{EntityId, Technology}
+-- 		CommandBuildingStartResearch		GUI.StartResearch/CppLogic.Entity.Building.StartResearch
 -- 
--- - GGL::CNetEventTransaction:							{EventTypeId, EntityId, SellType, BuyType, BuyAmount}
--- 		CommandMarketStartTrade				GUI.StartTransaction
+-- - GGL::CNetEventTransaction:							{EntityId, SellType, BuyType, BuyAmount}
+-- 		CommandMarketStartTrade				GUI.StartTransaction/CppLogic.Entity.Building.MarketStartTrade
 -- 
 -- - GGL::CNetEventPlayerResourceDonation:				???
 -- 		69691
@@ -133,9 +134,7 @@ end --mcbPacker.ignore
 -- 		69698
 -- 
 -- Benötigt:
--- - S5Hook
--- - MemoryManipulation
--- - S5HookLoader
+-- - CppLoader
 -- - TriggerFix
 -- 
 CNetEventCallbacks = {cbs = {}}
@@ -155,7 +154,7 @@ function CNetEventCallbacks.Remove(eventid, func)
 	end
 end
 
-function CNetEventCallbacks.DoCB(id, ev)
+function CNetEventCallbacks.DoCB(id, ev, writeback)
 	local doWrite, ignore = false, false
 	if CNetEventCallbacks.cbs.all then
 		for _,cb in ipairs(CNetEventCallbacks.cbs.all) do
@@ -175,7 +174,7 @@ function CNetEventCallbacks.DoCB(id, ev)
 		return true
 	end
 	if doWrite then
-		return doWrite
+		writeback(ev)
 	end
 end
 

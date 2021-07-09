@@ -6,8 +6,6 @@ end --mcbPacker.ignore
 -- Ermöglicht es, beliebige Lua-Ausdrücke auf allen verbundenen PCs zu parsen und synchron auszuführen.
 -- Wird das Script im SP geladen, wird keines Synchronisierung durchgeführt.
 -- 
--- MPSyncer.Init(player)								Aus der GameCallback_OnGameStart aufrufen, bei player werden Tribute zur Synchronisierung erstellt.
--- 
 -- MPSyncer.ExecuteSynced(vname, ...)				Ruft die Virtuelle Funktion vname synchron auf allen PCs mit den übergebenen Argumenten arg auf.
 -- 
 -- MPSyncer.ExecuteUnsyncedAtSingle(pl, vname, ...)	Ruft die virtuelle Funktion vname auf dem PC von pl auf (nicht synchron, im sp immer eigener pc).
@@ -92,6 +90,9 @@ end --mcbPacker.ignore
 -- 
 MPSyncer = {nextTribute = 0, playerAck={}, warnings={}, connected={}, allConnected=false, whitelist={}, chatRecievedCbs={}, initCbs={}, NoJingleForTribute={}, NextScriptTribute=0}
 function MPSyncer.Init(player)
+	if not player then
+		player = MPSyncer.AutoInitPlayer
+	end
 	if not MPSyncer.IsMP() then
 		MPSyncer.allConnected = true
 		for _,cb in ipairs(MPSyncer.initCbs) do
@@ -540,7 +541,7 @@ function MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer()
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()
-	return {pattern = "\\{([%w%.%-%[%]\"=,]*)}",
+	return {pattern = "{([%w%.%-%[%]\"=,]*)}",
 		serialize = function(t)
 		local s = "{"
 		local function f(x)
@@ -755,3 +756,6 @@ function MPSyncer.VirtualFuncsWithReturn.CallUnsynced(pl, vname, returnFunc, ...
 	MPSyncer.VirtualFuncsWithReturn.returnList[ind] = returnFunc
 	MPSyncer.ExecuteUnsyncedAtSingle(pl, vname.."Call", ind, GUI.GetPlayerID(), unpack(arg))
 end
+
+MPSyncer.AutoInitPlayer = 8
+AddMapStartCallback("MPSyncer.Init")
