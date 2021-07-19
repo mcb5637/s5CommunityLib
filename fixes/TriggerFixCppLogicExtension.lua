@@ -22,6 +22,14 @@ end
 -- - FrameworkWrapper
 -- - ArmorClasses
 TriggerFixCppLogicExtension = {Backup = {}}
+TriggerFixCppLogicExtension.Backup.TaskListToFix = {
+    {TaskLists.TL_BATTLE_RIFLE, 10},
+    {TaskLists.TL_BATTLE_BOW, 10},
+    {TaskLists.TL_BATTLE_CROSSBOWBOW, 10},
+    {TaskLists.TL_BATTLE_HEROBOW, 9},
+    {TaskLists.TL_BATTLE_SKIRMISHER, 10},
+    {TaskLists.TL_BATTLE_VEHICLE, 16},
+}
 
 TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY")
 
@@ -56,17 +64,34 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Hero, ArmorClasses.AC_Fur, 0.8)
         CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.AC_Fur, 1)
         CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.AC_Fur, 1.5)
+        if not CEntity then
+            for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- make battle task lists wait for anim uncancleable after firing projectile
+                CppLogic.Logic.TaskListMakeWaitForAnimsUnCancelable(tl[1], tl[2])
+            end
+        end
     end
 end
 
 function TriggerFixCppLogicExtension.OnLeaveMap()
     CppLogic.OnLeaveMap()
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
+        CppLogic.Combat.DisableAoEProjectileFix()
+        CppLogic.Combat.DisableCamoFix()
+        --CppLogic.Logic.EnableAllHurtEntityTrigger() no disable?
+        if not CEntity then
+            CppLogic.Logic.SetLeadersRegenerateTroopHealth(false)
+            CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(false)
+        end
         for ty, dc in pairs(TriggerFixCppLogicExtension.Backup.Cannons) do
             CppLogic.EntityType.SetAutoAttackDamage(ty, CppLogic.EntityType.GetAutoAttackDamage(ty), dc)
         end
         for dc, f in pairs(TriggerFixCppLogicExtension.Backup.FurAC) do
             CppLogic.Logic.SetDamageFactor(dc, ArmorClasses.AC_Fur, f)
+        end
+        if not CEntity then
+            for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do
+                CppLogic.Logic.TaskListMakeWaitForAnimsCancelable(tl[1], tl[2])
+            end
         end
     end
 end
