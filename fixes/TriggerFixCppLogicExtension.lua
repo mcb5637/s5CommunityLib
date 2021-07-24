@@ -25,10 +25,10 @@ TriggerFixCppLogicExtension = {Backup = {}}
 TriggerFixCppLogicExtension.Backup.TaskListToFix = {
     {TaskLists.TL_BATTLE_RIFLE, 10},
     {TaskLists.TL_BATTLE_BOW, 10},
-    {TaskLists.TL_BATTLE_CROSSBOWBOW, 10},
+    {TaskLists.TL_BATTLE_CROSSBOW, 10},
     {TaskLists.TL_BATTLE_HEROBOW, 9},
     {TaskLists.TL_BATTLE_SKIRMISHER, 10},
-    {TaskLists.TL_BATTLE_VEHICLE, 16},
+    {TaskLists.TL_BATTLE_VEHICLE, 17},
 }
 
 TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY")
@@ -39,6 +39,7 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Combat.EnableAoEProjectileFix() -- aoe projektile beachten damage/armorclass und schadensboni durch techs/helden
         CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
         CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
+        CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
         if not CEntity then
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
             CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
@@ -74,14 +75,8 @@ end
 
 function TriggerFixCppLogicExtension.OnLeaveMap()
     CppLogic.OnLeaveMap()
+    -- CppLogic automatically deactivates all mods, just have to reset data
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
-        CppLogic.Combat.DisableAoEProjectileFix()
-        CppLogic.Combat.DisableCamoFix()
-        --CppLogic.Logic.EnableAllHurtEntityTrigger() no disable?
-        if not CEntity then
-            CppLogic.Logic.SetLeadersRegenerateTroopHealth(false)
-            CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(false)
-        end
         for ty, dc in pairs(TriggerFixCppLogicExtension.Backup.Cannons) do
             CppLogic.EntityType.SetAutoAttackDamage(ty, CppLogic.EntityType.GetAutoAttackDamage(ty), dc)
         end
