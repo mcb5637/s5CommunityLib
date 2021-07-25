@@ -22,6 +22,8 @@
 -- TriggerFix.ProtectedCall(func, ...)	Ruft eine Funktion geschützt auf, und leitet Fehler an TriggerFix.ShowErrorMessage
 -- TriggerFix.ShowErrorMessage(txt)		Standard - Fehlerausgabe (über DebugWindow)
 --
+-- TriggerFix.AllScriptsLoaded()		Aus der FMA aufrfen, nachdem alle scripte geladen wurden. Initialisiert alle scripte, die das benötigen über Events.SCRIPT_EVENT_ON_DO_INITIALIZATION.
+--
 -- Für Debugger optimiert:
 --   Wenn der Debugger aktiv ist, werden Fehler nicht abgefangen, sondern an den Debugger weitergeleitet
 --   Im Debugger-Modus werden weitere Trigger nicht aufgerufen, wenn einer einen Fehler wirft
