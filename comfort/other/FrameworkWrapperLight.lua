@@ -50,6 +50,9 @@ end
 --
 -- (dies ist die einfache version)
 --
+-- übershreibt die funktionen:
+-- MainWindow_LoadGame_DoLoadGame, MainWindow_SaveGame_DoSaveGame, MainWindow_SaveGame_DoOverwriteSaveGame, GUIAction_RestartMap, QuitGame, QuickSave
+--
 -- benötigt:
 -- Trigger-Fix
 FrameworkWrapper={Mapfile={},Savegame={}}
