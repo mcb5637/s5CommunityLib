@@ -2,6 +2,7 @@ if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
 mcbPacker.require("s5CommunityLib/tables/ArmorClasses")
+mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 end --mcbPacker.ignore
 
 if not CppLogic then
