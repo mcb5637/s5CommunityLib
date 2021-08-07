@@ -469,7 +469,7 @@ function TriggerFix.KillTrigger.Init()
 		if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
 			return
 		end
-		if not CEntity or not CppLogic then
+		if not CppLogic then
 			return
 		end
 		TriggerFix.KillTrigger.Run()
@@ -478,8 +478,13 @@ end
 
 function TriggerFix.KillTrigger.Run()
 	local id = Event.GetEntityID2()
-	local dmg = CEntity.TriggerGetDamage()
+	if IsDead(id) then
+		return
+	end
+	local dmg = CppLogic.Logic.HurtEntityGetDamage()
+	local attackedsol = nil
 	if CppLogic.Entity.IsSoldier(id) then
+		attackedsol = id
 		id = CppLogic.Entity.Settler.GetLeaderOfSoldier(id)
 	end
 	if Logic.IsLeader(id)==1 and Logic.LeaderGetNumberOfSoldiers(id)>=1 then
@@ -490,12 +495,18 @@ function TriggerFix.KillTrigger.Run()
 		end
 		local sols = {Logic.GetSoldiersAttachedToLeader(id)}
 		table.remove(sols, 1)
+		for i=table.getn(sols),2,-1 do -- move attacked soldier to first
+			if (sols[i]==attackedsol) then
+				table.remove(sols, i)
+				table.insert(sols, 1, attackedsol)
+			end
+		end
 		local newsolh = solth - dmg
-		for i,sid in ipairs(sols) do
+		for i,sol in ipairs(sols) do
 			if ((Logic.LeaderGetNumberOfSoldiers(id)-i) * solph) > newsolh then
 				local t = TriggerFix.CreateEmptyEvent()
 				t.GetEntityID1 = Event.GetEntityID1()
-				t.GetEntityID2 = sid
+				t.GetEntityID2 = sol
 				TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, t)
 			else
 				break
