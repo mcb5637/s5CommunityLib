@@ -16,7 +16,7 @@
 -- mcbPacker.require("s5CommunityLib/fixes/TriggerFix")								--zum laden eines scriptes.
 -- 
 ---@diagnostic disable-next-line: lowercase-global
-mcbPacker = {loaded={}}
+mcbPacker = {loaded={}, assertIfNotFound=false}
 mcbPacker.Paths = {
 	{"data/maps/externalmap/", ".lua"},
 	{"data/maps/externalmap/", ".luac"}
@@ -49,6 +49,12 @@ function mcbPacker.load(file)
 			end
 		end
 	end
-	Script.Load(p[1]..file..p[2])
+	local path = p[1]..file..p[2]
+	if mcbPacker.assertIfNotFound then
+		assert(CppLogic.API.DoesFileExist(path), "mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
+	elseif LuaDebugger.Log and not CppLogic.API.DoesFileExist(path) then
+		LuaDebugger.Log("mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
+	end
+	Script.Load(path)
 	mcbPacker.loaded[file] = true
 end
