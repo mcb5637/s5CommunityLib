@@ -14,6 +14,7 @@ end
 --- author:mcb		current maintainer:mcb		v1.0
 -- trigger support für CppLogic.
 -- - definiert Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, aufgerufen wenn helias einen leader bekehrt.
+-- - verbessert Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, soldier ids stimmen nun in jedem fall.
 --
 -- setze TriggerFixCppLogicExtension_UseRecommendedFixes = true um einige von mir empfohlene fixes zu verwenden.
 --
@@ -39,11 +40,13 @@ function TriggerFixCppLogicExtension.Init()
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
         CppLogic.Combat.EnableAoEProjectileFix() -- aoe projektile beachten damage/armorclass und schadensboni durch techs/helden
         CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
-        CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
+        --CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
+        TriggerFixCppLogicExtension.InitKillCb()
         CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
         if not CEntity then
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
             CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
+            CppLogic.Logic.FixSnipeDamage(nil)
         end
         -- kanonen damageclasses fixen
         TriggerFixCppLogicExtension.Backup.Cannons = {}
@@ -111,5 +114,37 @@ function TriggerFixCppLogicExtension.Hook(targetId, player, newid, converterId)
     TriggerFix_action(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, ev)
 end
 
+function TriggerFixCppLogicExtension.InitKillCb()
+    for i = table.getn(TriggerFix.afterTriggerCB),  1, -1 do
+        if TriggerFix.afterTriggerCB[i]==TriggerFix.KillTrigger.AfterTriggerCB then
+            table.remove(TriggerFix.afterTriggerCB, i)
+        end
+    end
+    CppLogic.Logic.EnableAllHurtEntityTrigger(true, function(att, tar, pl, sourc)
+        local ev = TriggerFix.CreateEmptyEvent()
+        ev.GetEntityID1 = att
+        ev.GetEntityID2 = tar
+        ev.GetPlayerID = pl
+        ev.AttackSource = sourc
+        TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, ev)
+    end)
+end
+
 AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
 AddMapStartCallback("TriggerFixCppLogicExtension.AddLeaveTrigger")
+
+AdvancedDealDamageSource = {
+	Unknown = 0,
+	Melee = 1,
+	Arrow = 2,
+	Cannonball = 3,
+
+	AbilitySnipe = 10,
+	AbilityCircularAttack = 11,
+	AbilityBomb = 12,
+	AbilitySabotageSingleTarget = 13,
+	AbilitySabotageBlast = 14,
+	AbilityShuriken = 15,
+
+	Script = 25,
+};

@@ -110,6 +110,9 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
+		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+			cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+		end
 	end
 	local deleteBack = TriggerFix.TriggersToDelete[event]
 	TriggerFix.TriggersToDelete[event] = {}
@@ -126,6 +129,9 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 				remi = remi + 1
 			end
 		end
+	end
+	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+		CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
@@ -152,6 +158,9 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
+		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+			cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+		end
 	end
 	local deleteBack = TriggerFix.TriggersToDelete[event]
 	TriggerFix.TriggersToDelete[event] = {}
@@ -171,6 +180,9 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 				remi = remi + 1
 			end
 		end
+	end
+	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+		CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
@@ -293,6 +305,10 @@ function TriggerFix.HackTrigger()
 				return TriggerFix.currentEvent[name]
 			end
 		end,
+		__newindex = function(_, name, val)
+			assert(not TriggerFix.event[name])
+			TriggerFix.currentEvent[name] = val
+		end
 	})
 	for ev,id in pairs(TriggerFix.ScriptTriggers) do
 		Events[ev] = id
@@ -465,15 +481,16 @@ TriggerFix.KillTrigger = {}
 
 function TriggerFix.KillTrigger.Init()
 	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY")
-	table.insert(TriggerFix.afterTriggerCB, function(event)
-		if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
-			return
-		end
-		if not CppLogic then
-			return
-		end
-		TriggerFix.KillTrigger.Run()
-	end)
+	table.insert(TriggerFix.afterTriggerCB, TriggerFix.KillTrigger.AfterTriggerCB)
+end
+function TriggerFix.KillTrigger.AfterTriggerCB(event)
+	if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+		return
+	end
+	if not CppLogic then
+		return
+	end
+	TriggerFix.KillTrigger.Run()
 end
 
 function TriggerFix.KillTrigger.Run()
