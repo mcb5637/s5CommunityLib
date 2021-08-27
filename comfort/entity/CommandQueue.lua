@@ -215,6 +215,7 @@ CommandQueue.CommandTypes = {
         end,
         IsDone = function(self, id)
             return IsDestroyed(self.Target) or Logic.GetEntityHealth(self.Target)==0 or Logic.IsConstructionComplete(self.Target)==1 -- isdead doesnt work for bridges
+                or CppLogic.Entity.Building.GetNearestFreeConstructionSlotFor(self.Target, GetPosition(id))==-1
         end,
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfConstructBuilding(id, self.Target)
@@ -236,6 +237,7 @@ CommandQueue.CommandTypes = {
         end,
         IsDone = function(self, id)
             return IsDead(self.Target) or Logic.GetEntityHealth(self.Target)==Logic.GetEntityMaxHealth(self.Target)
+                or CppLogic.Entity.Building.GetNearestFreeRepairSlotFor(self.Target, GetPosition(id))==-1
         end,
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfRepairBuilding(id, self.Target)

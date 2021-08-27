@@ -19,7 +19,9 @@
 mcbPacker = {loaded={}, assertIfNotFound=false}
 mcbPacker.Paths = {
 	{"data/maps/externalmap/", ".lua"},
-	{"data/maps/externalmap/", ".luac"}
+	{"data/maps/externalmap/", ".luac"},
+	{Folders.Map, ".lua"},
+	{Folders.Map, ".luac"},
 }
 if GDB.IsKeyValid("workspace") then --mcbPacker.ignore
 	table.insert(mcbPacker.Paths, 1, {GDB.GetString("workspace"), ".lua"}) --mcbPacker.ignore
@@ -41,15 +43,16 @@ end
 
 function mcbPacker.load(file)
 	local p = mcbPacker.Paths[1]
+	local path = string.gsub(p[1]..file..p[2], "/", "\\")
 	if CppLogic then
 		for _,lp in ipairs(mcbPacker.Paths) do
-			if CppLogic.API.DoesFileExist(lp[1]..file..lp[2]) then
-				p = lp
+			local newpath = string.gsub(lp[1]..file..lp[2], "/", "\\")
+			if CppLogic.API.DoesFileExist(newpath) then
+				path = newpath
 				break
 			end
 		end
 	end
-	local path = p[1]..file..p[2]
 	if mcbPacker.assertIfNotFound then
 		assert(CppLogic.API.DoesFileExist(path), "mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
 	elseif LuaDebugger.Log and not CppLogic.API.DoesFileExist(path) then
