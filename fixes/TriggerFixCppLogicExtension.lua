@@ -47,6 +47,7 @@ function TriggerFixCppLogicExtension.Init()
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
             CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
             CppLogic.Logic.FixSnipeDamage(nil)
+            CppLogic.Logic.TaskListSetChangeTaskListCheckUncancelable(true)
         end
         -- kanonen damageclasses fixen
         TriggerFixCppLogicExtension.Backup.Cannons = {}
