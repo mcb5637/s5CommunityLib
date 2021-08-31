@@ -150,12 +150,7 @@ function CommandQueue.ClearEntitySynced(id)
 end
 
 function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs)
-    local bon = 0
-    local bty = CppLogic.EntityType.Building.GetBuildOnTypes(ty)
-    if bty[1] then
-        bon = Logic.GetEntityAtPosition(x, y)
-    end
-    if not CppLogic.Logic.CanPlaceBuildingAt(ty, pl, {X=x,Y=y}, r, bon) then
+    if not CppLogic.Logic.CanPlaceBuildingAt(ty, pl, {X=x,Y=y}, r) then
         Message("err cannot place!")
         return true
     end
@@ -163,9 +158,9 @@ function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs)
         return true
     end
     local csite = Logic.CreateConstructionSite(x, y, r, ty, pl)
-    LuaDebugger.Log(csite)
+    --LuaDebugger.Log(csite)
     local bid = CppLogic.Entity.Building.ConstructionSiteGetBuilding(csite)
-    LuaDebugger.Log(bid)
+    --LuaDebugger.Log(bid)
     for _,id in ipairs(serfs) do
         local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
         c.Target = bid
