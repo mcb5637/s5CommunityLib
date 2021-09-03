@@ -1,3 +1,4 @@
+--AutoFixArg
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")

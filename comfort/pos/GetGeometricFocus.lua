@@ -1,3 +1,4 @@
+--AutoFixArg
 --- author:totalwarANGEL		current maintainer:totalwarANGEL		v1
 -- berechnet den Geometrischer Schwerpunkt mehrerer Positionen / entities.
 function GetGeometricFocus(...)

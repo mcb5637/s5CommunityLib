@@ -1,3 +1,4 @@
+--AutoFixArg
 
 --- author:mcb		current maintainer:mcb		v3.0b                           Dank an Chromix
 -- Funktionen anstelle von Funktionsnamen als Trigger

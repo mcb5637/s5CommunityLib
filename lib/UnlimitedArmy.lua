@@ -1,3 +1,4 @@
+--AutoFixArg
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
