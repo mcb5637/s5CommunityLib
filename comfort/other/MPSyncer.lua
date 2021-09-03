@@ -517,7 +517,7 @@ function MPSyncer.VirtualFuncs.Create(func, vname, ...)
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeInt()
-	return {pattern="(%-?%d+%.?%d*)", serialize=tostring, deserialize = tonumber}
+	return {pattern="(%-?%d+%.?%d*)", serialize = function(n) return tostring(n) end, deserialize = function(s) return tonumber(s) end}
 end
 
 function MPSyncer.VirtualFuncs.ArgumentTypeString()
