@@ -487,7 +487,7 @@ function TriggerFix.KillTrigger.AfterTriggerCB(event)
 	if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
 		return
 	end
-	if not CppLogic then
+	if not CppLogic or CEntity then
 		return
 	end
 	TriggerFix.KillTrigger.Run()
