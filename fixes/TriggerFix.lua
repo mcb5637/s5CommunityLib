@@ -112,7 +112,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
 		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
-			cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
 	local deleteBack = TriggerFix.TriggersToDelete[event]
@@ -132,7 +132,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 		end
 	end
 	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
-		CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
+		TriggerFix.CreateEventHurtOut(cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
@@ -160,7 +160,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
 		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
-			cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
 	local deleteBack = TriggerFix.TriggersToDelete[event]
@@ -183,7 +183,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 		end
 	end
 	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
-		CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
+		TriggerFix.CreateEventHurtOut(cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
@@ -344,6 +344,26 @@ function TriggerFix.CreateEmptyEvent()
 	return cev
 end
 
+function TriggerFix.CreateEventHurtIn(cev)
+
+end
+function TriggerFix.CreateEventHurtInCppLogic(cev)
+	cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+end
+function TriggerFix.CreateEventHurtInCEntity(cev)
+	cev.Damage = CEntity.TriggerGetDamage()
+end
+
+function TriggerFix.CreateEventHurtOut(cev)
+
+end
+function TriggerFix.CreateEventHurtOutCppLogic(cev)
+	CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
+end
+function TriggerFix.CreateEventHurtOutCEntity(cev)
+	CEntity.TriggerSetDamage(cev.Damage)
+end
+
 function TriggerFix.ProtectedCall(func, ...)
 	if LuaDebugger.Log then
 		return func(unpack(arg))
@@ -411,6 +431,10 @@ function TriggerFix.Init()
 	end
 	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_SAVEGAME_LOADED")
 	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_DO_INITIALIZATION")
+	if CEntity then
+		TriggerFix.CreateEventHurtIn = TriggerFix.CreateEventHurtInCEntity
+		TriggerFix.CreateEventHurtOut = TriggerFix.CreateEventHurtOutCEntity
+	end
 end
 TriggerFix.Init()
 
