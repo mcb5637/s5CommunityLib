@@ -506,7 +506,7 @@ TriggerFix.KillTrigger = {}
 
 function TriggerFix.KillTrigger.Init()
 	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY")
-	table.insert(TriggerFix.afterTriggerCB, TriggerFix.KillTrigger.AfterTriggerCB)
+	--table.insert(TriggerFix.afterTriggerCB, TriggerFix.KillTrigger.AfterTriggerCB)
 end
 function TriggerFix.KillTrigger.AfterTriggerCB(event)
 	if event ~= Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
