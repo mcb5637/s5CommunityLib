@@ -161,7 +161,11 @@ function UnlimitedArmy:CheckUACore()
 			if self.AutoRotateRange then
 				self.FormationRotation = r
 			end
-			self:Formation(self.Target)
+			local t = self.Target
+			if CppLogic.Logic.LandscapeGetSector(t)==0 then
+				t = CppLogic.Logic.LandscapeGetNearestUnblockedPosInSector(t, Logic.GetSector(self:Iterator()()), 1500)
+			end
+			self:Formation(t)
 		end, function()
 			self:ProcessCommandQueue()
 		end, function()
