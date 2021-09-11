@@ -17,10 +17,15 @@ function GetRandom(_min, _max)
 	if not GvRandomseed then
 		GvRandomseed = true
 		if XNetwork.Manager_DoesExist()==0 then
-			local seed = XGUIEng.GetSystemTime()
-			local str = Framework.GetSystemTimeDateString()
-			for i=1, string.len(str) do
-				seed = seed + string.byte(str, i, i)
+			local seed = nil
+			if FrameworkWrapper then
+				seed = FrameworkWrapper.GetOSTimeAsInt()
+			else
+				seed = math.floor(XGUIEng.GetSystemTime())
+				local str = Framework.GetSystemTimeDateString()
+				for i=1, string.len(str) do
+					seed = seed + string.byte(str, i, i)
+				end
 			end
 			math.randomseed(seed)
 		end
