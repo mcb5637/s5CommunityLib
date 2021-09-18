@@ -23,7 +23,7 @@ end
 -- - TriggerFix
 -- - FrameworkWrapper
 -- - ArmorClasses
-TriggerFixCppLogicExtension = {Backup = {}}
+TriggerFixCppLogicExtension = {Backup = {}, GUIStateCustomMouse=10}
 TriggerFixCppLogicExtension.Backup.TaskListToFix = {
     {TaskLists.TL_BATTLE_RIFLE, 10},
     {TaskLists.TL_BATTLE_BOW, 10},
@@ -101,6 +101,13 @@ end
 function TriggerFixCppLogicExtension.AddLeaveTrigger()
     Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, "TriggerFixCppLogicExtension.OnLeaveMap", 1)
     Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, "TriggerFixCppLogicExtension.OnIdChanged", 1)
+    TriggerFixCppLogicExtension.GameCallback_GUI_StateChanged = GameCallback_GUI_StateChanged
+    function GameCallback_GUI_StateChanged(stateid, armed)
+        TriggerFixCppLogicExtension.GameCallback_GUI_StateChanged(stateid, armed)
+        if stateid == 27 then
+            Mouse.CursorSet(TriggerFixCppLogicExtension.GUIStateCustomMouse)
+        end
+    end
     return true
 end
 
@@ -131,6 +138,55 @@ function TriggerFixCppLogicExtension.InitKillCb()
         ev.AttackSource = sourc
         TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, ev)
     end)
+end
+
+function TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, checkentity, oncancel)
+    TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
+    CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
+        local id = GUI.GetEntityAtPosition(x, y)
+        if IsDestroyed(id) then
+            return false
+        end
+        if checkentity and not checkentity(id) then
+            return false
+        end
+        onconfirm(id)
+        return true
+    end, oncancel)
+end
+function TriggerFixCppLogicExtension.SetGUIStateSelectPos(onconfirm, mouse, checkpos, oncancel)
+    TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
+    CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
+        local p = CppLogic.UI.GetLandscapePosAtScreenPos(x, y)
+        if not IsValidPosition(p) then
+            return false
+        end
+        if checkpos and not checkpos(p) then
+            return false
+        end
+        onconfirm(p)
+        return true
+    end, oncancel)
+end
+function TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mouse, sector, checkpos, oncancel)
+    TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
+    CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
+        local p = CppLogic.UI.GetLandscapePosAtScreenPos(x, y)
+        if not IsValidPosition(p) then
+            return false
+        end
+        if CppLogic.Logic.LandscapeGetSector(p) ~= sector then
+            p = CppLogic.Logic.LandscapeGetNearestUnblockedPosInSector(p, sector, 2000)
+        end
+        if not IsValidPosition(p) or CppLogic.Logic.LandscapeGetSector(p) ~= sector then
+            return false
+        end
+        if checkpos and not checkpos(p) then
+            return false
+        end
+        onconfirm(p)
+        return true
+    end, oncancel)
 end
 
 AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
