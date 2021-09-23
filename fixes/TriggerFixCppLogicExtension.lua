@@ -18,12 +18,22 @@ end
 --
 -- setze TriggerFixCppLogicExtension_UseRecommendedFixes = true um einige von mir empfohlene fixes zu verwenden.
 --
+-- enthaltene comforts:
+-- - TriggerFixCppLogicExtension.RemoveArchiveOnLeave                       bool, wenn true werden alle s5x archive in der loadorder entfernt wenn die map verlassen wird.
+-- - TriggerFixCppLogicExtension.AddMapArchiveToLoadOrder(path)             fügt path zur loadorder hinzu, wenn noch nicht vorhanden. nur s5x archive. wenn path nil ist, die aktuelle map.
+-- - TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, checkentity, oncancel)
+--                                                                          gui state um ein entity zu selektieren.
+-- - TriggerFixCppLogicExtension.SetGUIStateSelectPos(onconfirm, mouse, checkpos, oncancel)
+--                                                                          gui state um eine position zu selektieren.
+-- - TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mouse, sector, checkpos, oncancel)
+--                                                                          gui state um eine position in einem sector zu selektieren.
+--
 -- Benötigt:
 -- - CppLogic
 -- - TriggerFix
 -- - FrameworkWrapper
 -- - ArmorClasses
-TriggerFixCppLogicExtension = {Backup = {}, GUIStateCustomMouse=10}
+TriggerFixCppLogicExtension = {Backup = {}, GUIStateCustomMouse=10, RemoveArchiveOnLeave=false}
 TriggerFixCppLogicExtension.Backup.TaskListToFix = {
     {TaskLists.TL_BATTLE_RIFLE, 10},
     {TaskLists.TL_BATTLE_BOW, 10},
@@ -94,6 +104,11 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
             for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do
                 CppLogic.Logic.TaskListMakeWaitForAnimsCancelable(tl[1], tl[2])
             end
+        end
+    end
+    if TriggerFixCppLogicExtension.RemoveArchiveOnLeave then
+        while string.find(CppLogic.Logic.GetLoadOrder()[1], ".s5x") do
+            CppLogic.Logic.RemoveTopArchive()
         end
     end
 end
@@ -187,6 +202,21 @@ function TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mou
         onconfirm(p)
         return true
     end, oncancel)
+end
+
+function TriggerFixCppLogicExtension.AddMapArchiveToLoadOrder(path)
+    TriggerFixCppLogicExtension.RemoveArchiveOnLeave = true
+    if not path then
+        path = CppLogic.API.MapGetDataPath(Framework.GetCurrentMapName(), Framework.GetCurrentMapTypeAndCampaignName())
+    end
+    assert(string.find(path, ".s5x"))
+    local lo = CppLogic.Logic.GetLoadOrder()
+    for _,p in ipairs(lo) do
+        if p==path then
+            return
+        end
+    end
+    CppLogic.Logic.AddArchive(path)
 end
 
 AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
