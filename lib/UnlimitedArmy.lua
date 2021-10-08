@@ -14,6 +14,7 @@ mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
+mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b

@@ -11,6 +11,10 @@
 -- - mcbPacker.forceLoad(file)					lädt file, egal ob es bereits geladen ist. trägt außerdem nichts in die geladenen dateien ein.
 -- 													auch aus file mit require geladene scripte werden nicht als geladen eingetragen.
 -- 
+-- Paths for folder maps "data\\maps\\user\\"..mapname.."\\" (may only use \\)
+-- Usual path for s5x "data/maps/externalmap/" (may use / or \\, but not mixed).
+-- require changes all path separators to \\.
+--
 -- Beispiel:
 -- Script.Load("data/maps/externalmap/s5CommunityLib/packer/devLoad.lua")			--genau dieses script laden.
 -- mcbPacker.require("s5CommunityLib/fixes/TriggerFix")								--zum laden eines scriptes.
