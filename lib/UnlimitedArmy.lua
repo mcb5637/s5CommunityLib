@@ -15,6 +15,9 @@ mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
+if CppLogic then --mcbPacker.ignore
+mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
+end --mcbPacker.ignore
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -149,8 +152,10 @@ function UnlimitedArmy:Init(data)
 		self.Trigger = StartSimpleJob(":Tick", self)
 	end
 	self.EntityChangedTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, ":OnIdChanged", 1, nil, {self})
-	self.PreSaveTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_PRE_SAVE, nil, ":OnPreSave", 1, nil, {self})
-	self.ConversionTrigger = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, nil, ":OnConversion", 1, nil, {self})
+	if UnlimitedArmy.HasHook() then
+		self.PreSaveTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_PRE_SAVE, nil, ":OnPreSave", 1, nil, {self})
+		self.ConversionTrigger = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, nil, ":OnConversion", 1, nil, {self})
+	end
 	self:SetLeaderFormation(data.LeaderFormation)
 	self:CheckUACore()
 end
@@ -1050,7 +1055,7 @@ function UnlimitedArmy.HasHook()
   if UnlimitedArmy.ForceNoHook then
     return false
   end
-  return CppLogic
+  return CppLogic and TriggerFixCppLogicExtension and FrameworkWrapper
 end
 
 UnlimitedArmy:AStatic()

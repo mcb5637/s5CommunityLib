@@ -1,10 +1,10 @@
 --AutoFixArg
 if mcbPacker then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-end --mcbPacker.ignore
 
 -- try to load full version, if you do, just return and dont load this one
 mcbPacker.require("comfort/FrameworkWrapper")
+end --mcbPacker.ignore
 --mcbPacker.returnIfDef:FrameworkWrapper
 if FrameworkWrapper then
 	return
