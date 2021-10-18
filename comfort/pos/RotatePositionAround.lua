@@ -27,5 +27,11 @@ function RotatePositionAround(pos, angle, center)
 		end
 		return pr
 	end
-	return GetCirclePosition(center, GetDistance(center, pos), GetAngleBetween(center, pos)+angle)
+	angle = math.rad(angle)
+    local s = math.sin(angle)
+    local c = math.cos(angle)
+	local x = p.X - center.X
+	local y = p.Y - center.Y
+    return { X= x * c + y * s + center.X, Y= x * s + y * c + center.Y }
+	--return GetCirclePosition(center, GetDistance(center, pos), GetAngleBetween(center, pos)+angle)
 end
