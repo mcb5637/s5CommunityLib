@@ -56,11 +56,11 @@ function mcbPacker.load(file)
 				break
 			end
 		end
-	end
-	if mcbPacker.assertIfNotFound then
-		assert(CppLogic.API.DoesFileExist(path), "mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
-	elseif LuaDebugger.Log and not CppLogic.API.DoesFileExist(path) then
-		LuaDebugger.Log("mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
+		if mcbPacker.assertIfNotFound then
+			assert(CppLogic.API.DoesFileExist(path), "mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
+		elseif LuaDebugger.Log and not CppLogic.API.DoesFileExist(path) then
+			LuaDebugger.Log("mcbPacker cound not find file: "..file.."\n"..CppLogic.API.StackTrace())
+		end
 	end
 	Script.Load(path)
 	mcbPacker.loaded[file] = true

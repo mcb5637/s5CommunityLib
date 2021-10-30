@@ -13,7 +13,6 @@ mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
-mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
 if CppLogic then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
