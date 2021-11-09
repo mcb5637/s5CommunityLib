@@ -115,6 +115,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
+	local prevevent = TriggerFix.currentEvent
 	local deleteBack = TriggerFix.TriggersToDelete[event]
 	TriggerFix.TriggersToDelete[event] = {}
 	local ev = TriggerFix.triggers[event]
@@ -152,7 +153,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			LuaDebugger.Break()
 		end
 	end
-	TriggerFix.currentEvent = nil
+	TriggerFix.currentEvent = prevevent
 end
 
 function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
@@ -163,6 +164,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
+	local prevevent = TriggerFix.currentEvent
 	local deleteBack = TriggerFix.TriggersToDelete[event]
 	TriggerFix.TriggersToDelete[event] = {}
 	local ev = TriggerFix.triggers[event]
@@ -200,7 +202,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	if rtime > 0.03 and TriggerFix.xpcallTimeMsg and KeyOf then
 		Message("@color:255,0,0 Trigger "..KeyOf(event, Events).." runtime too long: "..rtime)
 	end
-	TriggerFix.currentEvent = nil
+	TriggerFix.currentEvent = prevevent
 end
 
 function TriggerFix.ShowErrorMessage(txt)
@@ -294,7 +296,13 @@ function TriggerFix.HackTrigger()
 	for k,v in pairs(TriggerFix.event) do
 		local name = k	-- upvalue, muss aber sowieso nach jedem laden neu initialisiert werden
 		Event[name] = function()
-			if TriggerFix.currentEvent then
+			if TriggerFix.currentEvent and TriggerFix.currentEvent[name] then
+				if TriggerFix.currentEvent.light  then
+					local ori = TriggerFix.event[name]()
+					if ori ~= 0 then
+						return ori
+					end
+				end
 				return TriggerFix.currentEvent[name]
 			end
 			return TriggerFix.event[name]()
@@ -329,9 +337,12 @@ function TriggerFix.AddScriptTrigger(name)
 end
 
 function TriggerFix.CreateCopyEvent()
-	local cev = {}
+	local cev = {light=true}
 	for k,v in pairs(TriggerFix.event) do
-		cev[k] = v()
+		local a = v()
+		if a ~= 0 then
+			cev[k] = a
+		end
 	end
 	return cev
 end
