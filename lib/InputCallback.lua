@@ -23,26 +23,32 @@ InputCallback.TriggerType = {KeyTrigger="KeyTriggers", CharTrigger="CharTriggers
 
 function InputCallback.AddHandlers()
     CppLogic.UI.SetMouseTrigger(function(id, x, y, a)
+        local cancel = false
         for _,cb in ipairs(InputCallback.MouseTriggers) do
             xpcall(function()
-                cb(id, x, y, a)
+                cancel = cancel or cb(id, x, y, a)
             end, TriggerFix.ShowErrorMessage)
         end
+        return cancel
     end)
     CppLogic.UI.SetKeyTrigger(function(key, up)
+        local cancel = false
         for _,cb in ipairs(InputCallback.KeyTriggers) do
             xpcall(function()
-                cb(key, up)
+                cancel = cancel or cb(key, up)
             end, TriggerFix.ShowErrorMessage)
         end
+        return cancel
     end)
     CppLogic.UI.SetCharTrigger(function(char)
+        local cancel = false
         char = string.char(char)
         for _,cb in ipairs(InputCallback.CharTriggers) do
             xpcall(function()
-                cb(char)
+                cancel = cancel or cb(char)
             end, TriggerFix.ShowErrorMessage)
         end
+        return cancel
     end)
 end
 
