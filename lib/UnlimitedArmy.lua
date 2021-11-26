@@ -681,7 +681,7 @@ function UnlimitedArmy:IsDead()
 		if not self.HadOneLeader then
 			return 3
 		end
-		if self.UACore and self.UACore.GetFirstDeadHero() or self.DeadHeroes[1] then
+		if self.UACore and self.UACore:GetFirstDeadHero() or self.DeadHeroes[1] then
 			return 4
 		end
 		return 1
