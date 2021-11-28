@@ -121,11 +121,14 @@ function CommandQueue.OnTick()
 end
 
 function CommandQueue.CheckEntity(id, cs)
-    if CommandQueue.CommandTypes[cs[1].Cmd].IsDone(cs[1], id) then
-        table.remove(cs, 1)
-    end
     if not cs[1] then
         return true
+    end
+    while CommandQueue.CommandTypes[cs[1].Cmd].IsDone(cs[1], id) do
+        table.remove(cs, 1)
+        if not cs[1] then
+            return true
+        end
     end
     CommandQueue.CommandTypes[cs[1].Cmd].Execute(cs[1], id)
 end
