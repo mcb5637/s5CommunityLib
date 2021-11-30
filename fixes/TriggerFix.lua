@@ -32,7 +32,7 @@
 -- Benötigt:
 -- 	- CEntity/CppLogic (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
-TriggerFix = {triggers={}, nId=0, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
+TriggerFix = {triggers={}, nId=-1, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
 	ScriptTriggers={}, TriggersToDelete={},
 }
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
@@ -42,7 +42,7 @@ function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
 		TriggerFix.triggers[event] = {}
 	end
 	local tid = TriggerFix.nId
-	TriggerFix.nId = TriggerFix.nId + 1
+	TriggerFix.nId = TriggerFix.nId - 1
 	if con == "" then
 		con = nil
 	end
@@ -267,6 +267,8 @@ function TriggerFix.HackTrigger()
 	Trigger.UnrequestTrigger = function(tid)
 		if TriggerFix.idToTrigger[tid] then
 			return TriggerFix.RemoveTrigger(tid)
+		elseif tid >= 0 then
+			TriggerFix.UnrequestTrigger(tid)
 		end
 	end
 	TriggerFix.DisableTrigger = Trigger.DisableTrigger
@@ -274,6 +276,8 @@ function TriggerFix.HackTrigger()
 		if TriggerFix.idToTrigger[tid] then
 			TriggerFix.idToTrigger[tid].active = 0
 			return true
+		elseif tid >= 0 then
+			TriggerFix.DisableTrigger(tid)
 		end
 	end
 	TriggerFix.EnableTrigger = Trigger.EnableTrigger
@@ -281,12 +285,16 @@ function TriggerFix.HackTrigger()
 		if TriggerFix.idToTrigger[tid] then
 			TriggerFix.idToTrigger[tid].active = 1
 			return true
+		elseif tid >= 0 then
+			TriggerFix.EnableTrigger(tid)
 		end
 	end
 	TriggerFix.IsTriggerEnabled = Trigger.IsTriggerEnabled
 	Trigger.IsTriggerEnabled = function(tid)
 		if TriggerFix.idToTrigger[tid] then
 			return TriggerFix.idToTrigger[tid].active
+		elseif tid >= 0 then
+			TriggerFix.IsTriggerEnabled(tid)
 		end
 	end
 	TriggerFix.event = {}
