@@ -267,7 +267,7 @@ function TriggerFix.HackTrigger()
 	Trigger.UnrequestTrigger = function(tid)
 		if TriggerFix.idToTrigger[tid] then
 			return TriggerFix.RemoveTrigger(tid)
-		elseif tid >= 0 then
+		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.UnrequestTrigger(tid)
 		end
 	end
@@ -276,7 +276,7 @@ function TriggerFix.HackTrigger()
 		if TriggerFix.idToTrigger[tid] then
 			TriggerFix.idToTrigger[tid].active = 0
 			return true
-		elseif tid >= 0 then
+		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.DisableTrigger(tid)
 		end
 	end
@@ -285,7 +285,7 @@ function TriggerFix.HackTrigger()
 		if TriggerFix.idToTrigger[tid] then
 			TriggerFix.idToTrigger[tid].active = 1
 			return true
-		elseif tid >= 0 then
+		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.EnableTrigger(tid)
 		end
 	end
@@ -293,7 +293,7 @@ function TriggerFix.HackTrigger()
 	Trigger.IsTriggerEnabled = function(tid)
 		if TriggerFix.idToTrigger[tid] then
 			return TriggerFix.idToTrigger[tid].active
-		elseif tid >= 0 then
+		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.IsTriggerEnabled(tid)
 		end
 	end
