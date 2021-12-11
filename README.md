@@ -13,7 +13,7 @@ Eine Sammlung von kleinen und größeren Scriptteilen für Siedler 5 DedK.
 - requirements beachten (oder von mcbPacker verwalten lassen)
 
 ## Hinzufügen
-- jede comfort in eigener datei
+- jede comfort in eigener Datei
 - benutzungsanleitung als 1. kommentar der datei
 - 4 wichtige informationen für jede datei:
 	- ursprünglucher autor: kommentar 'author'
@@ -33,7 +33,7 @@ Eine Sammlung von kleinen und größeren Scriptteilen für Siedler 5 DedK.
 - wichtig ist nur der status beim pull request, solange sich niemand beschwert
 
 ## Automatische Aktualisierung der S5LibLastCommit.lua (Version):
-- den befehl `git config core.hooksPath githooks` ausführen, um den vorhandenen git hook zu aktivieren.
+- den Befehl `git config core.hooksPath githooks` ausführen, um den vorhandenen git hook zu aktivieren.
 
 ## Lizenz
-- wenn nicht extra in der datei etwas anderes steht, gilt die MIT lizenz (die erlaubt praktisch alles, ohne schadensersatzansprüche)
+- wenn nicht extra in der Datei etwas anderes steht, gilt die MIT lizenz (die erlaubt praktisch alles, ohne Schadensersatzansprüche)
