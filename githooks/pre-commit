@@ -1,3 +1,4 @@
+#!/bin/sh
 now="$(date +'%Y%m%d.%H%M%S')"
-echo "S5LibLastCommit = $now" > S5LibLastCommit.lua
-exec git add S5LibLastCommit.lua
+echo "S5LibLastCommit = $now" > ./S5LibLastCommit.lua
+exec git add ./S5LibLastCommit.lua

@@ -32,5 +32,8 @@ Eine Sammlung von kleinen und größeren Scriptteilen für Siedler 5 DedK.
 ## Eigene branches
 - wichtig ist nur der status beim pull request, solange sich niemand beschwert
 
+## Automatische Aktualisierung der S5LibLastCommit.lua (Version):
+- den befehl `git config core.hooksPath githooks` ausführen, um den vorhandenen git hook zu aktivieren.
+
 ## Lizenz
 - wenn nicht extra in der datei etwas anderes steht, gilt die MIT lizenz (die erlaubt praktisch alles, ohne schadensersatzansprüche)
