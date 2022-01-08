@@ -1435,6 +1435,24 @@ function UnlimitedArmy.MoveAndSetTargetRotation(id, pos, r)
 end
 
 UnlimitedArmy:AStatic()
+function UnlimitedArmy.MoveAndSetTargetRotationClamp(id, pos, r)
+	local x,y = Logic.WorldGetSize()
+	if pos.X > x+100 then
+		pos.X = x+100
+	end
+	if pos.X < 0 then
+		pos.X = 0
+	end
+	if pos.Y > y+100 then
+		pos.Y = y+100
+	end
+	if pos.Y < 0 then
+		pos.Y = 0
+	end
+	UnlimitedArmy.MoveAndSetTargetRotation(id, pos, t)
+end
+
+UnlimitedArmy:AStatic()
 function UnlimitedArmy.IsReferenceDead(r)
 	if type(r)=="table" then
 		if r.IsDead then
@@ -1476,34 +1494,34 @@ function UnlimitedArmy.Formations.Chaotic(army, pos)
 		if not army.ChaoticCache[id] then
 			army.ChaoticCache[id] = {X=GetRandom(-l, l), Y=GetRandom(-l, l), r=GetRandom(0,360)}
 		end
-		UnlimitedArmy.MoveAndSetTargetRotation(id, {X=pos.X+army.ChaoticCache[id].X, Y=pos.Y+army.ChaoticCache[id].Y}, army.ChaoticCache[id].r+army.FormationRotation)
+		UnlimitedArmy.MoveAndSetTargetRotationClamp(id, {X=pos.X+army.ChaoticCache[id].X, Y=pos.Y+army.ChaoticCache[id].Y}, army.ChaoticCache[id].r+army.FormationRotation)
 	end
 end
 --- @param army UnlimitedArmy
 function UnlimitedArmy.Formations.Circle(army, pos)
 	local ranged, melee, nocombat = army:GetRangedAndMelee()
 	if table.getn(nocombat)==1 then
-		UnlimitedArmy.MoveAndSetTargetRotation(nocombat[1], pos, 0 + army.FormationRotation)
+		UnlimitedArmy.MoveAndSetTargetRotationClamp(nocombat[1], pos, 0 + army.FormationRotation)
 	else
 		for i=1,table.getn(nocombat) do
 			local r = (i*360/table.getn(nocombat)) + army.FormationRotation
-			UnlimitedArmy.MoveAndSetTargetRotation(nocombat[i], GetCirclePosition(pos, table.getn(nocombat)*70, r), r)
+			UnlimitedArmy.MoveAndSetTargetRotationClamp(nocombat[i], GetCirclePosition(pos, table.getn(nocombat)*70, r), r)
 		end
 	end
 	if table.getn(ranged)==1 then
-		UnlimitedArmy.MoveAndSetTargetRotation(ranged[1], pos, 0 + army.FormationRotation)
+		UnlimitedArmy.MoveAndSetTargetRotationClamp(ranged[1], pos, 0 + army.FormationRotation)
 	else
 		for i=1,table.getn(ranged) do
 			local r = (i*360/table.getn(ranged)) + army.FormationRotation
-			UnlimitedArmy.MoveAndSetTargetRotation(ranged[i], GetCirclePosition(pos, 250+table.getn(nocombat)+table.getn(ranged)*70, r), r)
+			UnlimitedArmy.MoveAndSetTargetRotationClamp(ranged[i], GetCirclePosition(pos, 250+table.getn(nocombat)+table.getn(ranged)*70, r), r)
 		end
 	end
 	if table.getn(melee)==1 and table.getn(army.Leaders)==1 then
-		UnlimitedArmy.MoveAndSetTargetRotation(melee[1], pos, 0 + army.FormationRotation)
+		UnlimitedArmy.MoveAndSetTargetRotationClamp(melee[1], pos, 0 + army.FormationRotation)
 	else
 		for i=1,table.getn(melee) do
 			local r = (i*360/table.getn(melee)) + army.FormationRotation
-			UnlimitedArmy.MoveAndSetTargetRotation(melee[i], GetCirclePosition(pos, 500 +table.getn(nocombat)+table.getn(ranged)*70, r), r)
+			UnlimitedArmy.MoveAndSetTargetRotationClamp(melee[i], GetCirclePosition(pos, 500 +table.getn(nocombat)+table.getn(ranged)*70, r), r)
 		end
 	end
 end
@@ -1513,7 +1531,7 @@ function UnlimitedArmy.Formations.Lines(army, pos)
 	local abst = 500
 	if army:GetSize(false,false)==1 then
 		for id in army:Iterator(false) do
-			UnlimitedArmy.MoveAndSetTargetRotation(id, pos, 0 + army.FormationRotation)
+			UnlimitedArmy.MoveAndSetTargetRotationClamp(id, pos, 0 + army.FormationRotation)
 		end
 	else
 		local numOfLi = math.ceil(army:GetSize(false,false)/pl)
@@ -1545,7 +1563,7 @@ function UnlimitedArmy.Formations.Lines(army, pos)
 		for i=1, n do
 			local p = GetCirclePosition(pos, getModLi(i), r)
 			p = GetCirclePosition(p, getModRei(i), r + 270)
-			UnlimitedArmy.MoveAndSetTargetRotation(en[i], p, r)
+			UnlimitedArmy.MoveAndSetTargetRotationClamp(en[i], p, r)
 		end
 	end
 end
@@ -1574,7 +1592,7 @@ function UnlimitedArmy.Formations.Spear(army, pos)
 	for id in army:Iterator(false) do
 		local i = army:GetSize(false,false)-i2+1
 		local p = edgepositions[i] and edgepositions[i] or inpositions[i]
-		UnlimitedArmy.MoveAndSetTargetRotation(id, p, rot)
+		UnlimitedArmy.MoveAndSetTargetRotationClamp(id, p, rot)
 		i2 = i2 + 1
 	end
 end
