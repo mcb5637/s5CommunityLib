@@ -32,7 +32,7 @@
 -- Benötigt:
 -- 	- CEntity/CppLogic (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
-TriggerFix = {triggers={}, nId=-1, idToTrigger={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
+TriggerFix = {triggers={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
 	ScriptTriggers={}, TriggersToDelete={},
 }
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
@@ -41,8 +41,6 @@ function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
 	if not TriggerFix.triggers[event] then
 		TriggerFix.triggers[event] = {}
 	end
-	local tid = TriggerFix.nId
-	TriggerFix.nId = TriggerFix.nId - 1
 	if con == "" then
 		con = nil
 	end
@@ -52,29 +50,27 @@ function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
 	if type(act)=="string" then
 		act = TriggerFix.SplitTableIndexPath(act)
 	end
-	local t = {event=event, con=con, act=act, active=active, acon=acon or {}, aact=aact or {}, tid=tid, err=nil, time=0, comm=comm}
+	local t = {event=event, con=con, act=act, active=active, acon=acon or {}, aact=aact or {}, err=nil, time=0, comm=comm}
 	table.insert(TriggerFix.triggers[event], t)
-	TriggerFix.idToTrigger[tid] = t
-	return tid
+	return t
 end
 
-function TriggerFix.RemoveTrigger(tid)
-	local t = TriggerFix.idToTrigger[tid]
-	if not t then
+function TriggerFix.RemoveTrigger(t)
+	if not t or t.invalid then
 		return
 	end
+	t.active = 0
 	if TriggerFix.TriggersToDelete[t.event] then
 		table.insert(TriggerFix.TriggersToDelete[t.event], t)
-		t.active = 0
 		return
 	end
+	t.invalid = 1
 	local ev = TriggerFix.triggers[t.event]
 	for i=table.getn(ev),1,-1 do
 		if ev[i]==t then
 			table.remove(ev, i)
 		end
 	end
-	TriggerFix.idToTrigger[tid] = nil
 end
 
 function TriggerFix.ExecuteSingleTrigger(t)
@@ -127,7 +123,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			local r = TriggerFix.ExecuteSingleTrigger(t)
 			t.time=XGUIEng.GetSystemTime()-tim
 			if r and r~=0 then
-				rem[remi] = t.tid
+				rem[remi] = t
 				remi = remi + 1
 			end
 		end
@@ -137,7 +133,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
-		TriggerFix.RemoveTrigger(t.tid)
+		TriggerFix.RemoveTrigger(t)
 	end
 	for _,tid in ipairs(rem) do
 		TriggerFix.RemoveTrigger(tid)
@@ -179,7 +175,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			end, TriggerFix.ShowErrorMessage)
 			t.time=XGUIEng.GetSystemTime()-tim
 			if r then
-				rem[remi] = t.tid
+				rem[remi] = t
 				remi = remi + 1
 			end
 		end
@@ -189,7 +185,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
-		TriggerFix.RemoveTrigger(t.tid)
+		TriggerFix.RemoveTrigger(t)
 	end
 	for _,tid in ipairs(rem) do
 		TriggerFix.RemoveTrigger(tid)
@@ -265,7 +261,7 @@ function TriggerFix.HackTrigger()
 	end
 	TriggerFix.UnrequestTrigger = Trigger.UnrequestTrigger
 	Trigger.UnrequestTrigger = function(tid)
-		if TriggerFix.idToTrigger[tid] then
+		if type(tid)=="table" and tid.event and not tid.invalid then
 			return TriggerFix.RemoveTrigger(tid)
 		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.UnrequestTrigger(tid)
@@ -273,8 +269,8 @@ function TriggerFix.HackTrigger()
 	end
 	TriggerFix.DisableTrigger = Trigger.DisableTrigger
 	Trigger.DisableTrigger = function(tid)
-		if TriggerFix.idToTrigger[tid] then
-			TriggerFix.idToTrigger[tid].active = 0
+		if type(tid)=="table" and tid.event and not tid.invalid then
+			tid.active = 0
 			return true
 		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.DisableTrigger(tid)
@@ -282,8 +278,8 @@ function TriggerFix.HackTrigger()
 	end
 	TriggerFix.EnableTrigger = Trigger.EnableTrigger
 	Trigger.EnableTrigger = function(tid)
-		if TriggerFix.idToTrigger[tid] then
-			TriggerFix.idToTrigger[tid].active = 1
+		if type(tid)=="table" and tid.event and not tid.invalid then
+			tid.active = 1
 			return true
 		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.EnableTrigger(tid)
@@ -291,8 +287,11 @@ function TriggerFix.HackTrigger()
 	end
 	TriggerFix.IsTriggerEnabled = Trigger.IsTriggerEnabled
 	Trigger.IsTriggerEnabled = function(tid)
-		if TriggerFix.idToTrigger[tid] then
-			return TriggerFix.idToTrigger[tid].active
+		if type(tid)=="table" and tid.event then
+			if tid.invalid then
+				return 0
+			end
+			return tid.active
 		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.IsTriggerEnabled(tid)
 		end
@@ -398,9 +397,11 @@ end
 
 function TriggerFix.CheckTriggerRuntime()
 	local ct = nil
-	for _,t in pairs(TriggerFix.idToTrigger) do
-		if not ct or ct.time < t.time then
-			ct = t
+	for ev,ts in pairs(TriggerFix.triggers) do
+		for _,t in ipairs(ts) do
+			if not ct or ct.time < t.time then
+				ct = t
+			end
 		end
 	end
 	return ct
@@ -492,7 +493,7 @@ function TriggerFix.LowPriorityJob.Run()
 			r = nil
 		end
 		if r then
-			TriggerFix.RemoveTrigger(t.tid)
+			TriggerFix.RemoveTrigger(t)
 		end
 		if nt then
 			TriggerFix.LowPriorityJob.next = 1
