@@ -11,8 +11,10 @@
 -- - invalid table key: tables may only contain keys that are strings or numbers, saving crashes otherwise.
 -- - function/string too long: there is a size limit for functions and strings (exact limit not known), crashes on saving or loading.
 --		split functions/strings up into multiples as a workaround.
+-- - string table key with len >= 100: key sometines gets truncated, sometimes vanishes completely, might also crash. No fix known.
 -- warning types:
--- - numeric table key < 0: numeric keys below 0 get changed into strings somewhere between saving and loading. No fix known.
+-- - numeric table key < 0: key 0 gets changed to a string somewhere between saving and loading. No fix known.
+-- - string table key that translates to a number >= 0: key gets changed to a number somewhere between saving and loading. No fix known.
 -- - metatable: metatables do get ignored by savegames (they become nil on loadig). manually re-setting them works.
 -- - function upvalues: they cannot get saved and loaded. usually after loading all upvalues are nil, but there are no gurantees. no workaround known.
 --		(note: upvalue detection only works with CppLogic).
@@ -37,10 +39,21 @@ function CheckGlobalsForSavegame(t, str, done)
 		if not done[t] then
 			done[t] = true
 			for k,v in pairs(t) do
-				if type(k)~="string" and type(k)~="number" then
+				if type(k)=="string" then
+					if string.len(k) >= 100 then
+						LuaDebugger.Log("error: table has string key with len >= 100 at "..str.."."..tostring(k))
+					else
+						local n = tonumber(k)
+						if n and n >= 0 then
+							LuaDebugger.Log("warning: table has string key wich translates to a number >= 0 at "..str.."."..tostring(k))
+						end
+					end
+				elseif type(k)=="number" then
+					if k < 0 then
+						LuaDebugger.Log("warning: table has numeric key < 0 at "..str.."."..tostring(k))
+					end
+				else
 					LuaDebugger.Log("error: table has invalid key "..type(k).." at "..str.."."..tostring(k))
-				elseif type(k)=="number" and k < 0 then
-					LuaDebugger.Log("warning: table has numeric key < 0 at "..str.."."..tostring(k))
 				end
 				CheckGlobalsForSavegame(v, str.."."..k, done)
 			end
