@@ -227,6 +227,7 @@ function UnlimitedArmy:Tick()
 			self.Spawner:Tick(self.SpawnerActive)
 		end
 		self:ProcessCommandQueue()
+		self:RemoveAllDestroyedLeaders()
 		return
 	end
 	if self.Spawner then
@@ -263,6 +264,7 @@ function UnlimitedArmy:Tick()
 		preventfurthercommands = true
 	end
 	self:ProcessCommandQueue()
+	self:RemoveAllDestroyedLeaders()
 	if self.Status == UnlimitedArmy.Status.Battle then
 		self:DoBattleCommands()
 	elseif self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.MovingNoBattle then
