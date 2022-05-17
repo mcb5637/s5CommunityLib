@@ -295,6 +295,7 @@ function TriggerFix.HackTrigger()
 		elseif type(tid)=="number" and tid >= 0 then
 			TriggerFix.IsTriggerEnabled(tid)
 		end
+		return 0
 	end
 	TriggerFix.event = {}
 	for k,v in pairs(Event) do
