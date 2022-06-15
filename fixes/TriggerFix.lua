@@ -35,7 +35,7 @@
 TriggerFix = {triggers={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
 	ScriptTriggers={}, TriggersToDelete={},
 }
-TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and "Debugger" or "Xpcall")
+TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and not LuaDebugger.HandleXPCallErrorMessage and "Debugger" or "Xpcall")
 
 function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
 	if not TriggerFix.triggers[event] then
@@ -172,7 +172,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			TriggerFix.currentEvent = cev
 			xpcall(function()
 				r = TriggerFix.ExecuteSingleTrigger(t)
-			end, TriggerFix.ShowErrorMessage)
+			end, LuaDebugger.HandleXPCallErrorMessage or TriggerFix.ShowErrorMessage)
 			t.time=XGUIEng.GetSystemTime()-tim
 			if r then
 				rem[remi] = t
