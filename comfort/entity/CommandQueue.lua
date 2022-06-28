@@ -179,15 +179,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityAttackEntity] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityAttackEntity}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -200,15 +200,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -222,15 +222,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandSerfRepairBuilding] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfRepairBuilding}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -244,15 +244,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityGuardEntity] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityGuardEntity}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -265,15 +265,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroConvertSettler] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroConvertSettler}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -286,15 +286,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandThiefStealFrom] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandThiefStealFrom}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -308,15 +308,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandThiefCarryStolenStuffToHQ] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandThiefCarryStolenStuffToHQ}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -329,15 +329,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandThiefSabotageBuilding] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandThiefSabotageBuilding}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -350,15 +350,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandThiefDefuseKeg] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandThiefDefuseKeg}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -371,15 +371,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroSnipeSettler] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroSnipeSettler}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -392,15 +392,15 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroThrowShurikenAt] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.ActorId)
+                CommandQueue.ClearEntity(ev.EntityID1)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.ActorId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroThrowShurikenAt}
-            c.Target = ev.TargetId
-            CommandQueue.AddToEntity(ev.ActorId, c)
+            c.Target = ev.EntityID2
+            CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
         IsDone = function(self, id)
@@ -413,18 +413,18 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroPlaceCannonAt] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceCannonAt}
-            c.Bottom = ev.BottomType
-            c.Top = ev.TopType
+            c.Bottom = ev.FoundationType
+            c.Top = ev.CannonType
             c.X = ev.Position.X
             c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -437,16 +437,16 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroPlaceBombAt] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceBombAt}
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            c.X = ev.X
+            c.Y = ev.Y
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -459,14 +459,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityAttackPos] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityAttackPos}
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then -- always add to queue, cause sometimes this gets cancelled
+            c.X = ev.X
+            c.Y = ev.Y
+            CommandQueue.AddToEntity(ev.EntityID, c)
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then -- always add to queue, cause sometimes this gets cancelled
                 return
             end
             return true
@@ -481,16 +481,16 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroSendHawkToPos] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroSendHawkToPos}
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            c.X = ev.X
+            c.Y = ev.Y
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -503,16 +503,16 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandScoutUseBinocularsAt] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandScoutUseBinocularsAt}
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            c.X = ev.X
+            c.Y = ev.Y
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -526,16 +526,16 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandScoutPlaceTorchAtPos] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandScoutPlaceTorchAtPos}
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            c.X = ev.X
+            c.Y = ev.Y
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -548,19 +548,19 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityMove] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityMove}
-            c.X = ev.Positions[1].X
-            c.Y = ev.Positions[1].Y
-            if ev.Rotation~=-1 then
-                c.Rot = ev.Rotation
+            c.X = ev.Position[1].X
+            c.Y = ev.Position[1].Y
+            if ev.Orientation~=-1 then
+                c.Rot = math.deg(ev.Orientation)
             end
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -573,18 +573,18 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityPatrol] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityPatrol}
-            for i,p in ipairs(ev.Positions) do
+            for i,p in ipairs(ev.Position) do
                 c["X"..i] = p.X
                 c["Y"..i] = p.Y
             end
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -603,14 +603,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandLeaderHoldPosition] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandLeaderHoldPosition}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -624,14 +624,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandLeaderDefend] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandLeaderDefend}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -645,14 +645,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroActivateCamouflage] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroActivateCamouflage}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -665,14 +665,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroActivateSummon] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroActivateSummon}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -685,14 +685,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroAffectEntities] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroAffectEntities}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -705,14 +705,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroCircularAttack] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroCircularAttack}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -725,14 +725,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroInflictFear] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroInflictFear}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -745,14 +745,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandHeroMotivateWorkers] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroMotivateWorkers}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -765,14 +765,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandScoutFindResources] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandScoutFindResources}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -785,14 +785,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandSerfTurnToBattleSerf] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfTurnToBattleSerf}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -805,14 +805,14 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandBattleSerfTurnToSerf] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.EntityID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandBattleSerfTurnToSerf}
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
         IsDone = function(self, id)
@@ -825,42 +825,42 @@ CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandPlaceBuilding] = {
         Add = function(self, ev, queue)
             if not queue then
-                for _,id in ipairs(ev.Serfs) do
+                for _,id in ipairs(ev.Serf) do
                     CommandQueue.ClearEntity(id)
                 end
                 return
             end
-            local ty = Logic.GetBuildingTypeByUpgradeCategory(ev.UpgradeCategory, ev.PlayerId)
+            local ty = Logic.GetBuildingTypeByUpgradeCategory(ev.EntityType, ev.PlayerID)
             local bon = 0
             local bty = CppLogic.EntityType.Building.GetBuildOnTypes(ty)
             if bty[1] then
                 bon = Logic.GetEntityAtPosition(ev.Position.X, ev.Position.Y)
             end
-            if not CppLogic.Logic.CanPlaceBuildingAt(ty, ev.PlayerId, ev.Position, ev.Position.r, bon) then
+            if not CppLogic.Logic.CanPlaceBuildingAt(ty, ev.PlayerID, ev.Position, math.deg(ev.Orientation), bon) then
                 Message("err cannot place!")
                 return true
             end
-            if not SubFromPlayersResources(CppLogic.EntityType.Building.GetConstructionCost(ty), true, true, ev.PlayerId) then
+            if not SubFromPlayersResources(CppLogic.EntityType.Building.GetConstructionCost(ty), true, true, ev.PlayerID) then
                 return true
             end
-            MPSyncer.ExecuteSynced("CommandQueuePlaceBuilding", ty, ev.Position.X, ev.Position.Y, ev.Position.r, ev.PlayerId, ev.Serfs)
+            MPSyncer.ExecuteSynced("CommandQueuePlaceBuilding", ty, ev.Position.X, ev.Position.Y, math.deg(ev.Orientation), ev.PlayerID, ev.Serf)
             return true
         end
     },
     [CNetEventCallbacks.CNetEvents.CommandSerfExtractResource] = {
         Add = function(self, ev, queue)
             if not queue then
-                CommandQueue.ClearEntity(ev.EntityId)
+                CommandQueue.ClearEntity(ev.SerfID)
                 return
             end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityId) then
+            if CppLogic.Entity.Settler.IsIdle(ev.SerfID) then
                 return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfExtractResource}
             c.Res = ev.ResourceType
             c.X = ev.Position.X
             c.Y = ev.Position.Y
-            CommandQueue.AddToEntity(ev.EntityId, c)
+            CommandQueue.AddToEntity(ev.SerfID, c)
             return true
         end,
         IsDone = function(self, id)

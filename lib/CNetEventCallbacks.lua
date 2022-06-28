@@ -22,7 +22,7 @@ end --mcbPacker.ignore
 -- - CNetEventSubclass:									(prameter list)
 -- 		CommandName							Optionen, dasselbe in Lua zu erreichen
 -- 
--- - EGL::CNetEvent2Entities:							{ActorId, TargetId}
+-- - EGL::CNetEvent2Entities:							{EntityID1, EntityID2} (normalerweise ActorId, TargetId)
 -- 		CommandEntityAttackEntity			Logic.GroupAttack
 --		CommandSerfConstructBuilding		CppLogic.Entity.Settler.CommandSerfConstructBuilding
 --		CommandSerfRepairBuilding			CppLogic.Entity.Settler.CommandSerfRepairBuilding
@@ -37,21 +37,21 @@ end --mcbPacker.ignore
 --		69688
 --		69693
 -- 
--- - GGL::CNetEventCannonCreator:						{EntityId, BottomType, TopType, Position}
+-- - GGL::CNetEventCannonCreator:						{EntityID, FoundationType, CannonType, Position, Orientation(rad)}
 --		CommandHeroPlaceCannonAt			CppLogic.Entity.Settler.CommandPlaceCannon
 -- 
--- - EGL::CNetEventEntityAndPos:						{EntityId, Position}
+-- - EGL::CNetEventEntityAndPos:						{EntityID, X, Y}
 -- 		CommandHeroPlaceBombAt				CppLogic.Entity.Settler.CommandPlaceBomb
 -- 		CommandEntityAttackPos				Logic.GroupAttackMove
 -- 		CommandHeroSendHawkToPos			GUI.SendHawk/CppLogic.Entity.Settler.CommandSendHawk
 -- 		CommandScoutUseBinocularsAt			CppLogic.Entity.Settler.CommandBinocular
 -- 		CommandScoutPlaceTorchAtPos			CppLogic.Entity.Settler.CommandPlaceTorch
 -- 
--- - EGL::CNetEventEntityAndPosArray:					{EntityId, Positions, Rotation}
+-- - EGL::CNetEventEntityAndPosArray:					{EntityID, Position, Orientation(rad)} (Position ist array of {X,Y})
 -- 		CommandEntityMove					Logic.MoveSettler
 -- 		CommandEntityPatrol					Logic.GroupPatrol + Logic.GroupAddPatrolPoint
 -- 
--- - EGL::CNetEventEntityID:							{EntityId}
+-- - EGL::CNetEventEntityID:							{EntityID}
 -- 		CommandBuildingStartUpgrade			GUI.UpgradeSingleBuilding/CppLogic.Entity.Building.StartUpgrade
 -- 		CommandLeaderBuySoldier				CppLogic.Entity.Building.BarracksBuySoldierForLeader
 -- 		CommandSettlerExpell				CppLogic.Entity.Settler.CommandExpell
@@ -78,15 +78,15 @@ end --mcbPacker.ignore
 --		69652
 --		69666
 -- 
--- - GGL::CNetEventBuildingCreator:						{PlayerId, UpgradeCategory, Position{X,Y,r}, Serfs{id1,id2,...}}
+-- - GGL::CNetEventBuildingCreator:						{PlayerID, EntityType(is ucat), Position, Orientation(rad), Serf{id1,id2,...}} (crasht wenn Serf leer)
 -- 		CommandPlaceBuilding				Logic.CreateConstructionSite + CppLogic.Entity.Settler.CommandSerfConstructBuilding
 -- 
--- - EGL::CNetEventEntityIDAndPlayerID:					{PlayerId, EntityId}
+-- - EGL::CNetEventEntityIDAndPlayerID:					{PlayerID, EntityID}
 -- 		CommandHQBuySerf					CppLogic.Entity.Building.HQBuySerf
 -- 		CommandBuildingSell					CppLogic.Entity.Building.SellBuilding
 -- 		69639
 -- 
--- - EGL::CNetEventPlayerID:							{PlayerId}
+-- - EGL::CNetEventPlayerID:							{PlayerID}
 -- 		CommandPlayerActivateAlarm			CppLogic.Logic.PlayerActivateAlarm
 -- 		CommandPlayerDeactivateAlarm		CppLogic.Logic.PlayerDeactivateAlarm
 -- 		69637
@@ -94,34 +94,34 @@ end --mcbPacker.ignore
 -- 		69674
 -- 		69675
 -- 
--- - EGL::CNetEventIntegerAndPlayerID:					{PlayerId, Int}
+-- - EGL::CNetEventIntegerAndPlayerID:					{PlayerID, Value}
 -- 		PlayerUpgradeSettlerCategory		GUI.UpgradeSettlerCategory/CppLogic.Logic.PlayerUpgradeSettlerCategory
 -- 		CommandPlayerSetTaxes				GUI.SetTaxLevel/CppLogic.Logic.PlayerSetTaxLevel
 -- 		CommandWeathermachineChangeWeather	GUI.SetWeather/CppLogic.Logic.PlayerActivateWeatherMachine
 -- 		CommandMonasteryBlessSettlerGroup	GUI.BlessByBlessCategory/CppLogic.Logic.PlayerBlessSettlers
 -- 		69641
 -- 
--- - EGL::CNetEventPlayerIDAndInteger:					{PlayerId, Int}
+-- - EGL::CNetEventPlayerIDAndInteger:					{PlayerID, Value}
 --  	CommandPlayerPayTribute				GUI.PayTribute
 -- 
 -- - EGL::CNetEvent2PlayerIDsAndInteger:				???
 -- 		69671
 -- 
--- - GGL::CNetEventEntityIDAndUpgradeCategory:			{EntityId, UprgadeCategory}
+-- - GGL::CNetEventEntityIDAndUpgradeCategory:			{EntityID, UpgradeCategory}
 -- 		CommandBarracksBuyLeader			Logic.BarracksBuyLeader
 -- 
--- - EGL::CNetEventEntityIDAndInteger:					{EntityId, Int}
+-- - EGL::CNetEventEntityIDAndInteger:					{EntityID, Value}
 -- 		CommandLeaderSetFormation			Logic.LeaderChangeFormationType
 -- 		CommandBuildingSetCurrentMaxWorkers	Logic.SetCurrentMaxNumWorkersInBuilding
 -- 		CommandFoundryBuildCannon			PostEvent.FoundryConstructCannon/CppLogic.Entity.Building.CommandFoundryBuildCannon
 -- 
--- - GGL::CNetEventExtractResource:						{EntityId, ResourceType, Position}
+-- - GGL::CNetEventExtractResource:						{SerfID, ResourceType, Position}
 -- 		CommandSerfExtractResource			CppLogic.Entity.Settler.CommandSerfExtract
 -- 
--- - GGL::CNetEventTechnologyAndEntityID:				{EntityId, Technology}
+-- - GGL::CNetEventTechnologyAndEntityID:				{EntityID, TechnologyType}
 -- 		CommandBuildingStartResearch		GUI.StartResearch/CppLogic.Entity.Building.StartResearch
 -- 
--- - GGL::CNetEventTransaction:							{EntityId, SellType, BuyType, BuyAmount}
+-- - GGL::CNetEventTransaction:							{MarketID, SellResource, BuyResource, BuyAmount}
 -- 		CommandMarketStartTrade				GUI.StartTransaction/CppLogic.Entity.Building.MarketStartTrade
 -- 
 -- - GGL::CNetEventPlayerResourceDonation:				???
