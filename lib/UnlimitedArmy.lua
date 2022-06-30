@@ -1456,7 +1456,7 @@ function UnlimitedArmy.MoveAndSetTargetRotationClamp(id, pos, r)
 	if pos.Y < 0 then
 		pos.Y = 0
 	end
-	UnlimitedArmy.MoveAndSetTargetRotation(id, pos, t)
+	UnlimitedArmy.MoveAndSetTargetRotation(id, pos, r)
 end
 
 UnlimitedArmy:AStatic()
