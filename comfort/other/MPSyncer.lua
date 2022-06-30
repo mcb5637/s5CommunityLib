@@ -384,6 +384,7 @@ end
 
 function MPSyncer.recievedInit(player)
 	local p = tonumber(player)
+	assert(type(p)=="number")
 	MPSyncer.Log("init recieved from "..p)
 	if p~=GUI.GetPlayerID() then
 		MPSyncer.warningRepeat = true
@@ -504,7 +505,9 @@ function MPSyncer.VirtualFuncs.Create(func, vname, ...)
 	local serializer = {}
 	local deserializer = {}
 	local check = {}
-	for i,a in ipairs(arg) do
+	---@type table[]
+	local ar = arg
+	for i,a in ipairs(ar) do
 		pattern = pattern..a.pattern..", "
 		table.insert(serializer, a.serialize)
 		table.insert(deserializer, a.deserialize)

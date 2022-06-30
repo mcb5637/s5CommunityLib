@@ -35,41 +35,6 @@ LuaObject = {Methods = {}, Base = nil, Statics={}, Creators={}, Class=nil}
 
 LuaObjectDatabase = {LuaObject = LuaObject}
 
-function LuaObject.Statics:CreateSubClass(classname)
-	local t = {}
-	t.Methods = {}
-	t.Statics = {}
-	for k,v in pairs(self.Statics) do
-		t.Statics[k] = v
-	end
-	--t.Statics.Methods = nil
-	for k,v in pairs(self.Methods) do
-		t.Methods[k] = v
-	end
-	for _,n in ipairs{"AStatic", "AMethod", "AReference", "FinalizeClass"} do
-		t[n] = LuaObject.Creators[n]
-	end
-	t.Base = self
-	LuaObjectDatabase[classname] = t
-	return t
-end
-
-function LuaObject.Methods.Init()
-	
-end
-
---- @return LuaObject
-function LuaObject.Statics:New(...)
-	local t = {}
-	for k,v in pairs(self.Methods) do
-		t[k] = v
-	end
-	t.Class = self
-	t:Init(unpack(arg))
-	t.Init = nil
-	return t
-end
-
 function LuaObject:AStatic()
 	setmetatable(self, {
 		__newindex = function(t, k, v)
@@ -95,6 +60,44 @@ function LuaObject:AReference()
 			setmetatable(t, nil)
 		end,
 	})
+end
+
+LuaObject:AStatic()
+function LuaObject:CreateSubClass(classname)
+	local t = {}
+	t.Methods = {}
+	t.Statics = {}
+	for k,v in pairs(self.Statics) do
+		t.Statics[k] = v
+	end
+	--t.Statics.Methods = nil
+	for k,v in pairs(self.Methods) do
+		t.Methods[k] = v
+	end
+	for _,n in ipairs{"AStatic", "AMethod", "AReference", "FinalizeClass"} do
+		t[n] = LuaObject.Creators[n]
+	end
+	t.Base = self
+	LuaObjectDatabase[classname] = t
+	return t
+end
+
+LuaObject:AMethod()
+function LuaObject.Init()
+	
+end
+
+LuaObject:AStatic()
+--- @return LuaObject
+function LuaObject:New(...)
+	local t = {}
+	for k,v in pairs(self.Methods) do
+		t[k] = v
+	end
+	t.Class = self
+	t:Init(unpack(arg))
+	t.Init = nil
+	return t
 end
 
 function LuaObject:FinalizeClass()

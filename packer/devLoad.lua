@@ -72,6 +72,7 @@ function mcbPacker.DoesReallyHaveDebugger()
 		if LuaDebugger.Log then
 			-- c funcs cannot be dumped, so dump throws an error
 			xpcall(function()
+---@diagnostic disable-next-line: discard-returns
 				string.dump(LuaDebugger.Log)
 			end, function() mcbPacker.HasDebugger = true end)
 		end

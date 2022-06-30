@@ -28,12 +28,17 @@
 -- - C lib function: theoretically also a note, but as S5 makes extensive use of them, does not generate a note. they become nil on loadig.
 -- - tables of C lib funcs that get added by C lib code: savegame routine most likely overrides your lib table by the empty one from the savegame.
 --		(use FrameworkWrapper.Savegame.DoNotSaveGlobals as a workaround).
+---@param t nil|table
+---@param str nil|string
+---@param done nil|table
 function CheckGlobalsForSavegame(t, str, done)
 	if t==nil then
 		t = _G
 		str = "_G"
 		done = {}
 	end
+	str = str or "_G"
+	done = done or {}
 	local maxs = 25000
 	if type(t)=="table" then
 		if not done[t] then

@@ -191,7 +191,11 @@ function TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mou
             return false
         end
         if CppLogic.Logic.LandscapeGetSector(p) ~= sector then
-            p = CppLogic.Logic.LandscapeGetNearestUnblockedPosInSector(p, sector, 2000)
+            local p2 = CppLogic.Logic.LandscapeGetNearestUnblockedPosInSector(p, sector, 2000)
+            if p2 == nil then
+                return false
+            end
+            p = p2
         end
         if not IsValidPosition(p) or CppLogic.Logic.LandscapeGetSector(p) ~= sector then
             return false

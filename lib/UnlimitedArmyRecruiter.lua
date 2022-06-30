@@ -370,6 +370,7 @@ function UnlimitedArmyRecruiter:Remove(detachedFunc, detachedObj)
 		return
 	end
 	if self.Army then
+---@diagnostic disable-next-line: assign-type-mismatch
 		self.Army.Spawner = nil
 		self.Army = nil
 	end
@@ -401,6 +402,7 @@ function UnlimitedArmyRecruiter:AddUCat(ucat, spawnnum, looped)
 		UCat = assert(ucat),
 		SpawnNum = assert(spawnnum),
 		Looped = looped,
+		---@type number
 		CurrNum = nil,
 	}
 	self:ResetUCatNum(t)

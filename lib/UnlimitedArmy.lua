@@ -98,15 +98,15 @@ end --mcbPacker.ignore
 -- - TargetFilter
 -- - IsValidPosition
 --- @class UnlimitedArmy : LuaObject
-UnlimitedArmy = {Leaders=nil, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
+UnlimitedArmy = {Leaders={}, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=nil, Trigger=nil,
 	Area=nil, CurrentBattleTarget=nil, Target=nil, FormationRotation=nil, Formation=nil,
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
-	CannonCommandCache=nil, LeaderTransit=nil, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
+	CannonCommandCache=nil, LeaderTransit={}, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
-	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil, UACore=nil, UASaveData=nil, TroopsPerLine=nil, ChaoticCache=nil, EntityChangedTriggerId=nil,
+	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil, UACore=nil, UASaveData=nil, TroopsPerLine=nil, ChaoticCache={}, EntityChangedTriggerId=nil,
 	PreSaveTriggerId=nil, ConversionTrigger=nil
 }
---- @type UnlimitedArmyFiller
+--- @type UnlimitedArmyFiller|nil
 UnlimitedArmy.Spawner = nil
 --- @type UnlimitedArmy
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
@@ -121,6 +121,7 @@ function UnlimitedArmy:New(data) end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:Init(data)
 	self:CallBaseMethod("Init", UnlimitedArmy)
+	---@type number[]
 	self.Leaders = {}
 	self.Player = assert(data.Player)
 	self.Area = assert(data.Area)
@@ -139,6 +140,7 @@ function UnlimitedArmy:Init(data)
 	self.HeroTargetingCache = {}
 	self.FormationResets = {}
 	self.CannonCommandCache = {}
+	---@type number[]
 	self.LeaderTransit = {}
 	self.DeadHeroes={}
 	self.SpeedNormalizationFactors={}
@@ -459,7 +461,7 @@ function UnlimitedArmy:KillAllLeaders()
 end
 
 UnlimitedArmy:AMethod()
---- @return table
+--- @return Position
 function UnlimitedArmy:GetPosition()
 	self:CheckValidArmy()
 	self:CheckUACore()
@@ -692,6 +694,9 @@ function UnlimitedArmy:IsDead()
 end
 
 UnlimitedArmy:AMethod()
+---@return number[]
+---@return number[]
+---@return number[]
 function UnlimitedArmy:GetRangedAndMelee()
 	self:CheckValidArmy()
 	self:CheckUACore()
@@ -1490,7 +1495,6 @@ UnlimitedArmy:AStatic()
 UnlimitedArmy.Formations = {}
 --- @param army UnlimitedArmy
 function UnlimitedArmy.Formations.Chaotic(army, pos)
-	army.ChaoticCache = army.ChaoticCache or {}
 	local l = math.sqrt(army:GetSize(false, false))*150
 	for id in army:Iterator(false) do
 		if not army.ChaoticCache[id] then
@@ -1675,13 +1679,19 @@ UnlimitedArmyFiller.Army = nil
 UnlimitedArmyFiller = LuaObject:CreateSubClass("UnlimitedArmyFiller")
 
 UnlimitedArmyFiller:AMethod()
-UnlimitedArmyFiller.Tick = LuaObject_AbstractMethod
+function UnlimitedArmyFiller:Tick(active)
+	LuaObject_AbstractMethod()
+end
 
 UnlimitedArmyFiller:AMethod()
-UnlimitedArmyFiller.IsDead = LuaObject_AbstractMethod
+function UnlimitedArmyFiller:IsDead()
+	LuaObject_AbstractMethod()
+end
 
 UnlimitedArmyFiller:AMethod()
-UnlimitedArmyFiller.Remove = LuaObject_AbstractMethod
+function UnlimitedArmyFiller:Remove()
+	LuaObject_AbstractMethod()
+end
 
 UnlimitedArmyFiller:AMethod()
 UnlimitedArmyFiller.ArmySize = 0
