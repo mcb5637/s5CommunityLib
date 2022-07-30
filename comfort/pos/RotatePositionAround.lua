@@ -30,8 +30,8 @@ function RotatePositionAround(pos, angle, center)
 	angle = math.rad(angle)
     local s = math.sin(angle)
     local c = math.cos(angle)
-	local x = p.X - center.X
-	local y = p.Y - center.Y
-    return { X= x * c + y * s + center.X, Y= x * s + y * c + center.Y }
+	local x = pos.X - center.X
+	local y = pos.Y - center.Y
+    return { X= x * c - y * s + center.X, Y= x * s + y * c + center.Y }
 	--return GetCirclePosition(center, GetDistance(center, pos), GetAngleBetween(center, pos)+angle)
 end

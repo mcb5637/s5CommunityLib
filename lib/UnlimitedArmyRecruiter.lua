@@ -292,9 +292,14 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 		if self:CheckResources(c, true) then
 			UnlimitedArmyRecruiter.NumCache[buyingAt] = UnlimitedArmyRecruiter.NumCache[buyingAt] + 1
 			if buyT then
-				self.TriggerType = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
-				self.TriggerBuild = buyingAt
-				Logic.BarracksBuyLeader(buyingAt, self.UCats[index].UCat)
+				if UnlimitedArmy.HasHook() then
+					local id = CppLogic.Entity.Building.BarracksBuyLeaderByType(buyingAt, Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player), true)
+					self:AddRecruitedLeader(id, buyingAt)
+				else
+					self.TriggerType = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
+					self.TriggerBuild = buyingAt
+					Logic.BarracksBuyLeader(buyingAt, self.UCats[index].UCat)
+				end
 			else
 				local ty = Logic.GetSettlerTypeByUpgradeCategory(self.UCats[index].UCat, self.Army.Player)
 				if UnlimitedArmy.HasHook() then
@@ -432,6 +437,9 @@ UnlimitedArmyRecruiter.SpawnOffset = {
 
 UnlimitedArmyRecruiter:AMethod()
 function UnlimitedArmyRecruiter:CheckAddRecruitment()
+	if UnlimitedArmy.HasHook() then
+		return
+	end
 	self:CheckValidSpawner()
 	local id = Event.GetEntityID()
 	if Logic.GetEntityType(id)~=self.TriggerType then
@@ -441,20 +449,25 @@ function UnlimitedArmyRecruiter:CheckAddRecruitment()
 	local tp = GetPosition(self.TriggerBuild)
 	local off = UnlimitedArmyRecruiter.SpawnOffset[Logic.GetEntityType(self.TriggerBuild)]
 	if GetDistance(ep, {X=tp.X+off.X, Y=tp.Y+off.Y}) <= 200 then
-		--- @class UnlimitedArmyRecruiterInRec
-		local t = {Id=id, Building=self.TriggerBuild}
-		table.insert(self.InRecruitment, t)
-		if self.ResCheat then
-			local c = {}
-			Logic.FillSoldierCostsTable(self.Army.Player, Logic.LeaderGetSoldierUpgradeCategory(id), c)
-			local snum = Logic.LeaderGetMaxNumberOfSoldiers(id)
-			for r,a in pairs(c) do
-				Logic.AddToPlayersGlobalResource(self.Army.Player, r, a*snum)
-			end
-		end
+		self:AddRecruitedLeader(id, self.TriggerBuild)
 		self.TriggerBuild = nil
 		self.TriggerType = nil
 		return
+	end
+end
+
+UnlimitedArmyRecruiter:AMethod()
+function UnlimitedArmyRecruiter:AddRecruitedLeader(id, rax)
+	--- @class UnlimitedArmyRecruiterInRec
+	local t = {Id=id, Building=rax}
+	table.insert(self.InRecruitment, t)
+	if self.ResCheat then
+		local c = {}
+		Logic.FillSoldierCostsTable(self.Army.Player, Logic.LeaderGetSoldierUpgradeCategory(id), c)
+		local snum = Logic.LeaderGetMaxNumberOfSoldiers(id)
+		for r,a in pairs(c) do
+			Logic.AddToPlayersGlobalResource(self.Army.Player, r, a*snum)
+		end
 	end
 end
 

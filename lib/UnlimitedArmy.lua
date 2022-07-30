@@ -103,11 +103,13 @@ UnlimitedArmy = {Leaders={}, Player=nil, AutoDestroyIfEmpty=nil, HadOneLeader=ni
 	CommandQueue=nil, ReMove=nil, HeroTargetingCache=nil, PrepDefense=nil, FormationResets=nil, DestroyBridges=nil,
 	CannonCommandCache=nil, LeaderTransit={}, TransitAttackMove=nil, LeaderFormation=nil, AIActive=nil, SpawnerActive=nil,
 	DeadHeroes=nil, DefendDoNotHelpHeroes=nil, AutoRotateRange=nil, LowestSpeed=nil, DoNotNormalizeSpeed=nil, SpeedNormalizationFactors=nil,
-	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil, UACore=nil, UASaveData=nil, TroopsPerLine=nil, ChaoticCache={}, EntityChangedTriggerId=nil,
+	PosCacheTick=-100, PosCache=nil, IgnoreFleeing=nil, ForceNoHook=nil, UASaveData=nil, TroopsPerLine=nil, ChaoticCache={}, EntityChangedTriggerId=nil,
 	PreSaveTriggerId=nil, ConversionTrigger=nil
 }
 --- @type UnlimitedArmyFiller|nil
 UnlimitedArmy.Spawner = nil
+---@type UACore|nil
+UnlimitedArmy.UACore = nil
 --- @type UnlimitedArmy
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
 
@@ -181,7 +183,7 @@ function UnlimitedArmy:CheckUACore()
 			end
 		end, function(nor, force)
 			self:NormalizeSpeed(nor, force)
-		end)
+		end, GetRandom(0, 1073741824))
 		if self.UASaveData then
 			self.UACore:ReadTable(self.UASaveData)
 		else
