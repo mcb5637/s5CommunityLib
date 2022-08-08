@@ -11,7 +11,6 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/comfort/other/SimpleSynchronizer")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLanguage")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLocalizedTextInTable")
-    mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
     mcbPacker.require("s5CommunityLib/lib/placeholder/ReplacePlaceholders")
     mcbPacker.require("s5CommunityLib/lib/cinematic/CinematicEvent")
 end

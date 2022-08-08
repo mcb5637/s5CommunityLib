@@ -1,7 +1,7 @@
 ---
 --- Returns the extension number. This function can be used to identify the
 --- current expansion of the game.
---- @return number Extension
+--- @return number Extension Game extension
 --- @author totalwarANGEL
 function GetExtensionNumber()
     local Version = Framework.GetProgramVersion();

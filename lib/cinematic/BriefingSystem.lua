@@ -15,7 +15,6 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/comfort/other/SimpleSynchronizer")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLanguage")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLocalizedTextInTable")
-    mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
     mcbPacker.require("s5CommunityLib/lib/placeholder/ReplacePlaceholders")
     mcbPacker.require("s5CommunityLib/lib/cinematic/CinematicEvent")
 end
@@ -173,10 +172,12 @@ function BriefingSystem:Install()
         end
         self:CreateScriptEvents();
         self:OverrideBriefingFunctions();
-        self.m_Book.Job = StartSimpleHiResJob(function()
-            BriefingSystem:ControlBriefing();
-        end);
+        self.m_Book.Job = StartSimpleHiResJob("Internal_BriefingSystem_ControlBriefing");
     end
+end
+
+function Internal_BriefingSystem_ControlBriefing()
+    return BriefingSystem:ControlBriefing();
 end
 
 function BriefingSystem:CreateScriptEvents()
@@ -380,6 +381,7 @@ function BriefingSystem:AddPages(_Briefing)
     ---
     local AP = function(_Page)
         if _Page == nil then
+            ---@diagnostic disable-next-line: cast-local-type
             _Page = -1;
         end
         if type(_Page) == "table" then
@@ -399,6 +401,7 @@ function BriefingSystem:AddPages(_Briefing)
             end
         end
         table.insert(_Briefing, _Page);
+        ---@diagnostic disable-next-line: return-type-mismatch
         return _Page;
     end
 
@@ -941,29 +944,34 @@ function BriefingSystem:InitalizeFaderForBriefingPage(_PlayerID, _Page)
 end
 
 function BriefingSystem:StartFader(_PlayerID, _Duration, _FadeIn)
-    self.m_Fader[_PlayerID].FadeInJob = StartSimpleHiResJob(
-        function(_PlayerID, _Duration, _StartTime, _FadeIn)
-            return BriefingSystem:FaderVisibilityController(_PlayerID, _Duration, _StartTime, _FadeIn)
-        end,
-        _PlayerID,
-        _Duration * 1000,
-        Logic.GetTimeMs(),
-        _FadeIn == true
+    self.m_Fader[_PlayerID].FadeInJob = Trigger.RequestTrigger(
+        Events.LOGIC_EVENT_EVERY_TURN,
+        "",
+        "Internal_BriefingSystem_StartFader",
+        1,
+        {},
+        {_PlayerID, _Duration, Logic.GetTimeMs(), _FadeIn == true}
     );
     self:SetFaderAlpha(_PlayerID, (_FadeIn == true and 1) or 0);
 end
 
+function Internal_BriefingSystem_StartFader(_PlayerID, _Duration, _StartTime, _FadeIn)
+    return BriefingSystem:FaderVisibilityController(_PlayerID, _Duration, _StartTime, _FadeIn);
+end
 
 function BriefingSystem:StartFaderDelayed(_PlayerID, _Waittime, _Duration, _FadeIn)
-    self.m_Fader[_PlayerID].FadeOutJob = StartSimpleHiResJob(
-        function(_PlayerID, _Duration, _StartTime, _FadeIn)
-            return BriefingSystem:FaderDelayController(_PlayerID, _Duration, _StartTime, _FadeIn)
-        end,
-        _PlayerID,
-        _Duration,
-        _Waittime * 1000,
-        _FadeIn == true
+    self.m_Fader[_PlayerID].FadeOutJob = Trigger.RequestTrigger(
+        Events.LOGIC_EVENT_EVERY_TURN,
+        "",
+        "Internal_BriefingSystem_StartFaderDelayed",
+        1,
+        {},
+        {_PlayerID, _Duration, _Waittime * 1000, _FadeIn == true}
     );
+end
+
+function Internal_BriefingSystem_StartFaderDelayed(_PlayerID, _Duration, _StartTime, _FadeIn)
+    return BriefingSystem:FaderDelayController(_PlayerID, _Duration, _StartTime, _FadeIn)
 end
 
 function BriefingSystem:StopFader(_PlayerID)
