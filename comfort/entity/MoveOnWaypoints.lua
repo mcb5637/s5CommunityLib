@@ -63,12 +63,8 @@ function MoveOnWaypoints(_Entity, _Vanish, ...)
              arg[i].Callback}
         );
     end
-    local RequestTrigger = Trigger.RequestTrigger;
-    if TriggerFix.RequestTrigger then
-        RequestTrigger = TriggerFix.RequestTrigger;
-    end
     ---@diagnostic disable-next-line: return-type-mismatch
-    return RequestTrigger(
+    return Trigger.RequestTrigger(
         Events.LOGIC_EVENT_EVERY_SECOND,
         "",
         "Internal_MoveOnWaypointsController",

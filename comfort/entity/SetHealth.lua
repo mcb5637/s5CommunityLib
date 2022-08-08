@@ -5,12 +5,6 @@
 --- @author totalwarANGEL
 function SetHealth(_Entity, _Percent)
     local ID = GetID(_Entity);
-    if Logic.IsLeader(ID) == 1 then
-        local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
-        for i= 2, Soldiers[1]+1, 1 do
-            SetHealth(Soldiers[i], _Percent);
-        end
-    end
     if Logic.IsBuilding(ID) == 0 and Logic.IsSettler(ID) == 0 then
         return;
     end
@@ -18,6 +12,12 @@ function SetHealth(_Entity, _Percent)
     local CurrentHealth = Logic.GetEntityHealth(ID);
     local Percentage = math.abs(math.min(math.max(_Percent, 0), 100))/100;
     if (CurrentHealth/MaxHealth) > (Percentage*MaxHealth) then
+        if (Percentage*MaxHealth) == 0 and Logic.IsLeader(ID) == 1 then
+            local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
+            for i= 2, Soldiers[1]+1, 1 do
+                DestroyEntity(Soldiers[i]);
+            end
+        end
         Logic.HurtEntity(ID, (CurrentHealth/MaxHealth) - (Percentage*MaxHealth));
     elseif (CurrentHealth/MaxHealth) < (Percentage*MaxHealth) then
         Logic.HealEntity(ID, (CurrentHealth/MaxHealth) + (Percentage*MaxHealth));

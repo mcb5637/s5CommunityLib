@@ -5,12 +5,8 @@
 --- @return number ID ID of moving job
 --- @author totalwarANGEL
 function MoveAndVanish(_Entity, _Target)
-    local RequestTrigger = Trigger.RequestTrigger;
-    if TriggerFix.RequestTrigger then
-        RequestTrigger = TriggerFix.RequestTrigger;
-    end
     ---@diagnostic disable-next-line: return-type-mismatch
-    return RequestTrigger(
+    return Trigger.RequestTrigger(
         Events.LOGIC_EVENT_EVERY_SECOND,
         "",
         "Internal_MoveAndVanishController",
