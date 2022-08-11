@@ -52,6 +52,7 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
         --CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
         TriggerFixCppLogicExtension.InitKillCb()
+        CppLogic.Logic.EnableExperienceClassFix(true) -- level 1 gibt boni, misschance boni funktionieren
         CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
         if not CEntity then
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
