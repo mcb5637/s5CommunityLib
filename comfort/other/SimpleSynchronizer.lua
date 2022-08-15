@@ -310,15 +310,16 @@ function SimpleSynchronizer:PayTribute(_PlayerID, _TributeID)
 end
 
 function SimpleSynchronizer:ActivateTributePaidTrigger()
-    -- FIXME: Does this work?
     Trigger.RequestTrigger(
         Events.LOGIC_EVENT_TRIBUTE_PAID,
         "",
-        function()
-            SimpleSynchronizer:OnTributePaidTrigger(Event.GetTributeUniqueID());
-        end,
+        "Internal_SimpleSynchronizer_TributePayedTrigger",
         1
     );
+end
+
+function Internal_SimpleSynchronizer_TributePayedTrigger()
+    SimpleSynchronizer:OnTributePaidTrigger(Event.GetTributeUniqueID());
 end
 
 function SimpleSynchronizer:OnTributePaidTrigger(_ID)

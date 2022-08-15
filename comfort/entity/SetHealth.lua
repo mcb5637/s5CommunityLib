@@ -15,7 +15,7 @@ function SetHealth(_Entity, _Percent)
         if (Percentage*MaxHealth) == 0 and Logic.IsLeader(ID) == 1 then
             local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
             for i= 2, Soldiers[1]+1, 1 do
-                DestroyEntity(Soldiers[i]);
+                SetHealth(Soldiers[i], 0);
             end
         end
         Logic.HurtEntity(ID, (CurrentHealth/MaxHealth) - (Percentage*MaxHealth));
