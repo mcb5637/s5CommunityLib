@@ -181,7 +181,13 @@ function SimpleSynchronizer:CreateSyncEvent(_Function)
     if CNetwork then
         CNetwork.SetNetworkHandler(
             self.SimpleSynchronizerEvent[ActionIndex].CNetwork,
-            _Function
+            function(_Name, _PlayerID, _ID, ...)
+                if SimpleSynchronizer.SimpleSynchronizerEvent[_ID] then
+                    if CNetwork.IsAllowedToManipulatePlayer(_Name, _PlayerID) then
+                        SimpleSynchronizer.SimpleSynchronizerEvent[_ID].Function(_Name, _PlayerID, unpack(arg));
+                    end
+                end
+            end
         );
     end
     return self.UniqueActionCounter;
@@ -203,7 +209,7 @@ function SimpleSynchronizer:SynchronizedCall(_ID, ...)
     end
     if CNetwork then
         local Name = self.SimpleSynchronizerEvent[_ID].CNetwork;
-        CNetwork.SendCommand(Name, unpack(arg));
+        CNetwork.SendCommand(Name, GUI.GetPlayerID(), _ID, unpack(arg));
     else
         local PlayerID = GUI.GetPlayerID();
         local Time = Logic.GetTimeMs();
