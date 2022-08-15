@@ -3,9 +3,9 @@
 -- @sort=true
 --
 
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/table/GetLanguage")
-end
+end --mcbPacker.ignore
 
 ---
 --- Replaces the placeholders in the message with their values.

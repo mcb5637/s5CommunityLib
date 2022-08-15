@@ -1,6 +1,6 @@
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/table/GetLanguage")
-end
+end --mcbPacker.ignore
 
 ---
 --- Returns the localized text from the input.

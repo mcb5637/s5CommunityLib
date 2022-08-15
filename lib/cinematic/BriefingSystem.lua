@@ -10,14 +10,14 @@
 --- @set sort=true
 ---
 
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
     mcbPacker.require("s5CommunityLib/comfort/other/SimpleSynchronizer")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLanguage")
     mcbPacker.require("s5CommunityLib/comfort/table/GetLocalizedTextInTable")
     mcbPacker.require("s5CommunityLib/lib/placeholder/ReplacePlaceholders")
     mcbPacker.require("s5CommunityLib/lib/cinematic/CinematicEvent")
-end
+end --mcbPacker.ignore
 
 BriefingSystem = {
     m_Book = {};

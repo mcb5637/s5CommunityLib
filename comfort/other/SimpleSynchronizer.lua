@@ -8,9 +8,9 @@
 -- @set sort=true
 --
 
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
-end
+end --mcbPacker.ignore
 
 SimpleSynchronizer = {
     SimpleSynchronizerEvent = {},

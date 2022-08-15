@@ -1,6 +1,6 @@
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/entity/SVLib")
-end
+end --mcbPacker.ignore
 
 ---
 --- Returns the leader entity ID of the soldier.

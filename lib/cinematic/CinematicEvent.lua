@@ -12,9 +12,9 @@
 --- @author totalwarANGEL
 ---
 
-if mcbPacker then
+if mcbPacker then --mcbPacker.ignore
     mcbPacker.require("s5CommunityLib/comfort/other/SimpleSynchronizer")
-end
+end --mcbPacker.ignore
 
 CinematicEvent = {
     CinematicEventID = 0;
