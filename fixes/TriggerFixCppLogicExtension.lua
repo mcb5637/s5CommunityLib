@@ -74,15 +74,15 @@ function TriggerFixCppLogicExtension.Init()
         -- damageclasses faktor gegen fur fixen
         TriggerFixCppLogicExtension.Backup.FurAC = {}
         for _,dc in pairs(DamageClasses) do
-            TriggerFixCppLogicExtension.Backup.FurAC[dc] = CppLogic.Logic.GetDamageFactor(dc, ArmorClasses.AC_Fur)
+            TriggerFixCppLogicExtension.Backup.FurAC[dc] = CppLogic.Logic.GetDamageFactor(dc, ArmorClasses.ArmorClassFur)
         end
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Strike, ArmorClasses.AC_Fur, 0.9)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Pierce, ArmorClasses.AC_Fur, 0.9)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Chaos, ArmorClasses.AC_Fur, 0.7)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Siege, ArmorClasses.AC_Fur, 0.2)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Hero, ArmorClasses.AC_Fur, 0.8)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.AC_Fur, 1)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.AC_Fur, 1.5)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Strike, ArmorClasses.ArmorClassFur, 0.9)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Pierce, ArmorClasses.ArmorClassFur, 0.9)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Chaos, ArmorClasses.ArmorClassFur, 0.7)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Siege, ArmorClasses.ArmorClassFur, 0.2)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Hero, ArmorClasses.ArmorClassFur, 0.8)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.ArmorClassFur, 1)
+        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.ArmorClassFur, 1.5)
         if not CEntity then
             for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- make battle task lists wait for anim uncancleable after firing projectile
                 CppLogic.Logic.TaskListMakeWaitForAnimsUnCancelable(tl[1], tl[2])
@@ -99,7 +99,7 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
             CppLogic.EntityType.SetAutoAttackDamage(ty, CppLogic.EntityType.GetAutoAttackDamage(ty), dc)
         end
         for dc, f in pairs(TriggerFixCppLogicExtension.Backup.FurAC) do
-            CppLogic.Logic.SetDamageFactor(dc, ArmorClasses.AC_Fur, f)
+            CppLogic.Logic.SetDamageFactor(dc, ArmorClasses.ArmorClassFur, f)
         end
         if not CEntity then
             for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do
