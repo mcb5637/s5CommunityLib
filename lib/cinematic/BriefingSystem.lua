@@ -44,47 +44,13 @@ BriefingSystem = {
 ---
 --- Starts the passed briefing As cinematic event.
 ---
---- The briefing can have the following attributes:
----
---- <table border="1">
---- <tr>
---- <td><b>Attributes</b></td>
---- <td><b>Type</b></td>
---- <td><b>Description</b></td>
---- </tr>
---- <tr>
---- <td>Starting</td>
---- <td>function</td>
---- <td>Method to be invoked before briefing starts.</td>
---- </tr>
---- <tr>
---- <td>Finished</td>
---- <td>function</td>
---- <td>Method to be invoked when briefing has finished.</td>
---- </tr>
---- <tr>
---- <td>DisableSkipping</td>
---- <td>boolean</td>
---- <td>Globaly disables skipping for the briefing.</td>
---- </tr>
---- <tr>
---- <td>RestoreCamera</td>
---- <td>boolean</td>
---- <td>Camera position is saved and restored after briefing ends.</td>
---- </tr>
---- <tr>
---- <td>RenderFoW</td>
---- <td>boolean</td>
---- <td>Shows the fog of war. This is a default setting and can be set for
---- each page seperatley.</td>
---- </tr>
---- <tr>
---- <td>RenderSky</td>
---- <td>boolean</td>
---- <td>Shows the sky. This is a default setting and can be set for each
---- page seperatley.</td>
---- </tr>
---- </table>
+--- Briefing attributes:
+---   - Briefing.Starting                     Method to be invoked before briefing starts.
+---   - Briefing.Finished                     Method to be invoked when briefing has finished.
+---   - Briefing.DisableSkipping              Globaly disables skipping for the briefing.
+---   - Briefing.RestoreCamera                Camera position is saved and restored after briefing ends.
+---   - Briefing.RenderFoW                    Shows the fog of war. This is a default setting and can be set for each page seperatley.
+---   - Briefing.RenderSky                    Shows the sky. This is a default setting and can be set for each page seperatley.
 ---
 --- @param _PlayerID number ID of Player
 --- @param _Name     number Name of briefing
@@ -97,19 +63,12 @@ end
 --- Creates the local briefing functions for adding pages.
 ---
 --- Functions created:
---- <ul>
---- <li>AP: Creates normal pages and multiple choice pages. You have full
---- control over all settings. It is also possible to do cutscene like
---- camera animations. Add a name to the page to make it easily accessable
---- via multiple choice.</li>
---- <li>ASP: Creates a simplyfied page. A short notation good for dialogs.
---- can be used in talkative missions. The first argument is an optional
---- name for the page to be used with multiple choice.</li>
---- <li>AMC: Creates a simplyfied multiple choice page. Answers are passed
---- after the action. Each answer consists of the text and the target where
---- the briefing jumps to. Target can also be a function that returns
---- the target.</li>
---- </ul>
+---   - AP:     Creates normal pages and multiple choice pages. You have full control over all settings. It is also possible to do
+---             cutscene like camera animations. Add a name to the page to make it easily accessable via multiple choice.
+---   - ASP:    Creates a simplyfied page. A short notation good for dialogs. can be used in talkative missions. The first argument
+---             is an optional name for the page to be used with multiple choice.</li>
+---   - AMC:    Creates a simplyfied multiple choice page. Answers are passed after the action. Each answer consists of the text and
+---             the target where the briefing jumps to. Target can also be a function that returns the target.
 ---
 --- @param _Briefing table Briefing
 --- @return function AP  AP function
@@ -257,124 +216,30 @@ function BriefingSystem:AddPages(_Briefing)
     ---
     --- Creates a page for the briefing.
     ---
-    --- Pages can have the following attributes:
+    --- Page attributes:
     ---
-    --- <table border="1">
-    --- <tr>
-    --- <td><b>Attributes</b></td>
-    --- <td><b>Type</b></td>
-    --- <td><b>Description</b></td>
-    --- </tr>
-    --- <tr>
-    --- <td>Name</td>
-    --- <td>string</td>
-    --- <td>(Optional) Name of the page</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Target</td>
-    --- <td>string|number</td>
-    --- <td>Scriptname or ID of target entity</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Title</td>
-    --- <td>string|table</td>
-    --- <td>Text to be shown as title. Can be localized.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Text</td>
-    --- <td>string|table</td>
-    --- <td>Text to be shown as page content. Can be localized.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>DialogCamera</td>
-    --- <td>boolean</td>
-    --- <td>Use dialog camera settings.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Action</td>
-    --- <td>function</td>
-    --- <td>Function to be called when page is shown. Will be called every time
-    --- the page is entered.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>CameraFlight</td>
-    --- <td>boolean</td>
-    --- <td>(Optional) Use a camera animation for the transition between the
-    --- pages camera settings and the settings of the previous page. Not possible
-    --- for the first page.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Duration</td>
-    --- <td>number</td>
-    --- <td>(Optional) Show time of the page in seconds.</td>
-    --- </tr>
-    --- <td>Height</td>
-    --- <td>number</td>
-    --- <td>(Optional) Sets the calculated camera height.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Distance</td>
-    --- <td>number</td>
-    --- <td>(Optional) Sets a different distance to the target.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Rotation</td>
-    --- <td>number</td>
-    --- <td>(Optional) Sets a different rotation angle then the default.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Angle</td>
-    --- <td>number</td>
-    --- <td>(Optional) Sets a different elevation angle then the default.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>DisableSkipping</td>
-    --- <td>boolean</td>
-    --- <td>Disables skipping for the current page.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>RenderFoW</td>
-    --- <td>boolean</td>
-    --- <td>Shows the fog of war.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>RenderSky</td>
-    --- <td>boolean</td>
-    --- <td>Shows the sky.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>FadeIn</td>
-    --- <td>number</td>
-    --- <td>(Optional) Duration of page fade in.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>FadeOut</td>
-    --- <td>number</td>
-    --- <td>(Optional) Duration of page fade out.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>FaderAlpha</td>
-    --- <td>number</td>
-    --- <td>(Optional) Opacity of fader mask. This must be used between two
-    --- fading animations in an extra page.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Minimap</td>
-    --- <td>boolean</td>
-    --- <td>Shows the minimap.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Signal</td>
-    --- <td>boolean</td>
-    --- <td>Marks the camera position on the minimap with a signal.</td>
-    --- </tr>
-    --- <tr>
-    --- <td>Explore</td>
-    --- <td>number</td>
-    --- <td>Reveals an area of the set size around the position. This area is
-    --- hidden again after the briefing ends.</td>
-    --- </tr>
-    --- </table>
+    ---   - Page.Name           (Optional) Name of the page
+    ---   - Page.Target         Scriptname or ID of target entity
+    ---   - Page.Title          Text to be shown as title. Can be localized.
+    ---   - Page.Text            Text to be shown as page content. Can be localized.
+    ---   - Page.DialogCamera    Use dialog camera settings.
+    ---   - Page.Action          Function to be called when page is shown. Will be called every time the page is entered.
+    ---   - Page.CameraFlight    (Optional) Use a camera animation for the transition between the pages camera settings and the settings
+    ---                          of the previous page. Not possible for the first page.
+    ---   - Page.Duration        (Optional) Show time of the page in seconds.
+    ---   - Page.Height          (Optional) Sets the calculated camera height.
+    ---   - Page.Distance        (Optional) Sets a different distance to the target.
+    ---   - Page.Rotation        (Optional) Sets a different rotation angle then the default.
+    ---   - Page.Angle           (Optional) Sets a different elevation angle then the default.
+    ---   - Page.DisableSkipping Disables skipping for the current page.
+    ---   - Page.RenderFoW       Shows the fog of war.
+    ---   - Page.RenderSky       Shows the sky.
+    ---   - Page.FadeIn          (Optional) Duration of page fade in.
+    ---   - Page.FadeOut         (Optional) Duration of page fade out.
+    ---   - Page.FaderAlpha      (Optional) Opacity of fader mask. This must be used between two fading animations in an extra page.
+    ---   - Page.Minimap         Shows the minimap.
+    ---   - Page.Signal          Marks the camera position on the minimap with a signal.
+    ---   - Page.Explore         Reveals an area of the set size around the position. This area is hidden again after the briefing ends.
     ---
     --- @param _Page table Definded page
     --- @return table Page Created page
