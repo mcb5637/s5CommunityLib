@@ -148,6 +148,7 @@ function UnlimitedArmy:Init(data)
 	self.SpeedNormalizationFactors={}
 	self.TransitAttackMove = data.TransitAttackMove
 	self.SpawnerActive = true
+	self.ChaoticCache = {}
 	self.Status = UnlimitedArmy.Status.Idle
 	if data.HiResJob then
 		self.Trigger = StartSimpleHiResJob(":Tick", self)
