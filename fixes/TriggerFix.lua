@@ -33,7 +33,7 @@
 -- 	- CEntity/CppLogic (nur Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY)
 --
 TriggerFix = {triggers={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
-	ScriptTriggers={}, TriggersToDelete={},
+	ScriptTriggers={}, TriggersToDelete={}, HurtTriggers={[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY]=true},
 }
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and not LuaDebugger.HandleXPCallErrorMessage and "Debugger" or "Xpcall")
 
@@ -107,7 +107,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
-		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+		if TriggerFix.HurtTriggers[event] then
 			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
@@ -128,7 +128,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			end
 		end
 	end
-	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+	if TriggerFix.HurtTriggers[event] then
 		TriggerFix.CreateEventHurtOut(cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
@@ -156,7 +156,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
-		if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+		if TriggerFix.HurtTriggers[event] then
 			TriggerFix.CreateEventHurtIn(cev)
 		end
 	end
@@ -180,7 +180,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			end
 		end
 	end
-	if event==Events.LOGIC_EVENT_ENTITY_HURT_ENTITY then
+	if TriggerFix.HurtTriggers[event] then
 		TriggerFix.CreateEventHurtOut(cev)
 	end
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
@@ -335,12 +335,13 @@ function TriggerFix.HackTrigger()
 	end
 end
 
-function TriggerFix.AddScriptTrigger(name)
+function TriggerFix.AddScriptTrigger(name, key)
 	assert(not Events[name])
-	TriggerFix.ScriptTriggers[name] = name
-	Events[name] = name
-	if not TriggerFix.triggers[name] then
-		TriggerFix.triggers[name] = {}
+	key = key or name
+	TriggerFix.ScriptTriggers[name] = key
+	Events[name] = key
+	if not TriggerFix.triggers[key] then
+		TriggerFix.triggers[key] = {}
 	end
 end
 
@@ -428,16 +429,13 @@ function TriggerFix.Init()
 		Events.LOGIC_EVENT_ENTITY_IN_RANGE_OF_ENTITY,
 		Events.LOGIC_EVENT_EVERY_SECOND, Events.LOGIC_EVENT_EVERY_TURN, Events.LOGIC_EVENT_GOODS_TRADED,
 		Events.LOGIC_EVENT_RESEARCH_DONE, Events.LOGIC_EVENT_TRIBUTE_PAID, Events.LOGIC_EVENT_WEATHER_STATE_CHANGED,
+		Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
 	} do
 		if not TriggerFix.triggers[event] then
 			TriggerFix.triggers[event] = {}
 		end
 		TriggerFix.RequestTrigger(event, nil, "TriggerFix_action", 1, nil, {event})
 	end
-	if not TriggerFix.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] then
-		TriggerFix.triggers[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY] = {}
-	end
-	TriggerFix.entityHurtEntityBaseTriggerId = TriggerFix.RequestTrigger(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, nil, "TriggerFix_action", 1, nil, {Events.LOGIC_EVENT_ENTITY_HURT_ENTITY})
 	StartSimpleJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, nil, f, 1, nil, arg)
 	end
@@ -526,7 +524,7 @@ TriggerFix.LowPriorityJob.Init()
 TriggerFix.KillTrigger = {}
 
 function TriggerFix.KillTrigger.Init()
-	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY")
+	TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY", Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY)
 	--table.insert(TriggerFix.afterTriggerCB, TriggerFix.KillTrigger.AfterTriggerCB)
 end
 function TriggerFix.KillTrigger.AfterTriggerCB(event)

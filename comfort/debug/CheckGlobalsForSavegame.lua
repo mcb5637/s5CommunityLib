@@ -9,7 +9,7 @@
 --
 -- error types:
 -- - invalid table key: tables may only contain keys that are strings or numbers, saving crashes otherwise.
--- - function/string too long: there is a size limit for functions and strings (exact limit not known), crashes on saving or loading.
+-- - function/string too long: there is a size limit for functions and strings, crashes on saving or loading.
 --		split functions/strings up into multiples as a workaround.
 -- - string table key with len >= 100: key sometines gets truncated, sometimes vanishes completely, might also crash. No fix known.
 -- warning types:
@@ -39,7 +39,7 @@ function CheckGlobalsForSavegame(t, str, done)
 	end
 	str = str or "_G"
 	done = done or {}
-	local maxs = 25000
+	local maxs = 16000-1
 	if type(t)=="table" then
 		if not done[t] then
 			done[t] = true

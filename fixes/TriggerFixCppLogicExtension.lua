@@ -43,10 +43,13 @@ TriggerFixCppLogicExtension.Backup.TaskListToFix = {
     {TaskLists.TL_BATTLE_VEHICLE, 17},
 }
 
-TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY")
+TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY", Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY)
 
 function TriggerFixCppLogicExtension.Init()
-    CppLogic.Entity.Settler.EnableConversionHook(TriggerFixCppLogicExtension.Hook)
+    CppLogic.Entity.Settler.EnableConversionHook()
+    if not CEntity then
+        CppLogic.Logic.SetPaydayCallback()
+    end
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
         CppLogic.Combat.EnableAoEProjectileFix() -- aoe projektile beachten damage/armorclass und schadensboni durch techs/helden
         CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
@@ -114,7 +117,7 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
     end
 end
 
-function TriggerFixCppLogicExtension.AddLeaveTrigger()
+function TriggerFixCppLogicExtension.OnMapStart()
     Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, "TriggerFixCppLogicExtension.OnLeaveMap", 1)
     Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, "TriggerFixCppLogicExtension.OnIdChanged", 1)
     TriggerFixCppLogicExtension.GameCallback_GUI_StateChanged = GameCallback_GUI_StateChanged
@@ -127,17 +130,19 @@ function TriggerFixCppLogicExtension.AddLeaveTrigger()
     return true
 end
 
-function TriggerFixCppLogicExtension.OnIdChanged()
-    CppLogic.Entity.CloneOverrideData(Event.GetEntityID1(), Event.GetEntityID2())
+function TriggerFixCppLogicExtension.StaticInit()
+    for _,event in ipairs{Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY, Events.CPPLOGIC_EVENT_ON_PAYDAY
+            , Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY} do
+        if not TriggerFix.triggers[event] then
+			TriggerFix.triggers[event] = {}
+		end
+		TriggerFix.RequestTrigger(event, nil, "TriggerFix_action", 1, nil, {event})
+    end
+    TriggerFix.HurtTriggers[Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY]=true
 end
 
-function TriggerFixCppLogicExtension.Hook(targetId, player, newid, converterId)
-    local ev = TriggerFix.CreateEmptyEvent()
-    ev.GetEntityID1 = targetId
-    ev.GetEntityID2 = newid
-    ev.GetEntityID = converterId
-    ev.GetPlayerID = player
-    TriggerFix_action(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, ev)
+function TriggerFixCppLogicExtension.OnIdChanged()
+    CppLogic.Entity.CloneOverrideData(Event.GetEntityID1(), Event.GetEntityID2())
 end
 
 function TriggerFixCppLogicExtension.InitKillCb()
@@ -146,14 +151,7 @@ function TriggerFixCppLogicExtension.InitKillCb()
             table.remove(TriggerFix.afterTriggerCB, i)
         end
     end
-    CppLogic.Logic.EnableAllHurtEntityTrigger(true, function(att, tar, pl, sourc)
-        local ev = TriggerFix.CreateEmptyEvent()
-        ev.GetEntityID1 = att
-        ev.GetEntityID2 = tar
-        ev.GetPlayerID = pl
-        ev.AttackSource = sourc
-        TriggerFix_action(Events.SCRIPT_EVENT_ON_ENTITY_KILLS_ENTITY, ev)
-    end)
+    CppLogic.Logic.EnableAllHurtEntityTrigger(true)
 end
 
 function TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, checkentity, oncancel)
@@ -225,7 +223,8 @@ function TriggerFixCppLogicExtension.AddMapArchiveToLoadOrder(path)
 end
 
 AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
-AddMapStartCallback("TriggerFixCppLogicExtension.AddLeaveTrigger")
+AddMapStartCallback("TriggerFixCppLogicExtension.OnMapStart")
+TriggerFixCppLogicExtension.StaticInit()
 
 AdvancedDealDamageSource = {
 	Unknown = 0,
