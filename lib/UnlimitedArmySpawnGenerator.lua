@@ -159,7 +159,10 @@ end
 
 UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:IsDead()
-	self:CheckValidSpawner()
+	assert(self ~= UnlimitedArmySpawnGenerator)
+	if not self.Army then
+		return true
+	end
 	if self.Pos[1] then
 		for i=table.getn(self.Pos),1,-1 do
 			if self.Pos[i].Generator and UnlimitedArmy.IsReferenceDead(self.Pos[i].Generator) then
