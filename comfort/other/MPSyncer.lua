@@ -6,6 +6,7 @@ end --mcbPacker.ignore
 --- author:mcb		current maintainer:mcb		v3.2
 -- Ermöglicht es, beliebige Lua-Ausdrücke auf allen verbundenen PCs zu parsen und synchron auszuführen.
 -- Wird das Script im SP geladen, wird keines Synchronisierung durchgeführt.
+-- nicht zusammen mit SimpleSyncronizer nutzen!
 -- 
 -- MPSyncer.ExecuteSynced(vname, ...)				Ruft die Virtuelle Funktion vname synchron auf allen PCs mit den übergebenen Argumenten arg auf.
 -- 
