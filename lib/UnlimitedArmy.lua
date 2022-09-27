@@ -157,7 +157,6 @@ function UnlimitedArmy:Init(data)
 	end
 	self.EntityChangedTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_ENTITY_ID_CHANGED, nil, ":OnIdChanged", 1, nil, {self})
 	if UnlimitedArmy.HasHook() then
-		self.PreSaveTriggerId = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_PRE_SAVE, nil, ":OnPreSave", 1, nil, {self})
 		self.ConversionTrigger = Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_CONVERT_ENTITY, nil, ":OnConversion", 1, nil, {self})
 	end
 	self:SetLeaderFormation(data.LeaderFormation)
@@ -167,7 +166,7 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:CheckUACore()
 	if UnlimitedArmy.HasHook() and not self.UACore then
-		self.UACore = CppLogic.UA.New(self.Player, function(r)
+		self.UACore = CppLogic.UA.New(self.Player, function(self, r)
 			if self.AutoRotateRange then
 				self.FormationRotation = r
 			end
@@ -176,24 +175,16 @@ function UnlimitedArmy:CheckUACore()
 				t = CppLogic.Logic.LandscapeGetNearestUnblockedPosInSector(t, Logic.GetSector(self:Iterator()()), 1500)
 			end
 			self:Formation(t)
-		end, function()
-			self:ProcessCommandQueue()
-		end, function()
+		end, self.ProcessCommandQueue, function(self)
 			if self.Spawner then
 				self.Spawner:Tick(self.SpawnerActive)
 			end
-		end, function(nor, force)
-			self:NormalizeSpeed(nor, force)
-		end, GetRandom(0, 1073741824))
-		if self.UASaveData then
-			self.UACore:ReadTable(self.UASaveData)
-		else
-			self.UACore:SetArea(self.Area)
-			self.UACore:SetIgnoreFleeing(self.IgnoreFleeing)
-			self.UACore:SetAutoRotateFormation(self.AutoRotateRange or -1)
-			self.UACore:SetPrepDefense(self.PrepDefense)
-			self.UACore:SetSabotageBridges(self.DestroyBridges)
-		end
+		end, self.NormalizeSpeed, GetRandom(0, 1073741824))
+		self.UACore:SetArea(self.Area)
+		self.UACore:SetIgnoreFleeing(self.IgnoreFleeing)
+		self.UACore:SetAutoRotateFormation(self.AutoRotateRange or -1)
+		self.UACore:SetPrepDefense(self.PrepDefense)
+		self.UACore:SetSabotageBridges(self.DestroyBridges)
 	end
 end
 
@@ -208,7 +199,7 @@ function UnlimitedArmy:Tick()
 	self:CheckValidArmy()
 	self:CheckUACore()
 	if self.UACore then
-		self.UACore:Tick()
+		self.UACore:Tick(self)
 		if self.AutoDestroyIfEmpty and self.HadOneLeader and not self.Spawner and self.UACore:GetSize(true, true)==0 then
 			self:Destroy()
 			return
@@ -1032,14 +1023,6 @@ function UnlimitedArmy:OnIdChanged()
 				self.DeadHeroes[i] = ne
 			end
 		end
-	end
-end
-
-UnlimitedArmy:AMethod()
-function UnlimitedArmy:OnPreSave()
-	self:CheckValidArmy()
-	if self.UACore then
-		self.UASaveData = self.UACore:DumpTable()
 	end
 end
 

@@ -1,5 +1,6 @@
 if mcbPacker then --mcbPacker.ignore
 	mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
+	mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
 end --mcbPacker.ignore
 
 EntityCategories.TargetFilter_TargetType = 100
@@ -51,6 +52,12 @@ AddMapStartCallback(function()
 		skipCpp = true
 	end
 	
+	if not skipCpp then
+		for _,et in ipairs(TargetFilter.LeaderTypeArray) do
+			CppLogic.EntityType.AddEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
+		end
+	end
+
 	for en, e in pairs(Entities) do
 		if (string.find(en, "[PC][UBV]") or string.find(en, "XD_[Dark]*Wall.*")) and not TargetFilter.IgnoreEtypes[e] then
 			table.insert(TargetFilter.EntityTypeArray, e)
@@ -84,6 +91,25 @@ AddMapStartCallback(function()
 	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero2, Entities.PU_Hero2_Foundation1, Entities.PU_Hero2_Cannon1)
 	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero3, Entities.PU_Hero3_Trap, Entities.PU_Hero3_TrapCannon)
 end)
+Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, function()
+	for _,et in ipairs(TargetFilter.EntityTypeArray) do
+		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetType)
+	end
+	for _,et in ipairs(TargetFilter.LeaderTypeArray) do
+		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
+	end
+	for _, ty in ipairs{Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1} do
+		if ty  then
+			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_CustomRanged)
+		end
+	end
+	for _, ty in ipairs{Entities.PU_Thief, Entities.PU_Scout} do
+		if ty  then
+			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
+		end
+	end
+end, 1)
+
 
 function TargetFilter.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then

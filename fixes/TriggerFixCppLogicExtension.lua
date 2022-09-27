@@ -91,6 +91,7 @@ function TriggerFixCppLogicExtension.Init()
                 CppLogic.Logic.TaskListMakeWaitForAnimsUnCancelable(tl[1], tl[2])
             end
         end
+        CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, false)
     end
 end
 
@@ -109,6 +110,7 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
                 CppLogic.Logic.TaskListMakeWaitForAnimsCancelable(tl[1], tl[2])
             end
         end
+        CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, true)
     end
     if TriggerFixCppLogicExtension.RemoveArchiveOnLeave then
         while string.find(CppLogic.Logic.GetLoadOrder()[1], ".s5x") do
