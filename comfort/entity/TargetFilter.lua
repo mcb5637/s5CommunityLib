@@ -44,38 +44,35 @@ if Entities.CB_Evil_Tower1_ArrowLauncher then
 	table.insert(TargetFilter.LeaderTypeArray, Entities.PU_Thief)
 end
 
-AddMapStartCallback(function()
-	local skipCpp = false
-	if not CppLogic then
-		skipCpp = true
-	elseif Logic.IsEntityTypeInCategory(Entities.PU_Hero2, EntityCategories.TargetFilter_TargetType)==1 then
-		skipCpp = true
-	end
-	
-	if not skipCpp then
-		for _,et in ipairs(TargetFilter.LeaderTypeArray) do
-			CppLogic.EntityType.AddEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
-		end
-	end
-
+function TargetFilter.CreateTables()
 	for en, e in pairs(Entities) do
 		if (string.find(en, "[PC][UBV]") or string.find(en, "XD_[Dark]*Wall.*")) and not TargetFilter.IgnoreEtypes[e] then
 			table.insert(TargetFilter.EntityTypeArray, e)
-			if not skipCpp then
-				CppLogic.EntityType.AddEntityCategory(e, EntityCategories.TargetFilter_TargetType)
-			end
 		end
 		if string.find(en, "[PC][UV]") and (string.find(en, "Leader") or string.find(en, "Hero") or string.find(en, "Cannon"))
 		and not TargetFilter.IgnoreEtypes[e] and not TargetFilter.IgnoreELeaderTypes[e] then
 			table.insert(TargetFilter.LeaderTypeArray, e)
-			if not skipCpp then
-				CppLogic.EntityType.AddEntityCategory(e, EntityCategories.TargetFilter_TargetTypeLeader)
-			end
 		end
 	end
-
-	if skipCpp then
+	TargetFilter.AddCategories();
+end
+function TargetFilter.AddCategories()
+	EntityCategories.TargetFilter_TargetType = 100
+	EntityCategories.TargetFilter_TargetTypeLeader = 101
+	EntityCategories.TargetFilter_CustomRanged = 102
+	EntityCategories.TargetFilter_NonCombat = 103
+	
+	if not CppLogic then
 		return
+	elseif Logic.IsEntityTypeInCategory(Entities.PU_Hero2, EntityCategories.TargetFilter_TargetType)==1 then
+		return
+	end
+	
+	for _,et in ipairs(TargetFilter.EntityTypeArray) do
+		CppLogic.EntityType.AddEntityCategory(et, EntityCategories.TargetFilter_TargetType)
+	end
+	for _,et in ipairs(TargetFilter.LeaderTypeArray) do
+		CppLogic.EntityType.AddEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
 	end
 
 	for _, ty in ipairs{Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1} do
@@ -90,26 +87,29 @@ AddMapStartCallback(function()
 	end
 	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero2, Entities.PU_Hero2_Foundation1, Entities.PU_Hero2_Cannon1)
 	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero3, Entities.PU_Hero3_Trap, Entities.PU_Hero3_TrapCannon)
-end)
-Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, function()
-	for _,et in ipairs(TargetFilter.EntityTypeArray) do
-		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetType)
-	end
-	for _,et in ipairs(TargetFilter.LeaderTypeArray) do
-		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
+end
+function TargetFilter.RemoveCategories()
+	for _, ty in ipairs{Entities.PU_Thief, Entities.PU_Scout} do
+		if ty  then
+			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
+		end
 	end
 	for _, ty in ipairs{Entities.PU_Hero5, Entities.PU_Hero10, Entities.CU_BanditLeaderBow1, Entities.CU_Evil_LeaderSkirmisher1} do
 		if ty  then
 			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_CustomRanged)
 		end
 	end
-	for _, ty in ipairs{Entities.PU_Thief, Entities.PU_Scout} do
-		if ty  then
-			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
-		end
+	for _,et in ipairs(TargetFilter.LeaderTypeArray) do
+		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetTypeLeader)
 	end
-end, 1)
+	for _,et in ipairs(TargetFilter.EntityTypeArray) do
+		CppLogic.EntityType.RemoveEntityCategory(et, EntityCategories.TargetFilter_TargetType)
+	end
+end
 
+AddMapStartCallback("TargetFilter.CreateTables")
+AddSaveLoadedCallback("TargetFilter.AddCategories")
+Trigger.RequestTrigger(Events.SCRIPT_EVENT_ON_LEAVE_MAP, nil, "TargetFilter.RemoveCategories", 1)
 
 function TargetFilter.IsValidTarget(id, enemypl, aiactive)
 	if IsDead(id) then
