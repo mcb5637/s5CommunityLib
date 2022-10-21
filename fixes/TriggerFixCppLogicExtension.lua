@@ -104,6 +104,7 @@ function TriggerFixCppLogicExtension.Init()
                 end
             end
         end
+        Score.Player[0] = {all = 0, resources = 0, buildings = 0, technology = 0, settlers = 0, battle = 0}
     end
 end
 
