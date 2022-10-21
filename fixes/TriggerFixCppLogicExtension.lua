@@ -92,6 +92,18 @@ function TriggerFixCppLogicExtension.Init()
             end
         end
         CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, false)
+        TriggerFixCppLogicExtension.Backup.AC = {}
+        for _,et in pairs(Entities) do -- set soldier armor and armorclass to leaders values
+            if CppLogic.EntityType.IsLeaderType(et) then
+                local st = CppLogic.EntityType.Settler.LeaderTypeGetSoldierType(et)
+                if st ~= 0 then
+                    local larm, lac = CppLogic.EntityType.GetArmor(et)
+                    local sarm, sac = CppLogic.EntityType.GetArmor(st)
+                    TriggerFixCppLogicExtension.Backup.AC[st] = {sarm, sac}
+                    CppLogic.EntityType.SetArmor(st, larm, lac)
+                end
+            end
+        end
     end
 end
 
@@ -111,6 +123,9 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
             end
         end
         CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, true)
+        for st, t in pairs(TriggerFixCppLogicExtension.Backup.AC) do
+            CppLogic.EntityType.SetArmor(st, t[1], t[2])
+        end
     end
     if TriggerFixCppLogicExtension.RemoveArchiveOnLeave then
         while string.find(CppLogic.Logic.GetLoadOrder()[1], ".s5x") do
