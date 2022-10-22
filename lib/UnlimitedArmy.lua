@@ -180,12 +180,13 @@ function UnlimitedArmy:CheckUACore()
 			if self.Spawner then
 				self.Spawner:Tick(self.SpawnerActive)
 			end
-		end, self.NormalizeSpeed, GetRandom(0, 1073741824))
+		end, GetRandom(0, 1073741824))
 		self.UACore:SetArea(self.Area)
 		self.UACore:SetIgnoreFleeing(self.IgnoreFleeing)
 		self.UACore:SetAutoRotateFormation(self.AutoRotateRange or -1)
 		self.UACore:SetPrepDefense(self.PrepDefense)
 		self.UACore:SetSabotageBridges(self.DestroyBridges)
+		self.UACore:SetDoNotNormalizeSpeed(self.DoNotNormalizeSpeed)
 	end
 end
 
@@ -998,6 +999,16 @@ function UnlimitedArmy:SetSabotageBridges(r)
 		self.UACore:SetSabotageBridges(r)
 	else
 		self.DestroyBridges = r
+	end
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:SetDoNotNormalizeSpeed(r)
+	self:CheckUACore()
+	if self.UACore then
+		self.UACore:SetDoNotNormalizeSpeed(r)
+	else
+		self.DoNotNormalizeSpeed = r
 	end
 end
 
