@@ -4,6 +4,7 @@ mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
+mcbPacker.require("s5CommunityLib/comfort/entity/GetEntityMovementSpeed")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetCirclePosition")
 mcbPacker.require("s5CommunityLib/comfort/pos/GetAngleBetween")
 mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
@@ -842,13 +843,13 @@ function UnlimitedArmy:NormalizeSpeed(normalize, forcerefresh)
 	if normalize and not self.DoNotNormalizeSpeed then
 		local lowest = nil
 		for id in self:Iterator() do
-			local s = UnlimitedArmy.GetEntitySpeed(id)
+			local s = GetEntityMovementSpeed(id)
 			if not lowest or lowest>s then
 				lowest = s
 			end
 		end
 		for id in self:Iterator() do
-			local f = lowest/UnlimitedArmy.GetEntitySpeed(id)
+			local f = lowest/GetEntityMovementSpeed(id)
 			Logic.SetSpeedFactor(id, f)
 			if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0 and Logic.LeaderGetNumberOfSoldiers(id)>0 then
 				local d = {Logic.GetSoldiersAttachedToLeader(id)}
@@ -1334,35 +1335,6 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
 		end
 	end
 	return repid
-end
-
-UnlimitedArmy:AStatic()
-function UnlimitedArmy.GetEntitySpeed(id)
-	if UnlimitedArmy.HasHook() then
-		return CppLogic.Entity.GetSpeed(id) -- this does not include logic modifier
-	end
-	if Logic.IsEntityInCategory(id, EntityCategories.Cannon)==1 then
-		local ety = Logic.GetEntityType(id)
-		if ety==Entities.PV_Cannon1 then
-			return 240
-		elseif ety==Entities.PV_Cannon2 then
-			return 260
-		elseif ety==Entities.PV_Cannon3 then
-			return 220
-		else
-			return 180
-		end
-	end
-	if Logic.IsEntityInCategory(id, EntityCategories.Hero)==1 then
-		return 400
-	end
-	if Logic.IsEntityInCategory(id, EntityCategories.CavalryLight)==1 or Logic.IsEntityInCategory(id, EntityCategories.CavalryHeavy)==1 then
-		return 500
-	end
-	if Logic.IsEntityInCategory(id, EntityCategories.Bow)==1 or Logic.IsEntityInCategory(id, EntityCategories.Rifle)==1 then
-		return 320
-	end
-	return 360
 end
 
 UnlimitedArmy:AStatic()
