@@ -35,12 +35,36 @@ end
 -- - ArmorClasses
 TriggerFixCppLogicExtension = {Backup = {}, GUIStateCustomMouse=10, RemoveArchiveOnLeave=false}
 TriggerFixCppLogicExtension.Backup.TaskListToFix = {
-    {TaskLists.TL_BATTLE_RIFLE, 10},
-    {TaskLists.TL_BATTLE_BOW, 10},
-    {TaskLists.TL_BATTLE_CROSSBOW, 10},
-    {TaskLists.TL_BATTLE_HEROBOW, 9},
-    {TaskLists.TL_BATTLE_SKIRMISHER, 10},
-    {TaskLists.TL_BATTLE_VEHICLE, 17},
+    {TaskLists.TL_BATTLE_RIFLE, 9, 5},
+    {TaskLists.TL_BATTLE_BOW, 9, 5},
+    {TaskLists.TL_BATTLE_CROSSBOW, 9, 5},
+    {TaskLists.TL_BATTLE_HEROBOW, 9, 4},
+    {TaskLists.TL_BATTLE_SKIRMISHER, 9, 5},
+    --{TaskLists.TL_BATTLE_VEHICLE, 17},
+}
+TriggerFixCppLogicExtension.Backup.BattleWaitUntil = {
+    {Entities.CU_BanditLeaderBow1, 1700},
+    {Entities.CU_BanditSoldierBow1, 1700},
+    {Entities.CU_Evil_LeaderSkirmisher1, 2100},
+    {Entities.CU_Evil_SoldierSkirmisher1, 2100},
+    {Entities.PU_Hero5, 1100},
+    {Entities.PU_Hero10, 2900},
+    {Entities.PU_LeaderBow1, 2100},
+    {Entities.PU_LeaderBow2, 2100},
+    {Entities.PU_LeaderBow3, 2100},
+    {Entities.PU_LeaderBow4, 2100},
+    {Entities.PU_SoldierBow1, 2100},
+    {Entities.PU_SoldierBow2, 2100},
+    {Entities.PU_SoldierBow3, 2100},
+    {Entities.PU_SoldierBow4, 2100},
+    {Entities.PU_LeaderCavalry1, 1600},
+    {Entities.PU_LeaderCavalry2, 1600},
+    {Entities.PU_SoldierCavalry1, 1600},
+    {Entities.PU_SoldierCavalry2, 1600},
+    {Entities.PU_LeaderRifle1, 3200},
+    {Entities.PU_LeaderRifle2, 3200},
+    {Entities.PU_SoldierRifle1, 3200},
+    {Entities.PU_SoldierRifle2, 3200},
 }
 
 TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY", Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY)
@@ -87,8 +111,13 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.ArmorClassFur, 1)
         CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.ArmorClassFur, 1.5)
         if not CEntity then
-            for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- make battle task lists wait for anim uncancleable after firing projectile
-                CppLogic.Logic.TaskListMakeWaitForAnimsUnCancelable(tl[1], tl[2])
+            for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- insert wait tasks into battle tasklists
+                CppLogic.Logic.TaskListInsertSetLatestAttack(tl[1], tl[2])
+                CppLogic.Logic.TaskListInsertWaitForLatestAttack(tl[1], tl[3])
+            end
+            for _,et in ipairs(TriggerFixCppLogicExtension.Backup.BattleWaitUntil) do
+                et[3] = CppLogic.EntityType.GetBattleWaitUntil(et[1])
+                CppLogic.EntityType.SetBattleWaitUntil(et[1], et[2])
             end
         end
         CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, false)
@@ -120,7 +149,10 @@ function TriggerFixCppLogicExtension.OnLeaveMap()
         end
         if not CEntity then
             for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do
-                CppLogic.Logic.TaskListMakeWaitForAnimsCancelable(tl[1], tl[2])
+                CppLogic.Logic.TaskListRemoveLatestAttack(tl[1])
+            end
+            for _,et in ipairs(TriggerFixCppLogicExtension.Backup.BattleWaitUntil) do
+                CppLogic.EntityType.SetBattleWaitUntil(et[1], et[3])
             end
         end
         CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, true)
