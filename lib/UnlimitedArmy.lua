@@ -76,6 +76,21 @@ end --mcbPacker.ignore
 -- Army:AddCommandSetSpawnerStatus(status, looped)
 -- 												setzt ob ein spawner neue truppen spawnen/rekrutieren darf (default true).
 -- Army:AddCommandWaitForSpawnerFull(looped)	wartet darauf, das ein spawner die armee gefüllt hat (size im spawner) (sofort wahr, wenn kein spawner vorhanden).
+-- Army:AddCommandTransferTroops(target)		bewegt die armee zum ziel der UA target, und wenn beide nah genug aneinander sind, transferiert alle truppen zu target (und schaltet zum nächsten command).
+-- 													transferiert auch alle truppen, wenn target tot ist. AutoDestroyIfEmpty ist empfohlen.
+-- 													(wenn target destroyed ist, schaltet zum nächsten command)
+-- Army:AddCommandRallypoint(onExpedition, expeditionSize, numberExpeditions, enabled)
+-- 													nutzt diese army als sammelpunkt für einen spawner oder recruiter und sendet expeditionen aus.
+-- 													immer wenn genug truppen für eine expedition vorhanden sind, erstellt eine neue UA, transferiert truppen und schickt sie los.
+-- 													expeditionSize ist die truppen stärke einer expedition.
+-- 													numberExpeditions die maximale anzahl an expeditionen, nil für unbegrenzt.
+-- 													onExpedition(expeditionUA, command, rallyUA) wird aufgerufen, um die expedition loszuschicken. die expeditionUA hat schon alle truppen.
+-- 													enabled bool oder func(rallyUA, command) aktiv (nil wird zu true).
+-- 													command.Create(rallyUA, command) kann überschrieben werden, um die erstellte UA zu ersetzen (z.b. mit einer LazyUA).
+-- 													command.ArmyCtor wird an UnlimitedArmy:New übergeben (Player und Area werden aus der rallyUA übernommen, wenn nicht gesetzt).
+-- 														AutoDestroyIfEmpty ist zu beginn gesetzt.
+-- 													command.Cmd wird von der rallyUA ausgeführt, empfehle CreateCommandDefend oder nil.
+-- 													expeditionen können mit AddCommandTransferTroops zurück in den cache recycelt werden.
 -- Army:CreateLeaderForArmy(ety, sol, pos, experience)
 -- 												erstellt einen leader und verbindet ihn mit der army.
 -- Army:Iterator(transit)						gibt einen iterator zurück, der über alle leader der armee iteriert, zu verwenden: for id in Army:Iterator() do.
@@ -800,6 +815,22 @@ function UnlimitedArmy:AddCommandGuardEntity(target, looped)
 end
 
 UnlimitedArmy:AMethod()
+function UnlimitedArmy:AddCommandRallypoint(onExpedition, expeditionSize, numberExpeditions, enabled)
+	self:CheckValidArmy()
+	local t = UnlimitedArmy.CreateCommandRallypoint(onExpedition, expeditionSize, numberExpeditions, enabled)
+	table.insert(self.CommandQueue, t)
+	return t
+end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:AddCommandTransferTroops(target)
+	self:CheckValidArmy()
+	local t = UnlimitedArmy.CreateCommandTransferTroops(target)
+	table.insert(self.CommandQueue, t)
+	return t
+end
+
+UnlimitedArmy:AMethod()
 --- @return fun():number
 function UnlimitedArmy:Iterator(transit)
 	self:CheckValidArmy()
@@ -877,8 +908,12 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:SetDoNotNormalizeSpeed(val)
 	self:CheckValidArmy()
-	self.DoNotNormalizeSpeed = val
-	self:NormalizeSpeed(self.Status==UnlimitedArmy.Status.Moving or self.Status==UnlimitedArmy.Status.MovingNoBattle, true)
+	if self.UACore then
+		self.UACore:SetDoNotNormalizeSpeed(val)
+	else
+		self.DoNotNormalizeSpeed = val
+		self:NormalizeSpeed(self.Status==UnlimitedArmy.Status.Moving or self.Status==UnlimitedArmy.Status.MovingNoBattle, true)
+	end
 end
 
 UnlimitedArmy:AMethod()
@@ -944,7 +979,7 @@ function UnlimitedArmy:SetStatus(s)
 end
 
 UnlimitedArmy:AMethod()
-function UnlimitedArmy:SetReMove(u)
+function UnlimitedArmy:SetReMove(s)
 	self:CheckUACore()
 	if self.UACore then
 		self.UACore:SetReMove(s)
@@ -999,16 +1034,6 @@ function UnlimitedArmy:SetSabotageBridges(r)
 		self.UACore:SetSabotageBridges(r)
 	else
 		self.DestroyBridges = r
-	end
-end
-
-UnlimitedArmy:AMethod()
-function UnlimitedArmy:SetDoNotNormalizeSpeed(r)
-	self:CheckUACore()
-	if self.UACore then
-		self.UACore:SetDoNotNormalizeSpeed(r)
-	else
-		self.DoNotNormalizeSpeed = r
 	end
 end
 
@@ -1275,6 +1300,101 @@ function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
 				end
 			end
 		end,
+	}
+end
+
+UnlimitedArmy:AStatic()
+function UnlimitedArmy.CreateCommandRallypoint(onExpedition, expeditionSize, numberExpeditions, enabled)
+	if enabled == nil then
+		enabled = true
+	end
+	return {
+		OnExpedition = onExpedition,
+		ExpeditionSize = expeditionSize,
+		Enabled = enabled,
+		NumberExpeditions = numberExpeditions,
+		ArmyCtor = {
+			AutoDestroyIfEmpty = true,
+		},
+		Children = {},
+		--- @param self UnlimitedArmy
+		Command = function(self, com)
+			for i=table.getn(com.Children),1,-1 do
+				if com.Children[i]:IsDead()==-1 then
+					table.remove(com.Children, i)
+				end
+			end
+			if self:GetSize() >= com.ExpeditionSize and (not com.NumberExpeditions or table.getn(com.Children) < com.NumberExpeditions) then
+				local e = com.Enabled
+				if type(e)=="function" then
+					e = e(self, com)
+				end
+				if e then
+					local ua = com.CreateAndFill(self, com)
+					if ua then
+						table.insert(com.Children, ua)
+						com.OnExpedition(ua, com, self)
+					end
+				end
+			end
+			return false, com.Cmd
+		end,
+		--- @param self UnlimitedArmy
+		Create = function(self, com)
+			if not com.ArmyCtor.Player then
+				com.ArmyCtor.Player = self.Player
+			end
+			if not com.ArmyCtor.Area then
+				com.ArmyCtor.Area = self.Area
+			end
+			return UnlimitedArmy:New(com.ArmyCtor)
+		end,
+		--- @param self UnlimitedArmy
+		CreateAndFill = function(self, com)
+			local num = com.ExpeditionSize
+			local t = {}
+			for id in self:Iterator() do
+				if num <= 0 then
+					break
+				end
+				table.insert(t, id)
+				num = num - 1
+			end
+			local ua = com.Create(self, com)
+			for _,id in ipairs(t) do
+				self:RemoveLeader(id)
+				ua:AddLeader(id)
+			end
+			return ua
+		end,
+	}
+end
+
+UnlimitedArmy:AStatic()
+function UnlimitedArmy.CreateCommandTransferTroops(target)
+	return {
+		Target = target,
+		--- @param self UnlimitedArmy
+		Command = function(self, com)
+			if com.Target:IsDead() == -1 then
+				return true
+			end
+			local tpos = com.Target:GetPosition()
+			if com.Target:IsDead() or GetDistance(self:GetPosition(), tpos)<=2000 then
+				local t = {}
+				for id in self:Iterator() do
+					table.insert(t, id)
+				end
+				for _,id in ipairs(t) do
+					self:RemoveLeader(id)
+					com.Target:AddLeader(id)
+				end
+				return true
+			end
+			if not self.Target or GetDistance(self.Target, com.Target.Target) >= 1000 then
+				return false, UnlimitedArmy.CreateCommandMove(com.Target.Target)
+			end
+		end
 	}
 end
 
