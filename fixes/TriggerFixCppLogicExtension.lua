@@ -65,6 +65,7 @@ TriggerFixCppLogicExtension.Backup.BattleWaitUntil = {
     {Entities.PU_LeaderRifle2, 3200},
     {Entities.PU_SoldierRifle1, 3200},
     {Entities.PU_SoldierRifle2, 3200},
+    {Entities.PV_Cannon3, 3300},
 }
 
 TriggerFix.AddScriptTrigger("SCRIPT_EVENT_ON_CONVERT_ENTITY", Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY)
