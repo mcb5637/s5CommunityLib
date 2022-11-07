@@ -30,8 +30,12 @@ TargetFilter.IgnoreEtypes = {
 TargetFilter.LeaderTypeArray = {
 	Entities.CU_BlackKnight,
 	Entities.CU_Mary_de_Mortfichet,
-	Entities.PU_Serf,
+	--Entities.PU_Serf,
 	Entities.PU_BattleSerf,
+	Entities.PB_Tower2,
+	Entities.PB_Tower3,
+	Entities.PB_DarkTower2,
+	Entities.PB_DarkTower3,
 }
 TargetFilter.IgnoreELeaderTypes = {
 	[Entities.PU_Hero2_Foundation1] = true,
@@ -42,6 +46,7 @@ if Entities.CB_Evil_Tower1_ArrowLauncher then
 	TargetFilter.IgnoreEtypes[Entities.CB_Evil_Tower1_ArrowLauncher] = true
 	table.insert(TargetFilter.LeaderTypeArray, Entities.CU_Evil_Queen)
 	table.insert(TargetFilter.LeaderTypeArray, Entities.PU_Thief)
+	table.insert(TargetFilter.LeaderTypeArray, Entities.CB_Evil_Tower1)
 end
 
 function TargetFilter.CreateTables()
