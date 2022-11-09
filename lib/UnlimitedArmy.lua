@@ -350,6 +350,9 @@ function UnlimitedArmy:AddLeader(id)
 			end
 			self:RequireNewFormat()
 			self.PosCacheTick = -1
+			if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.MovingNoBattle then
+				self:SetReMove(true)
+			end
 		else
 			table.insert(self.LeaderTransit, id)
 		end
@@ -384,6 +387,9 @@ function UnlimitedArmy:RemoveLeader(id)
 			end
 		end
 		self:RequireNewFormat()
+		if self.Status == UnlimitedArmy.Status.Moving or self.Status == UnlimitedArmy.Status.MovingNoBattle then
+			self:SetReMove(true)
+		end
 	end
 end
 
