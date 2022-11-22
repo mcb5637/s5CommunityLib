@@ -94,6 +94,9 @@ function TargetFilter.AddCategories()
 	CppLogic.UA.AddCannonBuilderData(Entities.PU_Hero3, Entities.PU_Hero3_Trap, Entities.PU_Hero3_TrapCannon)
 end
 function TargetFilter.RemoveCategories()
+	if not CppLogic then
+		return
+	end
 	for _, ty in ipairs{Entities.PU_Thief, Entities.PU_Scout} do
 		if ty  then
 			CppLogic.EntityType.RemoveEntityCategory(ty, EntityCategories.TargetFilter_NonCombat)
