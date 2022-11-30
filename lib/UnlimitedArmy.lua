@@ -1007,10 +1007,9 @@ end
 UnlimitedArmy:AMethod()
 function UnlimitedArmy:SetIgnoreFleeing(b)
 	self:CheckUACore()
+	self.IgnoreFleeing = b
 	if self.UACore then
 		self.UACore:SetIgnoreFleeing(b)
-	else
-		self.IgnoreFleeing = b
 	end
 end
 
