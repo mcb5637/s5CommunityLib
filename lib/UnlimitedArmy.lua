@@ -91,6 +91,7 @@ end --mcbPacker.ignore
 -- 														AutoDestroyIfEmpty ist zu beginn gesetzt.
 -- 													command.Cmd wird von der rallyUA ausgeführt, empfehle CreateCommandDefend oder nil.
 -- 													expeditionen können mit AddCommandTransferTroops zurück in den cache recycelt werden.
+-- Army:AddCommandWaitSeconds(s)				wartet s sekunden
 -- Army:CreateLeaderForArmy(ety, sol, pos, experience)
 -- 												erstellt einen leader und verbindet ihn mit der army.
 -- Army:Iterator(transit)						gibt einen iterator zurück, der über alle leader der armee iteriert, zu verwenden: for id in Army:Iterator() do.
@@ -98,6 +99,7 @@ end --mcbPacker.ignore
 -- Army:SetLeaderFormation(form)				setzt die formation die die soldier der leader der armee einnehmen. kann eine function(army, id) sein.
 -- Army:IsLeaderPartOfArmy(id)					tested, ob ein leader teil der army ist.
 -- Army:SetIgnoreFleeing(b)						setzt, ob fliehende einheiten ignoriert werden.
+-- Army:CanPathTo(p)							prüft, ob die ua die position des entities p erreichen kann. Mit CppLogic kann p ein pos-tabe sein.
 -- 
 -- 
 -- Benötigt:
@@ -837,6 +839,14 @@ function UnlimitedArmy:AddCommandTransferTroops(target)
 end
 
 UnlimitedArmy:AMethod()
+function UnlimitedArmy:AddCommandWaitSeconds(s)
+	self:CheckValidArmy()
+	local t = UnlimitedArmy.CreateCommandWaitSeconds(s)
+	table.insert(self.CommandQueue, t)
+	return t
+end
+
+UnlimitedArmy:AMethod()
 --- @return fun():number
 function UnlimitedArmy:Iterator(transit)
 	self:CheckValidArmy()
@@ -1082,6 +1092,27 @@ function UnlimitedArmy:OnConversion()
 		Message(helias)
 	end
 end
+
+UnlimitedArmy:AMethod()
+function UnlimitedArmy:CanPathTo(p)
+	local targetSector = 0
+	if IsAlive(p) then
+		targetSector = Logic.GetSector(GetID(p))
+	elseif UnlimitedArmy.HasHook() then
+		targetSector = CppLogic.Logic.LandscapeGetSector(p)
+	else
+		assert(false, "cannot get target sector")
+	end
+	if targetSector == 0 then
+		return false
+	end
+	local firstid = self:Iterator()()
+	if IsDead(firstid) then
+		return false
+	end
+	return Logic.GetSector(firstid) == targetSector
+end
+
 
 
 UnlimitedArmy:AStatic()
@@ -1399,6 +1430,24 @@ function UnlimitedArmy.CreateCommandTransferTroops(target)
 			if not self.Target or GetDistance(self.Target, com.Target.Target) >= 1000 then
 				return false, UnlimitedArmy.CreateCommandMove(com.Target.Target)
 			end
+		end
+	}
+end
+
+UnlimitedArmy:AStatic()
+function UnlimitedArmy.CreateCommandWaitSeconds(s)
+	return {
+		Seconds = s,
+		--- @param self UnlimitedArmy
+		Command = function(self, com)
+			if not self.WaitForTick then
+				self.WaitForTick = Logic.GetCurrentTurn() + com.Seconds * 10
+			end
+			if Logic.GetCurrentTurn() > self.WaitForTick then
+				self.WaitForTick = nil
+				return true
+			end
+			return false
 		end
 	}
 end
