@@ -5,34 +5,13 @@ gvWaypointData = {};
 --- an script entity once it reaches the final destination.
 ---
 --- Waypoints are passed as table. They can contain the following fields:
---- <table border="1">
---- <tr>
---- <td><b>Field</b></td>
---- <td><b>Description</b></td>
---- </tr>
---- <tr>
---- <td>Target</td>
---- <td>Script name of the waypoint</td>
---- </tr>
---- <tr>
---- <td>Distance</td>
---- <td>(Optional) Radius the entity must be in around the target.</td>
---- </tr>
---- <tr>
---- <td>IgnoreBlocking</td>
---- <td>(Optional) Entity is using the direct way and ignores evenry blocking. (This can
---- be used to move them in and out of buildings)</td>
---- </tr>
---- <tr>
---- <td>Waittime</td>
---- <td>(Optional) Time in seconds the entity waits until moving to the next waypoint.</td>
---- </tr>
---- <tr>
---- <td>Callback</td>
---- <td>(Optional) Function called when entity passes waypoint. (If a waittime is
---- set the function is called after waittime is over)</td>
---- </tr>
---- </table>
+--- Target         Script name of the waypoint</td>
+--- Distance       (Optional) Radius the entity must be in around the target.</td>
+--- IgnoreBlocking (Optional) Entity is using the direct way and ignores evenry blocking. 
+---                (This can be used to move them in and out of buildings)
+--- Waittime       (Optional) Time in seconds the entity waits until moving to the next waypoint.</td>
+--- Callback       (Optional) Function called when entity passes waypoint. (If a waittime is set the function is called
+---                after waittime is over)</td>
 ---
 --- @param _Entity number  Entity to move
 --- @param _Vanish boolean Delete on last waypoint
