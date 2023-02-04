@@ -19,7 +19,7 @@ end --mcbPacker.ignore
 -- - GetDistance
 -- - SubFromPlayersResources
 -- - CNetEventCallbacks
-CommandQueue = {}
+CommandQueue = {SerfAutoBuild = true}
 
 CommandQueue.Queue = {}
 
@@ -61,7 +61,7 @@ function CommandQueue.AddTriggers()
     MPSyncer.VirtualFuncs.Create(CommandQueue.ClearEntitySynced, "CommandQueueClear", MPSyncer.VirtualFuncs.ArgumentTypeCheckedEntity())
     MPSyncer.VirtualFuncs.Create(CommandQueue.PlaceBuildingSynced, "CommandQueuePlaceBuilding",
         MPSyncer.VirtualFuncs.ArgumentTypeInt(), MPSyncer.VirtualFuncs.ArgumentTypeInt(), MPSyncer.VirtualFuncs.ArgumentTypeInt(), MPSyncer.VirtualFuncs.ArgumentTypeInt(),
-        MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer(), MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable()
+        MPSyncer.VirtualFuncs.ArgumentTypeCheckedPlayer(), MPSyncer.VirtualFuncs.ArgumentTypeSimpleTable(), MPSyncer.VirtualFuncs.ArgumentTypeInt()
     )
 end
 
@@ -125,12 +125,40 @@ function CommandQueue.CheckEntity(id, cs)
         return true
     end
     while CommandQueue.CommandTypes[cs[1].Cmd].IsDone(cs[1], id) do
-        table.remove(cs, 1)
+        local lastcmd = table.remove(cs, 1)
         if not cs[1] then
-            return true
+            if CommandQueue.CommandTypes[lastcmd.Cmd].SerfAutoBuild and CommandQueue.CheckSerfAutoBuild(id) then
+                break
+            else
+                return true
+            end
         end
     end
     CommandQueue.CommandTypes[cs[1].Cmd].Execute(cs[1], id)
+end
+
+function CommandQueue.CheckSerfAutoBuild(id)
+    local p = GetPosition(id)
+    local pl = GUI.GetPlayerID()
+    local r = nil
+    local c = nil
+    for b, rsq in CppLogic.Entity.EntityIterator(CppLogic.Entity.Predicates.IsBuilding(), CppLogic.Entity.Predicates.OfPlayer(pl),
+        CppLogic.Entity.Predicates.IsAlive(), CppLogic.Entity.Predicates.InCircle(p.X, p.Y, 2000)
+    ) do
+        if Logic.IsConstructionComplete(b)==0 and (not r or rsq < r) then
+            c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
+            c.Target = b
+            r = rsq
+        elseif Logic.GetEntityHealth(b)<Logic.GetEntityMaxHealth(b) and (not r or rsq < r) then
+            c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfRepairBuilding}
+            c.Target = b
+            r = rsq
+        end
+    end
+    if c then
+        CommandQueue.AddToEntitySynced(id, c)
+        return true
+    end
 end
 
 function CommandQueue.AddToEntity(id, c)
@@ -152,7 +180,8 @@ function CommandQueue.ClearEntitySynced(id)
     CommandQueue.Queue[id] = nil
 end
 
-function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs)
+function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs, queue)
+    queue = queue == 1
     if not CppLogic.Logic.CanPlaceBuildingAt(ty, pl, {X=x,Y=y}, r) then
         Message("err cannot place!")
         return true
@@ -168,6 +197,9 @@ function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs)
         local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
         c.Target = bid
         CommandQueue.AddToEntitySynced(id, c)
+        if CppLogic.Entity.Settler.IsIdle(id) or not queue then
+            CommandQueue.CheckEntity(id, CommandQueue.Queue[id])
+        end
     end
 end
 
@@ -201,14 +233,13 @@ CommandQueue.CommandTypes = {
         Add = function(self, ev, queue)
             if not queue then
                 CommandQueue.ClearEntity(ev.EntityID1)
-                return
-            end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
-                return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
             c.Target = ev.EntityID2
             CommandQueue.AddToEntity(ev.EntityID1, c)
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) or not queue then
+                return
+            end
             return true
         end,
         IsDone = function(self, id)
@@ -217,20 +248,20 @@ CommandQueue.CommandTypes = {
         end,
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfConstructBuilding(id, self.Target)
-        end
+        end,
+        SerfAutoBuild = true,
     },
     [CNetEventCallbacks.CNetEvents.CommandSerfRepairBuilding] = {
         Add = function(self, ev, queue)
             if not queue then
                 CommandQueue.ClearEntity(ev.EntityID1)
-                return
-            end
-            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
-                return
             end
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfRepairBuilding}
             c.Target = ev.EntityID2
             CommandQueue.AddToEntity(ev.EntityID1, c)
+            if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) or not queue then
+                return
+            end
             return true
         end,
         IsDone = function(self, id)
@@ -239,7 +270,8 @@ CommandQueue.CommandTypes = {
         end,
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfRepairBuilding(id, self.Target)
-        end
+        end,
+        SerfAutoBuild = true,
     },
     [CNetEventCallbacks.CNetEvents.CommandEntityGuardEntity] = {
         Add = function(self, ev, queue)
@@ -824,12 +856,6 @@ CommandQueue.CommandTypes = {
     },
     [CNetEventCallbacks.CNetEvents.CommandPlaceBuilding] = {
         Add = function(self, ev, queue)
-            if not queue then
-                for _,id in ipairs(ev.Serf) do
-                    CommandQueue.ClearEntity(id)
-                end
-                return
-            end
             local ty = Logic.GetBuildingTypeByUpgradeCategory(ev.EntityType, ev.PlayerID)
             local bon = 0
             local bty = CppLogic.EntityType.Building.GetBuildOnTypes(ty)
@@ -843,7 +869,7 @@ CommandQueue.CommandTypes = {
             if not SubFromPlayersResources(CppLogic.EntityType.Building.GetConstructionCost(ty), true, true, ev.PlayerID) then
                 return true
             end
-            MPSyncer.ExecuteSynced("CommandQueuePlaceBuilding", ty, ev.Position.X, ev.Position.Y, math.deg(ev.Orientation), ev.PlayerID, ev.Serf)
+            MPSyncer.ExecuteSynced("CommandQueuePlaceBuilding", ty, ev.Position.X, ev.Position.Y, math.deg(ev.Orientation), ev.PlayerID, ev.Serf, queue and 1 or 0)
             return true
         end
     },
