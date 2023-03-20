@@ -77,11 +77,13 @@ function TriggerFixCppLogicExtension.Init()
     end
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
         CppLogic.Combat.EnableAoEProjectileFix() -- aoe projektile beachten damage/armorclass und schadensboni durch techs/helden
+        CppLogic.Logic.EnableAllHurtEntityTrigger(true)
         CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
         --CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
         TriggerFixCppLogicExtension.InitKillCb()
         CppLogic.Logic.EnableExperienceClassFix(true) -- level 1 gibt boni, misschance boni funktionieren
         CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
+        CppLogic.Effect.EnableEffectTriggers(true) -- effect created
         if not CEntity then
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
             CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
@@ -183,7 +185,8 @@ end
 
 function TriggerFixCppLogicExtension.StaticInit()
     for _,event in ipairs{Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY, Events.CPPLOGIC_EVENT_ON_PAYDAY
-            , Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY} do
+            , Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY, Events.CPPLOGIC_EVENT_ON_EFFECT_CREATED, Events.CPPLOGIC_EVENT_ON_FLYINGEFFECT_HIT
+            , Events.CPPLOGIC_EVENT_ON_EFFECT_DESTROYED} do
         if not TriggerFix.triggers[event] then
 			TriggerFix.triggers[event] = {}
 		end
@@ -202,7 +205,6 @@ function TriggerFixCppLogicExtension.InitKillCb()
             table.remove(TriggerFix.afterTriggerCB, i)
         end
     end
-    CppLogic.Logic.EnableAllHurtEntityTrigger(true)
 end
 
 function TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, checkentity, oncancel)
