@@ -1,5 +1,9 @@
 --AutoFixArg
 
+if TriggerFix then
+	return
+end
+
 --- author:mcb		current maintainer:mcb		v3.0b                           Dank an Chromix
 -- Funktionen anstelle von Funktionsnamen als Trigger
 -- Tableindexierung in Funktionsanamen (sowas wie "foo.bar")
