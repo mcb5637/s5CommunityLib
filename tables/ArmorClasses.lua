@@ -1,4 +1,6 @@
-
+if ArmorClasses then
+	return
+end
 --- author:mcb		current maintainer:mcb		v1.0
 -- table aller Armorclasses
 ArmorClasses = {
