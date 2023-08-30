@@ -3,6 +3,7 @@ mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
+mcbPacker.require("s5CommunityLib/comfort/other/UpdatelessTimer")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -56,7 +57,7 @@ function UnlimitedArmySpawnGenerator:Init(army, spawndata)
 	self.Pos = assert(spawndata.Position)
 	self.ArmySize = assert(spawndata.ArmySize)
 	self.SpawnCounter = assert(spawndata.SpawnCounter)
-	self.CCounter = 0
+	self.CCounter = UpdatelessTimer:New(UpdatelessTimer.Type.Seconds)
 	self.SpawnLeaders = assert(spawndata.SpawnLeaders)
 	self.Generator = spawndata.Generator
 	self.FreeArea = spawndata.FreeArea
@@ -88,8 +89,7 @@ function UnlimitedArmySpawnGenerator:Tick(active)
 		end
 		return
 	end
-	self.CCounter = self.CCounter - 1
-	if active and self.CCounter <= 0 and self:IsSpawnPossible() then
+	if active and self.CCounter:Check() and self:IsSpawnPossible() then
 		local l, s = self:GetNeededSpawnAmount()
 		if l>0 or s>0 then
 			self:ResetCounter()
@@ -107,9 +107,9 @@ UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:ResetCounter()
 	self:CheckValidSpawner()
 	if type(self.SpawnCounter)=="number" then
-		self.CCounter = self.SpawnCounter
+		self.CCounter:Set(self.SpawnCounter, true)
 	else
-		self.CCounter = self:SpawnCounter()
+		self.CCounter:Set(self:SpawnCounter(), true)
 	end
 end
 
