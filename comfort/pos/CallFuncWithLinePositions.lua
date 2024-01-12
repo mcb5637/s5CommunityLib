@@ -1,3 +1,6 @@
+if mcbPacker then --mcbPacker.ignore
+mcbPacker.require("s5CommunityLib/comfort/number/round")
+end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v2.0
 -- Neue Funktion auf Grundlage von Effektlinie von Noigi.
