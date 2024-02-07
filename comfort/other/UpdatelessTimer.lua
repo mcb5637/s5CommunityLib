@@ -22,11 +22,11 @@ end
 UpdatelessTimer:AMethod()
 function UpdatelessTimer:Init(type)
 	if not type or type == UpdatelessTimer.Type.Seconds then
-		self.Get = Logic.GetTime
+		self.Get = function() return Logic.GetTime() end
 	elseif type == UpdatelessTimer.Type.Ticks then
-		self.Get = Logic.GetCurrentTurn
+		self.Get = function() return Logic.GetCurrentTurn() end
 	elseif type == UpdatelessTimer.Type.RealTime then
-		self.Get = XGUIEng.GetSystemTime
+		self.Get = function() return XGUIEng.GetSystemTime() end
 	else
 		assert(false, "invalid timer type")
 	end
