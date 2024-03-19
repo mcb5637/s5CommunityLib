@@ -139,7 +139,6 @@ end
 
 --Setzt die SpielerID einer Entity. Ändert NICHT die EntityID. Farbe der Entity wird nicht verändert, nur Lebensbalkenfarbe
 -- _playerID PlayerID 0 <= int <= 8/16(Kimis Server)
--- mcb: verwenden auf eigene gefahr: listen im player object werden nicht aktualisiert, kann zu unvorhergesehenem verhalten führen!
 function SVLib.SetPlayerID(_id,_playerID)
 	if SVLib.HistoryFlag == 1 then
 		return Logic.SetEntityScriptingValue(_id,-44,_playerID)
@@ -158,10 +157,23 @@ function SVLib.GetPlayerID(_id)
 	end
 end
 
+--Gibt die X-Ziel-Kooridnate einer sich bewegenden Entity zurück
+--return float aufgrundet auf 100 (3455 -> 3500)
+function SVLib.GetXTarget(_id)
+		return Int2Float(Logic.GetEntityScriptingValue(_id,8))
+end
+
+
+--Gibt die Y-Ziel-Kooridnate einer sich bewegenden Entity zurück
+--return float aufgrundet auf 100 (3455 -> 3500)
+function SVLib.GetYTarget(_id)
+		return Int2Float(Logic.GetEntityScriptingValue(_id,9))
+end
+
+
 
 --Utility Funktionen
 
----@diagnostic disable-next-line: lowercase-global
 function qmod(a, b)
 	return a - math.floor(a/b)*b
 end
@@ -196,11 +208,10 @@ function Int2Float(num)
 	return fraction * math.pow(2, exp) * sign
 end
 
----@diagnostic disable-next-line: lowercase-global
 function bitsInt(num)
 	local t={}
 	while num>0 do
-		local rest=qmod(num, 2)
+		rest=qmod(num, 2)
 		table.insert(t,1,rest)
 		num=(num-rest)/2
 	end
@@ -208,7 +219,6 @@ function bitsInt(num)
 	return t
 end
 
----@diagnostic disable-next-line: lowercase-global
 function bitsFrac(num, t)
 	for i = 1, 48 do
 		num = num * 2
