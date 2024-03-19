@@ -1,6 +1,5 @@
 --AutoFixArg
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
@@ -103,7 +102,6 @@ end --mcbPacker.ignore
 -- 
 -- 
 -- Benötigt:
--- - CopyTable
 -- - CppLogic (optional, aber ohne eingeschränkte funktionalität (Heldenfähigkeiten und zielfindung))
 -- - PredicateHelper (optional, siehe CppLogic)
 -- - GetDistance
@@ -1626,12 +1624,22 @@ function UnlimitedArmy.IsEntityFleeingFrom(id, pos)
 	if Logic.IsSettler(id)==0 then
 		return false
 	end
+	--new
+	if Logic.IsEntityInCategory(id, EntityCategories.Soldier) == 1 then
+		id = SVLib.GetLeaderOfSoldier(id)
+	end
+	--new end
+	--[[
 	if CppLogic.Entity.IsSoldier(id) then
 		id = CppLogic.Entity.GetLeaderOfSoldier(id)
 	end
+	]]
 	local p = GetPosition(id)
-	local p2 = CppLogic.Entity.MovingEntityGetTargetPos(id)
-	return GetDistance(pos, p) + 500 < GetDistance(pos, p2)
+	local p2 = {}
+	p2.X = SVLib.GetXTarget(id)
+	p2.Y = SVLib.GetYTarget(_id)
+	--local p2 = CppLogic.Entity.MovingEntityGetTargetPos(id)
+	return GetDistance(pos, p) + 700 < GetDistance(pos, p2)
 end
 
 UnlimitedArmy:AStatic()
