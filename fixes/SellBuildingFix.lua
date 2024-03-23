@@ -2,11 +2,11 @@ if mcbPacker then
 	mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
 end
 
-GUI.SellBuildingOrig = GUI.SellBuilding
+GUI_SellBuildingOrig = GUI.SellBuilding
 
 function OverrideSellingBuilding()
 	function GUI.SellBuilding(_id)
-		SellBuildingOrig(_id)
+		GUI_SellBuildingOrig(_id)
 		local _upgradecategory = Logic.GetUpgradeCategoryByBuildingType(Logic.GetEntityType(_id))
 		if _upgradecategory ==  UpgradeCategories.Beautification05 then
 			AddGold(-50)
