@@ -8,11 +8,12 @@ end --mcbPacker.ignore
 -- Einfache lua Vektorimplementierung mittels OOP.
 -- 
 -- Vector.New(d)					Erzeugt einen neuen Vektor mit dem table d als Elemente.
--- Vector:Size()					Gibt zurück, wie lang der Vektor ist.
+-- Vector:Size()					Gibt zurück, wie groß der Vektor ist (dimension).
 -- Vector:Add(v)					Addiert 2 Vektoren.
 -- Vector:SkalarMultiplication(s)	Skalarmultiplikation.
 -- Vector:Dot(v)					Skalarprodukt.
 -- Vector:MakeSavegameCompatible()	Macht diesen Vektor über den metatable fix Savegamesicher.
+-- Vector:Length()					Länge des Vektors.
 -- 
 -- Über metatable definiert:		*, -, +, .x, .y, .z
 -- 
@@ -56,6 +57,10 @@ function Vector:Dot(v)
 		newd = newd + d * v.data[i]
 	end
 	return newd
+end
+
+function Vector:Length()
+	return self:Dot(self)
 end
 
 function Vector:MakeSavegameCompatible()
