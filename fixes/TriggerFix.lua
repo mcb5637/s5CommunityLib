@@ -111,9 +111,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
-		if TriggerFix.HurtTriggers[event] then
-			TriggerFix.CreateEventHurtIn(cev)
-		end
+		TriggerFix.CreateEventHurtIn(cev, event)
 	end
 	local prevevent = TriggerFix.currentEvent
 	local deleteBack = TriggerFix.TriggersToDelete[event]
@@ -132,9 +130,7 @@ function TriggerFix.ExecuteAllTriggersOfEventDebugger(event, cev)
 			end
 		end
 	end
-	if TriggerFix.HurtTriggers[event] then
-		TriggerFix.CreateEventHurtOut(cev)
-	end
+	TriggerFix.CreateEventHurtOut(cev, event)
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
 		TriggerFix.RemoveTrigger(t)
@@ -160,9 +156,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 	TriggerFix.currStartTime = XGUIEng.GetSystemTime()
 	if not cev then
 		cev = TriggerFix.CreateCopyEvent()
-		if TriggerFix.HurtTriggers[event] then
-			TriggerFix.CreateEventHurtIn(cev)
-		end
+		TriggerFix.CreateEventHurtIn(cev, event)
 	end
 	local prevevent = TriggerFix.currentEvent
 	local deleteBack = TriggerFix.TriggersToDelete[event]
@@ -184,9 +178,7 @@ function TriggerFix.ExecuteAllTriggersOfEventXpcall(event, cev)
 			end
 		end
 	end
-	if TriggerFix.HurtTriggers[event] then
-		TriggerFix.CreateEventHurtOut(cev)
-	end
+	TriggerFix.CreateEventHurtOut(cev, event)
 	TriggerFix.TriggersToDelete[event], deleteBack = deleteBack, TriggerFix.TriggersToDelete[event]
 	for _,t in ipairs(deleteBack) do
 		TriggerFix.RemoveTrigger(t)
@@ -368,24 +360,36 @@ function TriggerFix.CreateEmptyEvent()
 	return cev
 end
 
-function TriggerFix.CreateEventHurtIn(cev)
+function TriggerFix.CreateEventHurtIn(cev, event)
 
 end
-function TriggerFix.CreateEventHurtInCppLogic(cev)
-	cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+function TriggerFix.CreateEventHurtInCppLogic(cev, event)
+	if TriggerFix.HurtTriggers[event] then
+		cev.Damage, cev.AttackSource, cev.GetPlayerID = CppLogic.Logic.HurtEntityGetDamage()
+	elseif event == Events.CPPLOGIC_EVENT_CAN_BUY_SETTLER then
+		cev.ToBuy, cev.TargetID, cev.HasVCSpace, cev.HasCost, cev.HasMotivation, cev.IsNotAlarmLocked, cev.HasHQSpace = CppLogic.Logic.GetSettlerBuyTriggerData()
+	end
 end
-function TriggerFix.CreateEventHurtInCEntity(cev)
-	cev.Damage = CEntity.TriggerGetDamage()
+function TriggerFix.CreateEventHurtInCEntity(cev, event)
+	if TriggerFix.HurtTriggers[event] then
+		cev.Damage = CEntity.TriggerGetDamage()
+	end
 end
 
-function TriggerFix.CreateEventHurtOut(cev)
+function TriggerFix.CreateEventHurtOut(cev, event)
 
 end
-function TriggerFix.CreateEventHurtOutCppLogic(cev)
-	CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
+function TriggerFix.CreateEventHurtOutCppLogic(cev, event)
+	if TriggerFix.HurtTriggers[event] then
+		CppLogic.Logic.HurtEntitySetDamage(cev.Damage)
+	elseif event == Events.CPPLOGIC_EVENT_CAN_BUY_SETTLER then
+		CppLogic.Logic.SetSettlerBuyTriggerData(cev.HasVCSpace, cev.HasCost, cev.HasMotivation, cev.IsNotAlarmLocked, cev.HasHQSpace)
+	end
 end
-function TriggerFix.CreateEventHurtOutCEntity(cev)
-	CEntity.TriggerSetDamage(cev.Damage)
+function TriggerFix.CreateEventHurtOutCEntity(cev, event)
+	if TriggerFix.HurtTriggers[event] then
+		CEntity.TriggerSetDamage(cev.Damage)
+	end
 end
 
 function TriggerFix.ProtectedCall(func, ...)
