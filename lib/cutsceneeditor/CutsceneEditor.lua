@@ -697,4 +697,11 @@ function CutsceneEditor.Store()
 	end)
 end
 
+function CutsceneEditor.ActionToggleInv()
+	XGUIEng.SetBaseWidgetUserVariable("CutsceneEditor_EditCamControl", 1, 1-XGUIEng.GetBaseWidgetUserVariable("CutsceneEditor_EditCamControl", 1))
+end
+function CutsceneEditor.UpdateToggleInv()
+	XGUIEng.HighLightButton(XGUIEng.GetCurrentWidgetID(), XGUIEng.GetBaseWidgetUserVariable("CutsceneEditor_EditCamControl", 1))
+end
+
 AddMapStartCallback("CutsceneEditor.Init")
