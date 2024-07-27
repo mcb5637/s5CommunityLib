@@ -9,7 +9,7 @@ end --mcbPacker.ignore
 -- ************************************************************************************************
 function NextTick(_Callback, ...)
 
-	StartSimpleHiResJob(NextTick_Internal, _Callback, unpack(arg))
+	Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, nil, NextTick_Internal, 1, nil, {_Callback, unpack(arg)})
 end
 function NextTick_Internal(_Callback, ...)
 
