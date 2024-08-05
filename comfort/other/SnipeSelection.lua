@@ -7,6 +7,8 @@ end -- mcbPacker.ignore
 --mcbPacker.deprecated
 
 ---author:mcb		current maintainer:mcb		v0.1
+---@diagnostic disable: deprecated
+---@deprecated
 SnipeSelection = {
 	---@type nil|fun():boolean ->endstate
 	OnClick = nil,
@@ -99,6 +101,7 @@ function SnipeSelection.Init()
 		SnipeSelection.Stop()
 	end
 	StartSimpleHiResJob("SnipeSelection.Tick")
+	AddSaveLoadedCallback("SnipeSelection.Stop")
 end
 
 AddMapStartCallback("SnipeSelection.Init")
