@@ -41,6 +41,8 @@ TriggerFix = {triggers={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={},
 }
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and not LuaDebugger.HandleXPCallErrorMessage and "Debugger" or "Xpcall")
 
+---@alias Trigger number|nil|table
+
 function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
 	if not TriggerFix.triggers[event] then
 		TriggerFix.triggers[event] = {}
