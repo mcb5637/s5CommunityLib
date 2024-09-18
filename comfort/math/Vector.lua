@@ -8,19 +8,33 @@ end --mcbPacker.ignore
 -- Einfache lua Vektorimplementierung mittels OOP.
 -- 
 -- Vector.New(d)					Erzeugt einen neuen Vektor mit dem table d als Elemente.
--- Vector:Size()					Gibt zurück, wie lang der Vektor ist.
+-- Vector:Size()					Gibt zurück, wie groß der Vektor ist (dimension).
 -- Vector:Add(v)					Addiert 2 Vektoren.
 -- Vector:SkalarMultiplication(s)	Skalarmultiplikation.
 -- Vector:Dot(v)					Skalarprodukt.
 -- Vector:MakeSavegameCompatible()	Macht diesen Vektor über den metatable fix Savegamesicher.
+-- Vector:Length()					Länge des Vektors.
 -- 
 -- Über metatable definiert:		*, -, +, .x, .y, .z
 -- 
 -- Benötigt:
 -- - CopyTable
 -- - metatable-fix (nur wenn vektoren gespeichert werden sollen)
-Vector = {}
+---@class Vector
+---@operator add(Vector):Vector
+---@operator sub(Vector):Vector
+---@operator mul(number):Vector
+---@operator unm:Vector
+---@field x number
+---@field y number
+---@field z number
+Vector = {
+	---@type number[]
+	data = nil
+}
 
+---@param d number[]
+---@return Vector
 function Vector.New(d)
 	local t = CopyTable(Vector)
 	t.data = d
@@ -28,10 +42,13 @@ function Vector.New(d)
 	return t
 end
 
+---@return number
 function Vector:Size()
 	return table.getn(self.data)
 end
 
+---@param v Vector
+---@return Vector
 function Vector:Add(v)
 	assert(self:Size()==v:Size())
 	local newd = {}
@@ -41,6 +58,8 @@ function Vector:Add(v)
 	return Vector.New(newd)
 end
 
+---@param s number
+---@return Vector
 function Vector:SkalarMultiplication(s)
 	local newd = {}
 	for i,d in ipairs(self.data) do
@@ -49,6 +68,8 @@ function Vector:SkalarMultiplication(s)
 	return Vector.New(newd)
 end
 
+---@param v Vector
+---@return number
 function Vector:Dot(v)
 	assert(self:Size()==v:Size())
 	local newd = 0
@@ -56,6 +77,28 @@ function Vector:Dot(v)
 		newd = newd + d * v.data[i]
 	end
 	return newd
+end
+
+---@param deg number
+---@return Vector
+function Vector:Rotate(deg)
+	assert(self:Size()==2)
+	local X = self.data[1]
+	local Y = self.data[2]
+	local rad = math.rad(deg)
+	local s = math.sin(rad)
+	local c = math.cos(rad)
+	return Vector.New({X * c + Y * s, X * s + Y * c})
+end
+
+---@return number
+function Vector:Length()
+	return self:Dot(self)
+end
+
+---@return Vector
+function Vector:Normalize()
+	return self:SkalarMultiplication(1 / self:Length())
 end
 
 function Vector:MakeSavegameCompatible()

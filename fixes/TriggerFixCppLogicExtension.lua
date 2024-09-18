@@ -84,6 +84,8 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Logic.EnableExperienceClassFix(true) -- level 1 gibt boni, misschance boni funktionieren
         CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
         CppLogic.Effect.EnableEffectTriggers(true) -- effect created
+        CppLogic.Logic.EnableResourceTriggers(true, false)
+		CppLogic.Logic.EnableSettlerBuyTriggers()
         if not CEntity then
             CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
             CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
@@ -186,7 +188,9 @@ end
 function TriggerFixCppLogicExtension.StaticInit()
     for _,event in ipairs{Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY, Events.CPPLOGIC_EVENT_ON_PAYDAY
             , Events.CPPLOGIC_EVENT_ON_CONVERT_ENTITY, Events.CPPLOGIC_EVENT_ON_EFFECT_CREATED, Events.CPPLOGIC_EVENT_ON_FLYINGEFFECT_HIT
-            , Events.CPPLOGIC_EVENT_ON_EFFECT_DESTROYED} do
+            , Events.CPPLOGIC_EVENT_ON_EFFECT_DESTROYED, Events.CPPLOGIC_EVENT_ON_RESOURCE_REFINED, Events.CPPLOGIC_EVENT_ON_REFINER_SUPPLY_TAKEN
+            , Events.CPPLOGIC_EVENT_ON_RESOURCE_MINED, Events.CPPLOGIC_EVENT_CAN_BUY_SETTLER
+			, Events.CPPLOGIC_EVENT_ON_MAP_STARTED, Events.CPPLOGIC_EVENT_ON_SAVEGAME_LOADED} do
         if not TriggerFix.triggers[event] then
 			TriggerFix.triggers[event] = {}
 		end
@@ -279,18 +283,22 @@ AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
 AddMapStartCallback("TriggerFixCppLogicExtension.OnMapStart")
 TriggerFixCppLogicExtension.StaticInit()
 
-AdvancedDealDamageSource = {
-	Unknown = 0,
-	Melee = 1,
-	Arrow = 2,
-	Cannonball = 3,
+CppLogic.API.CreateExtraDataTables()
+if not AdvancedDealDamageSource then
+    AdvancedDealDamageSource = {
+        Unknown = 0,
+        Melee = 1,
+        Arrow = 2,
+        Cannonball = 3,
+        DefenderArrow = 4,
 
-	AbilitySnipe = 10,
-	AbilityCircularAttack = 11,
-	AbilityBomb = 12,
-	AbilitySabotageSingleTarget = 13,
-	AbilitySabotageBlast = 14,
-	AbilityShuriken = 15,
+        AbilitySnipe = 10,
+        AbilityCircularAttack = 11,
+        AbilityBomb = 12,
+        AbilitySabotageSingleTarget = 13,
+        AbilitySabotageBlast = 14,
+        AbilityShuriken = 15,
 
-	Script = 25,
-};
+        Script = 25,
+    }
+end
