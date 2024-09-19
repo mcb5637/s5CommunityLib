@@ -139,6 +139,7 @@ end
 
 --Setzt die SpielerID einer Entity. Ändert NICHT die EntityID. Farbe der Entity wird nicht verändert, nur Lebensbalkenfarbe
 -- _playerID PlayerID 0 <= int <= 8/16(Kimis Server)
+-- mcb: verwenden auf eigene gefahr: listen im player object werden nicht aktualisiert, kann zu unvorhergesehenem verhalten führen!
 function SVLib.SetPlayerID(_id,_playerID)
 	if SVLib.HistoryFlag == 1 then
 		return Logic.SetEntityScriptingValue(_id,-44,_playerID)
