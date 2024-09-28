@@ -76,68 +76,71 @@ function TriggerFixCppLogicExtension.Init()
         CppLogic.Logic.SetPaydayCallback()
     end
     if TriggerFixCppLogicExtension_UseRecommendedFixes then
-        CppLogic.Combat.EnableAoEProjectileFix() -- aoe projektile beachten damage/armorclass und schadensboni durch techs/helden
+        CppLogic.Combat.EnableAoEProjectileFix()
         CppLogic.Logic.EnableAllHurtEntityTrigger(true)
-        CppLogic.Combat.EnableCamoFix() -- camo wird nicht beendet, wenn projektile treffen
-        --CppLogic.Logic.EnableAllHurtEntityTrigger() -- hurtentity trigger auch ausführen, wenn der angreifer tot ist
+        CppLogic.Combat.EnableCamoFix()
         TriggerFixCppLogicExtension.InitKillCb()
-        CppLogic.Logic.EnableExperienceClassFix(true) -- level 1 gibt boni, misschance boni funktionieren
-        CppLogic.Logic.EnableBuildOnMovementFix(true) -- auf siedlern bauen bricht bewegung nicht mehr ab
-        CppLogic.Effect.EnableEffectTriggers(true) -- effect created
+        CppLogic.Logic.EnableExperienceClassFix(true)
+        CppLogic.Logic.EnableBuildOnMovementFix(true)
+        CppLogic.Effect.EnableEffectTriggers(true)
         CppLogic.Logic.EnableResourceTriggers(true, false)
 		CppLogic.Logic.EnableSettlerBuyTriggers()
+		CppLogic.Logic.EnableCannonInProgressAttraction(true)
+		CppLogic.Effect.EnableLightningFix(true)
         if not CEntity then
-            CppLogic.Logic.SetLeadersRegenerateTroopHealth(true) -- truppen hp regenerieren
-            CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true) -- truppen hp von salim geheilt
+            CppLogic.Logic.SetLeadersRegenerateTroopHealth(true)
+            CppLogic.Entity.Settler.EnableRangedEffectSoldierHeal(true)
             CppLogic.Logic.FixSnipeDamage(nil)
             CppLogic.Logic.TaskListSetChangeTaskListCheckUncancelable(true)
             TriggerFix.CreateEventHurtIn = TriggerFix.CreateEventHurtInCppLogic
             TriggerFix.CreateEventHurtOut = TriggerFix.CreateEventHurtOutCppLogic
         end
-        -- kanonen damageclasses fixen
-        TriggerFixCppLogicExtension.Backup.Cannons = {}
-        local function docannon(ty, dc)
-            local d, c = CppLogic.EntityType.GetAutoAttackDamage(ty)
-            TriggerFixCppLogicExtension.Backup.Cannons[ty] = c
-            CppLogic.EntityType.SetAutoAttackDamage(ty, d, dc)
-        end
-        docannon(Entities.PV_Cannon2, DamageClasses.DC_Siege)
-        docannon(Entities.PV_Cannon3, DamageClasses.DC_Chaos)
-        -- damageclasses faktor gegen fur fixen
-        TriggerFixCppLogicExtension.Backup.FurAC = {}
-        for _,dc in pairs(DamageClasses) do
-            TriggerFixCppLogicExtension.Backup.FurAC[dc] = CppLogic.Logic.GetDamageFactor(dc, ArmorClasses.ArmorClassFur)
-        end
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Strike, ArmorClasses.ArmorClassFur, 0.9)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Pierce, ArmorClasses.ArmorClassFur, 0.9)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Chaos, ArmorClasses.ArmorClassFur, 0.7)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Siege, ArmorClasses.ArmorClassFur, 0.2)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Hero, ArmorClasses.ArmorClassFur, 0.8)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.ArmorClassFur, 1)
-        CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.ArmorClassFur, 1.5)
-        if not CEntity then
-            for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- insert wait tasks into battle tasklists
-                CppLogic.Logic.TaskListInsertSetLatestAttack(tl[1], tl[2])
-                CppLogic.Logic.TaskListInsertWaitForLatestAttack(tl[1], tl[3])
-            end
-            for _,et in ipairs(TriggerFixCppLogicExtension.Backup.BattleWaitUntil) do
-                et[3] = CppLogic.EntityType.GetBattleWaitUntil(et[1])
-                CppLogic.EntityType.SetBattleWaitUntil(et[1], et[2])
-            end
-        end
-        CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, false)
-        TriggerFixCppLogicExtension.Backup.AC = {}
-        for _,et in pairs(Entities) do -- set soldier armor and armorclass to leaders values
-            if CppLogic.EntityType.IsLeaderType(et) then
-                local st = CppLogic.EntityType.Settler.LeaderTypeGetSoldierType(et)
-                if st ~= 0 then
-                    local larm, lac = CppLogic.EntityType.GetArmor(et)
-                    local sarm, sac = CppLogic.EntityType.GetArmor(st)
-                    TriggerFixCppLogicExtension.Backup.AC[st] = {sarm, sac}
-                    CppLogic.EntityType.SetArmor(st, larm, lac)
-                end
-            end
-        end
+		if not TriggerFixCppLogicExtension.IsBugfixesLoaded() then
+			-- kanonen damageclasses fixen
+			TriggerFixCppLogicExtension.Backup.Cannons = {}
+			local function docannon(ty, dc)
+				local d, c = CppLogic.EntityType.GetAutoAttackDamage(ty)
+				TriggerFixCppLogicExtension.Backup.Cannons[ty] = c
+				CppLogic.EntityType.SetAutoAttackDamage(ty, d, dc)
+			end
+			docannon(Entities.PV_Cannon2, DamageClasses.DC_Siege)
+			docannon(Entities.PV_Cannon3, DamageClasses.DC_Chaos)
+			-- damageclasses faktor gegen fur fixen
+			TriggerFixCppLogicExtension.Backup.FurAC = {}
+			for _,dc in pairs(DamageClasses) do
+				TriggerFixCppLogicExtension.Backup.FurAC[dc] = CppLogic.Logic.GetDamageFactor(dc, ArmorClasses.ArmorClassFur)
+			end
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Strike, ArmorClasses.ArmorClassFur, 0.9)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Pierce, ArmorClasses.ArmorClassFur, 0.9)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Chaos, ArmorClasses.ArmorClassFur, 0.7)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Siege, ArmorClasses.ArmorClassFur, 0.2)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Hero, ArmorClasses.ArmorClassFur, 0.8)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Evil, ArmorClasses.ArmorClassFur, 1)
+			CppLogic.Logic.SetDamageFactor(DamageClasses.DC_Bullet, ArmorClasses.ArmorClassFur, 1.5)
+			if not CEntity then
+				for _,tl in ipairs(TriggerFixCppLogicExtension.Backup.TaskListToFix) do -- insert wait tasks into battle tasklists
+					CppLogic.Logic.TaskListInsertSetLatestAttack(tl[1], tl[2])
+					CppLogic.Logic.TaskListInsertWaitForLatestAttack(tl[1], tl[3])
+				end
+				for _,et in ipairs(TriggerFixCppLogicExtension.Backup.BattleWaitUntil) do
+					et[3] = CppLogic.EntityType.GetBattleWaitUntil(et[1])
+					CppLogic.EntityType.SetBattleWaitUntil(et[1], et[2])
+				end
+			end
+			CppLogic.EntityType.SetDeleteWhenBuildOn(Entities.XD_BuildBlockScriptEntity, false)
+			TriggerFixCppLogicExtension.Backup.AC = {}
+			for _,et in pairs(Entities) do -- set soldier armor and armorclass to leaders values
+				if CppLogic.EntityType.IsLeaderType(et) then
+					local st = CppLogic.EntityType.Settler.LeaderTypeGetSoldierType(et)
+					if st ~= 0 then
+						local larm, lac = CppLogic.EntityType.GetArmor(et)
+						local sarm, sac = CppLogic.EntityType.GetArmor(st)
+						TriggerFixCppLogicExtension.Backup.AC[st] = {sarm, sac}
+						CppLogic.EntityType.SetArmor(st, larm, lac)
+					end
+				end
+			end
+		end
         Score.Player[0] = {all = 0, resources = 0, buildings = 0, technology = 0, settlers = 0, battle = 0}
     end
 end
@@ -145,7 +148,7 @@ end
 function TriggerFixCppLogicExtension.OnLeaveMap()
     CppLogic.OnLeaveMap()
     -- CppLogic automatically deactivates all mods, just have to reset data
-    if TriggerFixCppLogicExtension_UseRecommendedFixes then
+    if TriggerFixCppLogicExtension_UseRecommendedFixes and not TriggerFixCppLogicExtension.IsBugfixesLoaded() then
         for ty, dc in pairs(TriggerFixCppLogicExtension.Backup.Cannons) do
             CppLogic.EntityType.SetAutoAttackDamage(ty, CppLogic.EntityType.GetAutoAttackDamage(ty), dc)
         end
@@ -178,7 +181,7 @@ function TriggerFixCppLogicExtension.OnMapStart()
     TriggerFixCppLogicExtension.GameCallback_GUI_StateChanged = GameCallback_GUI_StateChanged
     function GameCallback_GUI_StateChanged(stateid, armed)
         TriggerFixCppLogicExtension.GameCallback_GUI_StateChanged(stateid, armed)
-        if stateid == 27 then
+        if stateid == 28 then
             Mouse.CursorSet(TriggerFixCppLogicExtension.GUIStateCustomMouse)
         end
     end
@@ -211,6 +214,11 @@ function TriggerFixCppLogicExtension.InitKillCb()
     end
 end
 
+---guistate entityauswahl
+---@param onconfirm fun(number)
+---@param mouse number
+---@param checkentity nil|fun(number):boolean
+---@param oncancel fun()
 function TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, checkentity, oncancel)
     TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
     CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
@@ -225,6 +233,11 @@ function TriggerFixCppLogicExtension.SetGUIStateSelectEntity(onconfirm, mouse, c
         return true
     end, oncancel)
 end
+---guistate positionsauswahl
+---@param onconfirm fun(Position)
+---@param mouse number
+---@param checkpos nil|fun(Position):boolean
+---@param oncancel fun()
 function TriggerFixCppLogicExtension.SetGUIStateSelectPos(onconfirm, mouse, checkpos, oncancel)
     TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
     CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
@@ -239,6 +252,12 @@ function TriggerFixCppLogicExtension.SetGUIStateSelectPos(onconfirm, mouse, chec
         return true
     end, oncancel)
 end
+---guistate positionsauswahl im sector
+---@param onconfirm fun(Position)
+---@param mouse number
+---@param sector number
+---@param checkpos nil|fun(Position):boolean
+---@param oncancel fun()
 function TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mouse, sector, checkpos, oncancel)
     TriggerFixCppLogicExtension.GUIStateCustomMouse = mouse
     CppLogic.UI.SetGUIStateLuaSelection(function(x, y)
@@ -264,6 +283,9 @@ function TriggerFixCppLogicExtension.SetGUIStateSelectPosInSector(onconfirm, mou
     end, oncancel)
 end
 
+---lade s5x, automatisch entfernen beim verlassen der map
+---@param path string
+---@return ArchivePopHelper|nil
 function TriggerFixCppLogicExtension.AddMapArchiveToLoadOrder(path)
     TriggerFixCppLogicExtension.RemoveArchiveOnLeave = true
     if not path then
@@ -276,7 +298,23 @@ function TriggerFixCppLogicExtension.AddMapArchiveToLoadOrder(path)
             return
         end
     end
-    CppLogic.Logic.AddArchive(path)
+    return CppLogic.Logic.AddArchive(path)
+end
+
+---@return boolean
+function TriggerFixCppLogicExtension.IsBugfixesLoaded()
+	if not ModLoader then
+		return false
+	end
+	if not ModLoader.RequiredMods then
+		return false
+	end
+	for _,m in ipairs(ModLoader.RequiredMods) do
+		if m == "BugFixes" then
+			return true
+		end
+	end
+	return false
 end
 
 AddMapStartAndSaveLoadedCallback("TriggerFixCppLogicExtension.Init")
