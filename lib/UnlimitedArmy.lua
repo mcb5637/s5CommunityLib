@@ -1,6 +1,6 @@
 --AutoFixArg
 if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
+--mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
@@ -15,6 +15,7 @@ mcbPacker.require("s5CommunityLib/comfort/other/LuaObject")
 mcbPacker.require("s5CommunityLib/comfort/entity/TargetFilter")
 mcbPacker.require("s5CommunityLib/comfort/pos/IsValidPosition")
 mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight")
+mcbPacker.require("S5CommunityLib/comfort/entity/SVLib")
 if CppLogic then --mcbPacker.ignore
 mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 end --mcbPacker.ignore
@@ -251,10 +252,13 @@ function UnlimitedArmy:Tick()
 	self:RefreshPosCache()
 	local pos = self:GetPosition()
 	local preventfurthercommands = false
-	if IsDead(self.CurrentBattleTarget) or not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive)
+	if not UnlimitedArmy.IsValidTarget(self.CurrentBattleTarget, self.Player, self.AIActive)
 	or GetDistance(pos, self.CurrentBattleTarget)>self.Area
-	or (self.IgnoreFleeing and UnlimitedArmy.IsEntityFleeingFrom(self.CurrentBattleTarget, pos)) then
-		self.CurrentBattleTarget = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.Area, self.AIActive, self.IgnoreFleeing)
+	or (self.IgnoreFleeing and UnlimitedArmy.IsEntityFleeingFrom(self.CurrentBattleTarget, pos))then
+		if (self.IgnoreFleeing and UnlimitedArmy.IsEntityFleeingFrom(self.CurrentBattleTarget, pos)) then
+			self.ReMove = true
+		end
+		self.CurrentBattleTarget = UnlimitedArmy.GetTargetEnemiesInArea(pos, self.Player, self.Area, self.AIActive, self.IgnoreFleeing, self.CurrentBattleTarget)
 		self.CannonCommandCache = {}
 	end
 	if not preventfurthercommands and self.Status ~= UnlimitedArmy.Status.MovingNoBattle and IsValid(self.CurrentBattleTarget) then
@@ -1185,7 +1189,7 @@ function UnlimitedArmy.CreateCommandDefend(defendPos, defendArea, looped)
 				self:SetTarget(com.Pos)
 				self:SetReMove(true)
 			elseif self:GetStatus() ~= UnlimitedArmy.Status.Battle then
-				local tid = UnlimitedArmy.GetTargetEnemiesInArea(com.Pos, self.Player, self.Area, self.AIActive, self.IgnoreFleeing)
+				local tid = UnlimitedArmy.GetTargetEnemiesInArea(com.Pos, self.Player, com.DistArea, self.AIActive, self.IgnoreFleeing) --changed self.Area to com.DistArea
 				if IsValid(tid) then
 					self:SetTarget(GetPosition(tid))
 					self:SetReMove(true)
@@ -1459,12 +1463,12 @@ end
 
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.GetTargetEnemiesInArea(p, player, area, aiactive, excludeFleeing)
+function UnlimitedArmy.GetTargetEnemiesInArea(p, player, area, aiactive, excludeFleeing, currentTarget)
 	if p == invalidPosition then
 		return nil
 	end
 	if not UnlimitedArmy.HasHook() then
-		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
+		return UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive, excludeFleeing, currentTarget)
 	end
 	return CppLogic.UA.GetNearestEnemyInArea(player, p, area, excludeFleeing)
 end
@@ -1476,7 +1480,7 @@ function UnlimitedArmy.GetNumberOfEnemiesInArea(p, player, area, excludeFleeing)
 	end
 	if not UnlimitedArmy.HasHook() then
 		local num = 0
-		for p2=1,8 do
+		for p2=1, (CUtil and 16) or 8 do
 			if Logic.GetDiplomacyState(player, p2)==Diplomacy.Hostile then
 				local d = {Logic.GetPlayerEntitiesInArea(p2, 0, p.X, p.Y, area, 16)}
 				table.remove(d, 1)
@@ -1504,18 +1508,20 @@ function UnlimitedArmy.GetNearestBridgeInArea(p, player, area, etypes, aiactive)
 end
 
 UnlimitedArmy:AStatic()
-function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive)
+function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive, excludeFleeing, currentTarget)
 	local repid = nil
-	for i=1, 8 do
-		if Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
+	for i=1, (CUtil and 16) or 8 do
+		if i ~= player and Logic.GetDiplomacyState(i, player)==Diplomacy.Hostile then
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
-				local b, rid = UnlimitedArmy.IsValidTarget(id, player, aiactive)
-				if b then
-					return id
+				if not (excludeFleeing and id == currentTarget) then
+					local b, rid = UnlimitedArmy.IsValidTarget(id, player, aiactive)
+					if b then
+						return id
+					end
+					repid = repid or rid
 				end
-				repid = repid or rid
 			end
 		end
 	end
@@ -1626,12 +1632,22 @@ function UnlimitedArmy.IsEntityFleeingFrom(id, pos)
 	if Logic.IsSettler(id)==0 then
 		return false
 	end
+	--new
+	if Logic.IsEntityInCategory(id, EntityCategories.Soldier) == 1 then
+		id = SVLib.GetLeaderOfSoldier(id)
+	end
+	--new end
+	--[[
 	if CppLogic.Entity.IsSoldier(id) then
 		id = CppLogic.Entity.GetLeaderOfSoldier(id)
 	end
+	]]
 	local p = GetPosition(id)
-	local p2 = CppLogic.Entity.MovingEntityGetTargetPos(id)
-	return GetDistance(pos, p) + 500 < GetDistance(pos, p2)
+	local p2 = {}
+	p2.X = SVLib.GetXTarget(id)
+	p2.Y = SVLib.GetYTarget(id)
+	--local p2 = CppLogic.Entity.MovingEntityGetTargetPos(id)
+	return GetDistance(pos, p) + 800 < GetDistance(pos, p2)
 end
 
 UnlimitedArmy:AStatic()
