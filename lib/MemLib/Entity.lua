@@ -7,10 +7,11 @@
 if mcbPacker then
     mcbPacker.require("s5CommunityLib/Lib/MemLib/MemLib")
     mcbPacker.require("s5CommunityLib/Lib/MemLib/EntityType")
+    mcbPacker.require("s5CommunityLib/Lib/MemLib/Util")
     mcbPacker.require("s5CommunityLib/Tables/EntityClasses")
 else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
-	MemLib.Load("EntityType", "EntityClasses")
+	MemLib.Load("EntityType", "Util", "Tables/EntityClasses")
 end
 --------------------------------------------------------------------------------
 MemLib.Entity = {}
@@ -121,7 +122,7 @@ end
 --------------------------------------------------------------------------------
 ---@param _ResourceDoodadId integer
 ---@param _ResourceType integer
-function MemLib.Util.ResourceDoodadSetResourceType(_ResourceDoodadId, _ResourceType)
+function MemLib.Entity.ResourceDoodadSetResourceType(_ResourceDoodadId, _ResourceType)
 	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad, "MemLib.Util.ResourceDoodadSetResourceType: _ResourceDoodadId invalid")
 	assert(MemLib.Util.ResourceTypeIsValid(_ResourceType), "MemLib.Util.ResourceDoodadSetResourceType: _ResourceType invalid")
 	MemLib.Entity.GetMemory(_ResourceDoodadId)[66]:SetInt(_ResourceType)

@@ -36,7 +36,11 @@ function MemLib_SV_InitAddressEntity()
             Camera.ScrollSetLookAt(_X, _Y)
 
             MemLib.FPU = nil
-            MemLib.Load("FPU")
+            if mcbPacker then
+                mcbPacker.require("s5CommunityLib/Lib/MemLib/FPU")
+            else
+                MemLib.Load("FPU")
+            end
 
             return true
         end

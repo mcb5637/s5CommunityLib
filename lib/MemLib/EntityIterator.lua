@@ -1,6 +1,6 @@
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 -- MemLib.EntityIterator
--- author: RobbiTheFox, Fritz98
+-- author: RobbiTheFox, Fritz98, Kimichura
 -- current maintainer: RobbiTheFox
 -- Version: v1.0
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
@@ -16,27 +16,39 @@ MemLib.EntityIterator = {}
 ---@return table|function
 function MemLib.EntityIterator.Iterator(...)
 
+    local Logic_GetEntityScriptingValue = Logic.GetEntityScriptingValue
+    local Logic_IsEntityDestroyed = Logic.IsEntityDestroyed
+    local math_mod = math.mod
+    local args = table.getn(arg)
+    local MemLib_SV_AddressEntity = MemLib.SV.AddressEntity
+
     local address = MemLib.GetMemory(9008472)[0]:GetInt()
+
     MemLib.ArmPreciseFPU()
     MemLib.SetPreciseFPU()
 
-    local offset = (address - MemLib.SV.AddressOffset + 24) / 4
+    local offset = (address - MemLib.SV.AddressOffset + 24) / 4 + 2
     local entities = {}
-    local bitMask = 2^30
+    local bitMask = 2 ^ 30
+
+    local offsets = {};
+    table.setn(offsets, 65535)
+    for i = 1, 65535 do
+        offset = offset + 2
+        offsets[i] = offset
+    end
+
+    MemLib.DisarmPreciseFPU()
 
     for i = 1, 65535 do
-        MemLib.ArmPreciseFPU()
-        MemLib.SetPreciseFPU()
-        offset = offset + 2
-        MemLib.DisarmPreciseFPU()
-        local sv = Logic.GetEntityScriptingValue(MemLib.SV.AddressEntity, offset)
-        local entityId = math.mod(sv, bitMask)
+        local sv = Logic_GetEntityScriptingValue(MemLib_SV_AddressEntity, offsets[i])
+        local entityId = math_mod(sv, bitMask)
         if entityId < 0 then
             entityId = entityId + bitMask
         end
-        if not Logic.IsEntityDestroyed(entityId) then
+        if not Logic_IsEntityDestroyed(entityId) then
             local meetsCriteria = true
-            for j = 1, table.getn(arg) do
+            for j = 1, args do
                 local filter = arg[j]
                 if not filter(entityId) then
                     meetsCriteria = false
@@ -447,7 +459,7 @@ if CEntityIterator then
 --------------------------------------------------------------------------------
 -- S5Hook.EntityIterator exists
 --------------------------------------------------------------------------------
-elseif false and S5Hook and Predicate then
+elseif S5Hook and Predicate then
 
     ---@param ... function|userdata
     ---@return table|function

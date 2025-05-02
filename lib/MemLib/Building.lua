@@ -112,7 +112,7 @@ end
 ---@param _ConstructionSiteId integer
 ---@return integer
 function MemLib.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)
-    assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite, "MemLib.Util.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
+    assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite, "MemLib.Building.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
     -- if this line raises an error, something is REALLY WRONG!
     return MemLib.Entity.GetReversedAttachedEntities(_ConstructionSiteId)[20][1]
 end

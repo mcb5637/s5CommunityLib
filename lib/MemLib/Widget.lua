@@ -10,7 +10,7 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/Tables/WidgetClasses")
 else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
-	MemLib.Load("WidgetClasses")
+	MemLib.Load("Tables/WidgetClasses")
 end
 --------------------------------------------------------------------------------
 MemLib.Widget = {}
