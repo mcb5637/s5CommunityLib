@@ -1751,7 +1751,15 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive, excludeFl
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
-				if not (excludeFleeing and id == currentTarget) then
+				local valid = true
+				if excludeFleeing then
+					if id == currentTarget then
+						valid = false
+					elseif UnlimitedArmy.IsEntityFleeingFrom(id, p) then 
+						valid = false
+					end
+				end
+				if valid then
 					local b, rid = UnlimitedArmy.IsValidTarget(id, player, aiactive)
 					if b then
 						return id
