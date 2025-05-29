@@ -1,14 +1,6 @@
-if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-end --mcbPacker.ignore
-
-
-
--- ************************************************************************************************
--- Custom Tick Library
--- v 1.2
--- by RobbiTheFox
--- ************************************************************************************************
+--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+-- author: RobbiTheFox, current maintainer: RobbiTheFox, v1.3
+--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 -- Library to create Jobs with custom tick intervals
 -- use CustomTick.AddCallback(_Callback, _TickRateMs) to add a job
 -- jobs are active by default
@@ -17,12 +9,12 @@ end --mcbPacker.ignore
 -- CustomTick.PauseCallback(_Id)
 -- CustomTick.ResumeCallback(_Id)
 -- CustomTick.RemoveCallback(_Id)
--- ************************************************************************************************
+--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 CustomTick = {}
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- CustomTick.Init gets called automaticly on first use
 -- passing an UpdateFunction of your choice does not work yet
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.Init(_UpdateFunc)
 	
 	-- TODO: make it work, that you can pass an update function of your choice
@@ -57,9 +49,9 @@ function CustomTick.Init(_UpdateFunc)
 		
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- calls all callbacks which are not paused in their respective intervals
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.ExecuteCallbacks()
 
 	--for i = 1, table.getn(CustomTick.Callbacks) do
@@ -89,10 +81,10 @@ function CustomTick.ExecuteCallbacks()
 		end
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- executes the callback function of the given callback
 -- param: id or callback
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.ExecuteCallback(_Callback)
 	
 	if type(_Callback) == "number" then
@@ -112,7 +104,7 @@ function CustomTick.ExecuteCallback(_Callback)
 		_Callback.Callback(_Callback.Params)
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- adds a callback to Callbacks table, callbacks start active by default
 -- params:
 -- Callback			function to call in given interval
@@ -122,7 +114,7 @@ end
 -- IgnoreGamePaused	if true, _Callback will be called even if game is paused (TickInRealTime must also be true then)
 -- IsPaused			if true, the callback starts paused and can be activated later
 -- Params			table with additional params for _Callback
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.AddCallback(_Callback, _TickRateMs, _TickInRealTime, _IgnoreGamePaused, _IsPaused, _Params)
 	
 	if type(_Callback) == "table" then
@@ -151,16 +143,16 @@ function CustomTick.AddCallback(_Callback, _TickRateMs, _TickInRealTime, _Ignore
 	
 	return id
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- returns true if a callback is listed at the given id, false if not
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.IsValidCallback(_Id)
 	
 	return CustomTick.Callbacks[_Id] ~= nil
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- pauses a callback
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.PauseCallback(_Id)
 	
 	if CustomTick.IsValidCallback(_Id) then
@@ -168,10 +160,10 @@ function CustomTick.PauseCallback(_Id)
 		CustomTick.Callbacks[_Id].IsPaused = true
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- returns true if callback is paused, false if not
 -- returns nil if callback is invalid
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.IsPausedCallback(_Id)
 	
 	if CustomTick.IsValidCallback(_Id) then
@@ -179,9 +171,9 @@ function CustomTick.IsPausedCallback(_Id)
 		return CustomTick.Callbacks[_Id].IsPaused == true
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- resumes a callback
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.ResumeCallback(_Id, _SupressInitialCall)
 	
 	if CustomTick.IsValidCallback(_Id) then
@@ -190,9 +182,9 @@ function CustomTick.ResumeCallback(_Id, _SupressInitialCall)
 		CustomTick.Callbacks[_Id].LastCall = Game.RealTimeGetMs()
 	end
 end
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 -- removes a callback from Callbacks table
--- ************************************************************************************************
+--------------------------------------------------------------------------------
 function CustomTick.RemoveCallback(_Id)
 	
 	if CustomTick.IsValidCallback(_Id) then

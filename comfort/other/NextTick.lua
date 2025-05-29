@@ -1,18 +1,17 @@
-if mcbPacker then --mcbPacker.ignore
-mcbPacker.require("s5CommunityLib/fixes/TriggerFix")
-end --mcbPacker.ignore
+--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+-- NextTick
+-- author: RobbiTheFox
+-- current maintainer: RobbiTheFox
+-- Version: v1.1
+--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 
-
--- ************************************************************************************************
--- Next Tick by RobbiTheFox
--- requires trigger fix
--- ************************************************************************************************
+-- executes function with params in the next game tick
+---@param _Callback function
+---@param ... any
 function NextTick(_Callback, ...)
-
-	Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, nil, NextTick_Internal, 1, nil, {_Callback, unpack(arg)})
+	Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_TURN, nil, "NextTick_Internal", 1, nil, {_Callback, unpack(arg)})
 end
 function NextTick_Internal(_Callback, ...)
-
 	_Callback(unpack(arg))
 	return true
 end

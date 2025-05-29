@@ -30,13 +30,6 @@ function MemLib.SettlerType.IsValid(_SettlerType)
     return MemLib.EntityType.GetMemory(_SettlerType)[0]:GetInt() == EntityTypeClasses.CGLSettlerProps
 end
 --------------------------------------------------------------------------------
--- like Logic.FillSettlerCostTable but 0s are left out
----@param _SettlerType integer
----@return table
-function MemLib.SettlerType.GetCostTable(_SettlerType)
-	return MemLib.Util.GetCostTable(MemLib.SettlerType.GetMemory(_SettlerType):Offset(40))
-end
---------------------------------------------------------------------------------
 ---@param _SettlerType integer
 ---@return integer
 function MemLib.SettlerType.GetArmor(_SettlerType)
@@ -60,12 +53,6 @@ end
 function MemLib.SettlerType.SetArmorClass(_SettlerType, _ArmorClass)
     assert(table.find(ArmorClasses, _ArmorClass))
 	return MemLib.SettlerType.GetMemory(_SettlerType)[60]:SetInt(_ArmorClass)
-end
---------------------------------------------------------------------------------
----@param _SettlerType integer
----@return integer
-function MemLib.SettlerType.GetUpgradeCategory(_SettlerType)
-	return MemLib.SettlerType.GetMemory(_SettlerType)[84]:GetInt()
 end
 --------------------------------------------------------------------------------
 ---@param _ResourceEntityType integer
@@ -199,6 +186,47 @@ else
 		assert(MemLib.SettlerType.IsValid(_SettlerType))
 		assert(type(_Amount) == "number" and _Amount >= 0)
 		MemLib.SettlerType.GetMemory(_SettlerType)[136]:SetInt(_Amount)
+	end
+
+end
+
+if CppLogic then
+
+	--------------------------------------------------------------------------------
+	-- like Logic.FillSettlerCostTable but 0s are left out
+	---@param _SettlerType integer
+	---@return table
+	function MemLib.SettlerType.GetCostTable(_SettlerType)
+		local result = {}
+		local costs = CppLogic.EntityType.Settler.GetCost(_SettlerType)
+		for i = 1, 17 do
+			if costs[i] > 0 then
+				result[i] = costs[i]
+			end
+		end
+		return result
+	end
+	--------------------------------------------------------------------------------
+	---@param _SettlerType integer
+	---@return integer
+	function MemLib.SettlerType.GetUpgradeCategory(_SettlerType)
+		return CppLogic.EntityType.Settler.GetUpgradeCategory(_SettlerType)
+	end
+
+else
+
+	--------------------------------------------------------------------------------
+	-- like Logic.FillSettlerCostTable but 0s are left out
+	---@param _SettlerType integer
+	---@return table
+	function MemLib.SettlerType.GetCostTable(_SettlerType)
+		return MemLib.Util.GetCostTable(MemLib.SettlerType.GetMemory(_SettlerType):Offset(40))
+	end
+	--------------------------------------------------------------------------------
+	---@param _SettlerType integer
+	---@return integer
+	function MemLib.SettlerType.GetUpgradeCategory(_SettlerType)
+		return MemLib.SettlerType.GetMemory(_SettlerType)[84]:GetInt()
 	end
 
 end

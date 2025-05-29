@@ -38,13 +38,15 @@ function MemLib.BuildingTypeGetArmor(_BuildingType)
 end
 --------------------------------------------------------------------------------
 ---@param _BuildingType integer
----@return number
----@return number
----@return number
----@return number
-function MemLib.BuildingType.GetAproachAndDoorPosition(_BuildingType)
+---@return number AproachX
+---@return number AproachY
+---@return number DoorX
+---@return number DoorY
+---@return number LeaveX
+---@return number LeaveY
+function MemLib.BuildingType.GetAproachDoorAndLeavePosition(_BuildingType)
     local buildingTypeMemory = MemLib.BuildingType.GetMemory(_BuildingType)
-    return buildingTypeMemory[7]:GetFloat(), buildingTypeMemory[8]:GetFloat(), buildingTypeMemory[46]:GetFloat(), buildingTypeMemory[47]:GetFloat()
+    return buildingTypeMemory[7]:GetFloat(), buildingTypeMemory[8]:GetFloat(), buildingTypeMemory[46]:GetFloat(), buildingTypeMemory[47]:GetFloat(), buildingTypeMemory[48]:GetFloat(), buildingTypeMemory[49]:GetFloat()
 end
 --------------------------------------------------------------------------------
 ---@param _BuildingType integer
@@ -67,20 +69,6 @@ end
 function MemLib.BuildingType.GetBuildBlockArea(_BuildingType)
 	local buildingTypeMemory = MemLib.BuildingType.GetMemory(_BuildingType)
 	return buildingTypeMemory[38]:GetFloat(), buildingTypeMemory[39]:GetFloat(), buildingTypeMemory[40]:GetFloat(), buildingTypeMemory[41]:GetFloat()
-end
---------------------------------------------------------------------------------
--- like Logic.FillBuildingCostTable but 0s are left out
----@param _BuildingType integer
----@return table
-function MemLib.BuildingType.GetConstructionCostTable(_BuildingType)
-	return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(56))
-end
---------------------------------------------------------------------------------
--- like Logic.FillBuildingUpgradeCostTable but 0s are left out
----@param _BuildingType integer
----@return table
-function MemLib.BuildingType.GetUpgradeCostTable(_BuildingType)
-	return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(81))
 end
 --------------------------------------------------------------------------------
 ---@param _BuildingType integer
@@ -161,6 +149,21 @@ if CLogic then
 		CLogic.SetRefinedResourcesValue(_BuildingType, _Amount)
 	end
 
+elseif CppLogic then
+
+	--------------------------------------------------------------------------------
+	---@param _BuildingType integer
+	---@return integer
+	function MemLib.BuildingType.GetAttractionSlots(_BuildingType)
+		return CppLogic.EntityType.Building.GetVCAttractionSlotsProvided(_BuildingType)
+	end
+	--------------------------------------------------------------------------------
+	---@param _BuildingType integer
+	---@param _Amount integer
+	function MemLib.BuildingType.SetAttractionSlots(_BuildingType, _Amount)
+		CppLogic.EntityType.Building.SetVCAttractionSlotsProvided(_BuildingType, _Amount)
+	end
+
 else
 
 	--------------------------------------------------------------------------------
@@ -197,6 +200,56 @@ else
 		if refinerBehaviorProps then
 			return refinerBehaviorProps[5]:GetFloat(), refinerBehaviorProps[4]:GetInt()
 		end
+	end
+
+end
+
+if CppLogic then
+
+	--------------------------------------------------------------------------------
+	-- like Logic.FillBuildingCostTable but 0s are left out
+	---@param _BuildingType integer
+	---@return table
+	function MemLib.BuildingType.GetConstructionCostTable(_BuildingType)
+		local result = {}
+		local costs = CppLogic.EntityType.Building.GetConstructionCost(_BuildingType)
+		for i = 1, 17 do
+			if costs[i] > 0 then
+				result[i] = costs[i]
+			end
+		end
+		return result
+	end
+	--------------------------------------------------------------------------------
+	-- like Logic.FillBuildingUpgradeCostTable but 0s are left out
+	---@param _BuildingType integer
+	---@return table
+	function MemLib.BuildingType.GetUpgradeCostTable(_BuildingType)
+		local result = {}
+		local costs = CppLogic.EntityType.Building.GetUpradeCost(_BuildingType)
+		for i = 1, 17 do
+			if costs[i] > 0 then
+				result[i] = costs[i]
+			end
+		end
+		return result
+	end
+
+else
+
+	--------------------------------------------------------------------------------
+	-- like Logic.FillBuildingCostTable but 0s are left out
+	---@param _BuildingType integer
+	---@return table
+	function MemLib.BuildingType.GetConstructionCostTable(_BuildingType)
+		return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(56))
+	end
+	--------------------------------------------------------------------------------
+	-- like Logic.FillBuildingUpgradeCostTable but 0s are left out
+	---@param _BuildingType integer
+	---@return table
+	function MemLib.BuildingType.GetUpgradeCostTable(_BuildingType)
+		return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(81))
 	end
 
 end

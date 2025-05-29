@@ -9,7 +9,7 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/fixes/metatable")
 else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
-    if not metatable then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\fixes\\metatable.lua") end
+    if not metatable then Script.Load("D:\\Privat\\Spiele\\Siedler5\\extra2\\shr\\maps\\user\\EMS\\tools\\s5CommunityLib\\fixes\\metatable.lua") end
 end
 --------------------------------------------------------------------------------
 MemLib.LAU = {}
@@ -50,6 +50,7 @@ MemLib.LAU.OctToBin = {
 function MemLib.LAU.ToTable(_Number)
     local NumberOctalString = string.format("%011o", _Number)
     local NumberBinaryTable = {}
+    table.setn(NumberBinaryTable, 33)
     for i = 1, 11 do
         local BinCode = MemLib.LAU.OctToBin[string.sub(NumberOctalString, i, i)]
         for j = 1, 3 do
@@ -65,6 +66,7 @@ end
 ---@return table
 function MemLib.LAU.CopyTable(_Table)
     local copy = {}
+    table.setn(copy, 32)
     for i = 1, 32 do
         copy[i] = _Table[i]
     end
@@ -114,6 +116,7 @@ end
 function MemLib.LAU.AddTable(_A, _B)
     local c = 0
     local Sum = {}
+    table.setn(Sum, 32)
     for i = 32, 1, -1 do
         local Digit = _A[i] + _B[i] + c
         Sum[i] = math.mod(Digit, 2)
@@ -123,10 +126,19 @@ function MemLib.LAU.AddTable(_A, _B)
     return Sum
 end
 --------------------------------------------------------------------------------
+---@param _A number
+---@param _B number
+---@return number
+function MemLib.LAU.AddNumber(_A, _B)
+    local a, b = MemLib.LAU.ToTable(_A), MemLib.LAU.ToTable(_B)
+    return MemLib.LAU.ToNumber(MemLib.LAU.AddTable(a, b))
+end
+--------------------------------------------------------------------------------
 ---@param _A table
 ---@return table
 function MemLib.LAU.TwosComplement(_A)
     local Complement = {}
+    table.setn(Complement, 32)
     for i = 1, 32 do
         Complement[i] = 1 - _A[i]
     end
@@ -142,6 +154,14 @@ function MemLib.LAU.SubTable(_A, _B)
     local result = MemLib.LAU.AddTable(_A, MemLib.LAU.TwosComplement(_B))
     metatable.set(result, MemLib.LAU.mt)
     return result
+end
+--------------------------------------------------------------------------------
+---@param _A number
+---@param _B number
+---@return number
+function MemLib.LAU.SubNumber(_A, _B)
+    local a, b = MemLib.LAU.ToTable(_A), MemLib.LAU.ToTable(_B)
+    return MemLib.LAU.ToNumber(MemLib.LAU.SubTable(a, b))
 end
 --------------------------------------------------------------------------------
 ---@param _A table
@@ -163,6 +183,7 @@ end
 ---@return table
 function MemLib.LAU.And(_A, _B)
     local c = {}
+    table.setn(c, 32)
     for i = 1, 32 do
         if _A[i] == 1 and _B[i] == 1 then
             c[i] = 1
@@ -173,11 +194,12 @@ function MemLib.LAU.And(_A, _B)
     return c
 end
 --------------------------------------------------------------------------------
----@param _N table
+---@param _N integer
 ---@param _A table
 ---@return table
 function MemLib.LAU.LRotate(_N, _A)
     local b = {}
+    table.setn(b, 32)
     for i = 1, 32 do
         local n = i + _N
         if n > 32 then
@@ -188,11 +210,12 @@ function MemLib.LAU.LRotate(_N, _A)
     return b
 end
 --------------------------------------------------------------------------------
----@param _N table
+---@param _N integer
 ---@param _A table
 ---@return table
 function MemLib.LAU.LShift(_N, _A)
     local b = {}
+    table.setn(b, 32)
     for i = 1, 32 do
         b[i] = _A[i + _N] or 0
     end
@@ -203,6 +226,7 @@ end
 ---@return table
 function MemLib.LAU.Not(_A)
     local b = {}
+    table.setn(b, 32)
     for i = 1, 32 do
         b[i] = 1 - _A[i]
     end
@@ -214,6 +238,7 @@ end
 ---@return table
 function MemLib.LAU.Or(_A, _B)
     local c = {}
+    table.setn(c, 32)
     for i = 1, 32 do
         if _A[i] == 1 or _B[i] == 1 then
             c[i] = 1
@@ -224,11 +249,12 @@ function MemLib.LAU.Or(_A, _B)
     return c
 end
 --------------------------------------------------------------------------------
----@param _N table
+---@param _N integer
 ---@param _A table
 ---@return table
 function MemLib.LAU.RRotate(_N, _A)
     local b = {}
+    table.setn(b, 32)
     for i = 1, 32 do
         local n = i - _N
         if n < 1 then
@@ -239,11 +265,12 @@ function MemLib.LAU.RRotate(_N, _A)
     return b
 end
 --------------------------------------------------------------------------------
----@param _N table
+---@param _N integer
 ---@param _A table
 ---@return table
 function MemLib.LAU.RShift(_N, _A)
     local b = {}
+    table.setn(b, 32)
     for i = 1, 32 do
         b[i] = _A[i - _N] or 0
     end
@@ -255,6 +282,7 @@ end
 ---@return table
 function MemLib.LAU.Xor(_A, _B)
     local c = {}
+    table.setn(c, 32)
     for i = 1, 32 do
         if _A[i] ~= _B[i] then
             c[i] = 1

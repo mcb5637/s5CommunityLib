@@ -19,13 +19,13 @@ MemLib.EntityType = {}
 ---@return userdata
 function MemLib.EntityType.GetMemory(_EntityType)
 	assert(MemLib.EntityType.IsValid(_EntityType), "MemLib.EntityType.GetMemory: _EntityType invalid")
-	return MemLib.GetMemory(9002416)[0][7][_EntityType]
+	return MemLib.GetMemory(MemLib.Offsets.CGLEEntitiesProps.GlobalObject)[0][7][_EntityType]
 end
 --------------------------------------------------------------------------------
 ---@param _EntityType integer
 ---@return boolean
 function MemLib.EntityType.IsValid(_EntityType)
-	local CGLEEntitiesProps = MemLib.GetMemory(9002416)[0]
+	local CGLEEntitiesProps = MemLib.GetMemory(MemLib.Offsets.CGLEEntitiesProps.GlobalObject)[0]
 	return type(_EntityType) == "number" and _EntityType > 0 and _EntityType <= (CGLEEntitiesProps[8]:GetInt() - CGLEEntitiesProps[7]:GetInt()) / 4
 end
 --------------------------------------------------------------------------------
@@ -57,43 +57,6 @@ function MemLib.EntityType.BehaviorGetMemory(_EntityType, _BehaviorProps)
 	end
 end
 --------------------------------------------------------------------------------
----comment
----@param _EntityType any
----@param _Modifier any
----@return table
-function MemLib.EntityType.GetModifierTechnologies(_EntityType, _Modifier)
-
-	local techs = {}
-	local offsets = {
-		[Modifiers.Exploration]	=  88,
-		[Modifiers.Hitpoints]	=  93,
-		[Modifiers.Speed]		=  98,
-		[Modifiers.Damage]		= 103,
-		[Modifiers.Armor]		= 108,
-		[Modifiers.DodgeChance]	= 113,
-		[Modifiers.MaxRange]	= 118,
-		[Modifiers.MinRange]	= 123,
-		[Modifiers.DamageBonus]	= 128,
-		[Modifiers.GroupLimit]	= 133,
-	}
-	local offset = offsets[_Modifier]
-
-	if offset then
-
-		local entityTypeMemory = MemLib.EntityType.GetMemory(_EntityType)
-
-		local vectorStartMemory = entityTypeMemory[offset]
-		local vectorEndMemory = entityTypeMemory[offset + 1]
-		local lastIndex = (vectorEndMemory:GetInt() - vectorStartMemory:GetInt()) / 4 - 1
-
-		for i = 0, lastIndex do
-			table.insert(techs, vectorStartMemory[i]:GetInt())
-		end
-	end
-
-	return techs
-end
---------------------------------------------------------------------------------
 ---@param _EntityType integer
 ---@return number?
 function MemLib.EntityType.GetCamperRange(_EntityType)
@@ -102,39 +65,7 @@ function MemLib.EntityType.GetCamperRange(_EntityType)
 		return camperBehaviorProps[4]:GetFloat()
 	end
 end
---------------------------------------------------------------------------------
----@param _EntityType integer
----@return integer Points
----@return integer Seconds
-function MemLib.EntityType.GetHealingPointsAndSeconds(_EntityType)
 
-	local behaviors = {
-		BehaviorProperties.CLeaderBehaviorProps,
-		BehaviorProperties.CBattleSerfBehaviorProps,
-	}
-
-	for _, behavior in ipairs(behaviors) do
-
-		local battleBehaviorMemory = MemLib.EntityType.BehaviorGetMemory(_EntityType, behavior)
-
-		if battleBehaviorMemory then
-			return battleBehaviorMemory[28]:GetInt(), battleBehaviorMemory[29]:GetInt()
-		end
-	end
-	return 0, 0
-end
---------------------------------------------------------------------------------
----@param _EntityType integer
----@return integer
-function MemLib.EntityType.GetMaxHealth(_EntityType)
-	return MemLib.EntityType.GetMemory(_EntityType)[13]:GetInt()
-end
---------------------------------------------------------------------------------
----@param _EntityType integer
----@param _MaxHealth integer
-function MemLib.EntityType.SetMaxHealth(_EntityType, _MaxHealth)
-	return MemLib.EntityType.GetMemory(_EntityType)[13]:SetInt(_MaxHealth)
-end
 --------------------------------------------------------------------------------
 ---@param _EntityType integer
 ---@return number
@@ -289,4 +220,130 @@ function MemLib.Internal.LimitedAttachmentGetSlotAmountMemory(_EntityType, _Atta
 			end
 		end
 	end
+end
+--------------------------------------------------------------------------------
+---@param _TreeType integer
+---@return integer
+function MemLib.EntityType.TreeTypeGetResourceAmount(_TreeType)
+	local entityTypeMemory = MemLib.EntityType.GetMemory(_TreeType)
+	assert(entityTypeMemory[0]:GetInt() == EntityTypeClasses.CEntityProperties)
+	return entityTypeMemory[39]:GetInt()
+end
+--------------------------------------------------------------------------------
+if CppLogic then
+
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@return integer
+	function MemLib.EntityType.GetMaxHealth(_EntityType)
+		return CppLogic.EntityType.GetMaxHealth(_EntityType)
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@param _MaxHealth integer
+	function MemLib.EntityType.SetMaxHealth(_EntityType, _MaxHealth)
+		CppLogic.EntityType.SetMaxHealth(_EntityType, _MaxHealth)
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@return integer Points
+	---@return integer Seconds
+	function MemLib.EntityType.GetHealingPointsAndSeconds(_EntityType)
+		return CppLogic.EntityType.Settler.LeaderTypeGetRegeneration(_EntityType)
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@param _Modifier integer
+	---@return table
+	function MemLib.EntityType.GetModifierTechnologies(_EntityType, _Modifier)
+
+		local techs = {}
+		local getters = {
+			CppLogic.EntityType.GetExplorationModifierTechs,
+			CppLogic.EntityType.Settler.GetSpeedModifierTechs,
+			CppLogic.EntityType.Settler.GetDamageModifierTechs,
+			CppLogic.EntityType.GetArmorModifierTechs,
+			CppLogic.EntityType.Settler.GetMaxRangeModifierTechs,
+		}
+		local getter = getters[_Modifier]
+
+		if getter then
+			return getter(_EntityType)
+		end
+
+		return techs
+	end
+
+else
+
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@return integer
+	function MemLib.EntityType.GetMaxHealth(_EntityType)
+		return MemLib.EntityType.GetMemory(_EntityType)[13]:GetInt()
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@param _MaxHealth integer
+	function MemLib.EntityType.SetMaxHealth(_EntityType, _MaxHealth)
+		MemLib.EntityType.GetMemory(_EntityType)[13]:SetInt(_MaxHealth)
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@return integer Points
+	---@return integer Seconds
+	function MemLib.EntityType.GetHealingPointsAndSeconds(_EntityType)
+
+		local behaviors = {
+			BehaviorProperties.CLeaderBehaviorProps,
+			BehaviorProperties.CBattleSerfBehaviorProps,
+		}
+
+		for _, behavior in ipairs(behaviors) do
+
+			local battleBehaviorMemory = MemLib.EntityType.BehaviorGetMemory(_EntityType, behavior)
+
+			if battleBehaviorMemory then
+				return battleBehaviorMemory[28]:GetInt(), battleBehaviorMemory[29]:GetInt()
+			end
+		end
+		return 0, 0
+	end
+	--------------------------------------------------------------------------------
+	---@param _EntityType integer
+	---@param _Modifier integer
+	---@return table
+	function MemLib.EntityType.GetModifierTechnologies(_EntityType, _Modifier)
+
+		local techs = {}
+		local offsets = {
+			[Modifiers.Exploration]	=  88,
+			[Modifiers.Hitpoints]	=  93,
+			[Modifiers.Speed]		=  98,
+			[Modifiers.Damage]		= 103,
+			[Modifiers.Armor]		= 108,
+			[Modifiers.DodgeChance]	= 113,
+			[Modifiers.MaxRange]	= 118,
+			[Modifiers.MinRange]	= 123,
+			[Modifiers.DamageBonus]	= 128,
+			[Modifiers.GroupLimit]	= 133,
+		}
+		local offset = offsets[_Modifier]
+
+		if offset then
+
+			local entityTypeMemory = MemLib.EntityType.GetMemory(_EntityType)
+
+			local vectorStartMemory = entityTypeMemory[offset]
+			local vectorEndMemory = entityTypeMemory[offset + 1]
+			local lastIndex = (vectorEndMemory:GetInt() - vectorStartMemory:GetInt()) / 4 - 1
+
+			for i = 0, lastIndex do
+				table.insert(techs, vectorStartMemory[i]:GetInt())
+			end
+		end
+
+		return techs
+	end
+
 end

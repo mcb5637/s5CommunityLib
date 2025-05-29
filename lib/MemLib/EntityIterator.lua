@@ -1,6 +1,6 @@
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 -- MemLib.EntityIterator
--- author: RobbiTheFox, Fritz98
+-- author: RobbiTheFox, Fritz98, Kimichura
 -- current maintainer: RobbiTheFox
 -- Version: v1.0
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
@@ -12,43 +12,109 @@ end
 --------------------------------------------------------------------------------
 MemLib.EntityIterator = {}
 --------------------------------------------------------------------------------
----@param ... function|userdata
----@return table|function
-function MemLib.EntityIterator.Iterator(...)
+if XNetwork.Manager_IsNATReady then
 
-    local address = MemLib.GetMemory(9008472)[0]:GetInt()
-    MemLib.ArmPreciseFPU()
-    MemLib.SetPreciseFPU()
+    --------------------------------------------------------------------------------
+    ---@param ... function|userdata
+    ---@return table|function
+    function MemLib.EntityIterator.Iterator(...)
 
-    local offset = (address - MemLib.SV.AddressOffset + 24) / 4
-    local entities = {}
-    local bitMask = 2^30
+        local Logic_GetEntityScriptingValue = Logic.GetEntityScriptingValue
+        local Logic_IsEntityDestroyed = Logic.IsEntityDestroyed
+        local math_mod = math.mod
+        local args = table.getn(arg)
+        local MemLib_SV_AddressEntity = MemLib.SV.AddressEntity
 
-    for i = 1, 65535 do
-        MemLib.ArmPreciseFPU()
-        MemLib.SetPreciseFPU()
-        offset = offset + 2
-        MemLib.DisarmPreciseFPU()
-        local sv = Logic.GetEntityScriptingValue(MemLib.SV.AddressEntity, offset)
-        local entityId = math.mod(sv, bitMask)
-        if entityId < 0 then
-            entityId = entityId + bitMask
+        local address = MemLib.LAU.ToTable(MemLib.GetMemory(MemLib.Offsets.CGLEEntityManager.GlobalObject)[0]:GetInt())
+
+        local offset = (address - MemLib.SV.AddressOffset + 24) / 4 + 2
+        local entities = {}
+        local bitMask = 2 ^ 30
+
+        local offsets = {};
+        table.setn(offsets, 65535)
+        for i = 1, 65535 do
+            offset = offset + 2
+            offsets[i] = MemLib.LAU.ToNumber(offset)
         end
-        if not Logic.IsEntityDestroyed(entityId) then
-            local meetsCriteria = true
-            for j = 1, table.getn(arg) do
-                local filter = arg[j]
-                if not filter(entityId) then
-                    meetsCriteria = false
-                    break
+
+        for i = 1, 65535 do
+            local sv = Logic_GetEntityScriptingValue(MemLib_SV_AddressEntity, offsets[i])
+            local entityId = math_mod(sv, bitMask)
+            if entityId < 0 then
+                entityId = entityId + bitMask
+            end
+            if not Logic_IsEntityDestroyed(entityId) then
+                local meetsCriteria = true
+                for j = 1, args do
+                    local filter = arg[j]
+                    if not filter(entityId) then
+                        meetsCriteria = false
+                        break
+                    end
+                end
+                if meetsCriteria then
+                    entities[entityId] = true
                 end
             end
-            if meetsCriteria then
-                entities[entityId] = true
+        end
+        return entities
+    end
+
+else
+
+    --------------------------------------------------------------------------------
+    ---@param ... function|userdata
+    ---@return table|function
+    function MemLib.EntityIterator.Iterator(...)
+
+        local Logic_GetEntityScriptingValue = Logic.GetEntityScriptingValue
+        local Logic_IsEntityDestroyed = Logic.IsEntityDestroyed
+        local math_mod = math.mod
+        local args = table.getn(arg)
+        local MemLib_SV_AddressEntity = MemLib.SV.AddressEntity
+
+        local address = MemLib.GetMemory(MemLib.Offsets.CGLEEntityManager.GlobalObject)[0]:GetInt()
+
+        MemLib.ArmPreciseFPU()
+        MemLib.SetPreciseFPU()
+
+        local offset = (address - MemLib.SV.AddressOffset + 24) / 4 + 2
+        local entities = {}
+        local bitMask = 2 ^ 30
+
+        local offsets = {};
+        table.setn(offsets, 65535)
+        for i = 1, 65535 do
+            offset = offset + 2
+            offsets[i] = offset
+        end
+
+        MemLib.DisarmPreciseFPU()
+
+        for i = 1, 65535 do
+            local sv = Logic_GetEntityScriptingValue(MemLib_SV_AddressEntity, offsets[i])
+            local entityId = math_mod(sv, bitMask)
+            if entityId < 0 then
+                entityId = entityId + bitMask
+            end
+            if not Logic_IsEntityDestroyed(entityId) then
+                local meetsCriteria = true
+                for j = 1, args do
+                    local filter = arg[j]
+                    if not filter(entityId) then
+                        meetsCriteria = false
+                        break
+                    end
+                end
+                if meetsCriteria then
+                    entities[entityId] = true
+                end
             end
         end
+        return entities
     end
-    return entities
+
 end
 --------------------------------------------------------------------------------
 -- true if distance <= range
@@ -447,7 +513,7 @@ if CEntityIterator then
 --------------------------------------------------------------------------------
 -- S5Hook.EntityIterator exists
 --------------------------------------------------------------------------------
-elseif false and S5Hook and Predicate then
+elseif S5Hook and Predicate then
 
     ---@param ... function|userdata
     ---@return table|function
@@ -584,6 +650,129 @@ elseif false and S5Hook and Predicate then
     ---@return function|userdata
     function MemLib.EntityIterator.ProvidesResource(_ResourceType)
         return Predicate.ProvidesResource(_ResourceType)
+    end
+
+elseif CppLogic then
+
+    --------------------------------------------------------------------------------
+    ---@param ... function|userdata
+    ---@return table|function
+    function MemLib.EntityIterator.Iterator(...)
+        local nativePredicates = {}
+        local customPredicates = {}
+        local areAllPredicatesNative = true
+
+        for i = 1,table.getn(arg) do
+            if type(arg[i]) == "function" then
+                table.insert(customPredicates, arg[i])
+                areAllPredicatesNative = false
+            else
+                table.insert(nativePredicates, arg[i])
+            end
+        end
+
+        local iterator = CppLogic.Entity.EntityIterator(unpack(nativePredicates))
+
+        if areAllPredicatesNative then
+            return iterator
+        end
+
+        return function()
+
+            local entity = iterator()
+
+            while entity ~= nil do
+                local meetsCriteria = true
+                for i = 1,table.getn(customPredicates) do
+                    if not customPredicates[i](entity) then
+                        meetsCriteria = false
+                        break
+                    end
+                end
+
+                if meetsCriteria then
+                    return entity
+                end
+
+                entity = iterator()
+            end
+
+            return entity
+        end
+    end
+    --------------------------------------------------------------------------------
+    ---@param _X number
+    ---@param _Y number
+    ---@param _R number
+    ---@return function|userdata
+    function MemLib.EntityIterator.InCircle(_X, _Y, _R)
+        return CppLogic.Entity.Predicates.InCircle(_X, _Y, _R)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _X1 number
+    ---@param _Y1 number
+    ---@param _X2 number
+    ---@param _Y2 number
+    ---@return function|userdata
+    function MemLib.EntityIterator.InRectangle(_X1, _Y1, _X2, _Y2)
+        return CppLogic.Entity.Predicates.InRect(_X1, _Y1, _X2, _Y2)
+    end
+    --------------------------------------------------------------------------------
+    ---@return function|userdata
+    function MemLib.EntityIterator.IsBuilding()
+        return CppLogic.Entity.Predicates.IsBuilding()
+    end
+    --------------------------------------------------------------------------------
+    ---@return function|userdata
+    function MemLib.EntityIterator.IsNotSoldier()
+        return CppLogic.Entity.Predicates.IsNotSoldier()
+    end
+    --------------------------------------------------------------------------------
+    ---@return function|userdata
+    function MemLib.EntityIterator.IsSettler()
+        return CppLogic.Entity.Predicates.IsSettler()
+    end
+    --------------------------------------------------------------------------------
+    ---@param ... integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfAnyPlayer(...)
+        return CppLogic.Entity.Predicates.OfAnyPlayer(unpack(arg))
+    end
+    --------------------------------------------------------------------------------
+    ---@param ... integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfAnyType(...)
+        return CppLogic.Entity.Predicates.OfAnyEntityType(unpack(arg))
+    end
+    --------------------------------------------------------------------------------
+    ---@param _EntityCategory integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfCategory(_EntityCategory)
+        return CppLogic.Entity.Predicates.OfEntityCategory(_EntityCategory)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _Player integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfPlayer(_Player)
+        return CppLogic.Entity.Predicates.OfPlayer(_Player)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _EntityType integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfType(_EntityType)
+        return CppLogic.Entity.Predicates.OfType(_EntityType)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _UpgradeCategory integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.OfUpgradeCategory(_UpgradeCategory)
+        return CppLogic.Entity.Predicates.OfUpgradeCategory(_UpgradeCategory)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _ResourceType integer
+    ---@return function|userdata
+    function MemLib.EntityIterator.ProvidesResource(_ResourceType)
+        return CppLogic.Entity.Predicates.ProvidesResource(_ResourceType)
     end
 
 else

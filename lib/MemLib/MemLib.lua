@@ -11,23 +11,17 @@ function MemLib.Load(...)
 	for i = 1, table.getn(arg) do
 		local module = arg[i]
 		if type(module) == "string" and not MemLib[module] then
-			if string.find(module, "\\") or string.find(module, "/") then
-				module = string.gsub(module, "/", "\\")
-				Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\" .. module .. ".lua")
+			module = string.gsub(module, "/", "\\")
+			if string.find(module, "\\") then
+				Script.Load("D:\\Privat\\Spiele\\Siedler5\\extra2\\shr\\maps\\user\\EMS\\tools\\s5CommunityLib\\" .. module .. ".lua")
 			else
-				Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\Lib\\MemLib\\" .. module .. ".lua")
+				Script.Load("D:\\Privat\\Spiele\\Siedler5\\extra2\\shr\\maps\\user\\EMS\\tools\\s5CommunityLib\\Lib\\MemLib\\" .. module .. ".lua")
 			end
 		end
 	end
 end
 --------------------------------------------------------------------------------
 if CUtilMemory and CUtilMemory.GetMemory then
-
-	if mcbPacker then
-		mcbPacker.require("s5CommunityLib/Lib/MemLib/FPU")
-	else
-		MemLib.Load("FPU")
-	end
 
 	---@param _Address integer
 	---@return userdata|table
@@ -37,12 +31,6 @@ if CUtilMemory and CUtilMemory.GetMemory then
 	end
 
 elseif S5Hook and S5Hook.GetRawMem then
-
-	if mcbPacker then
-		mcbPacker.require("s5CommunityLib/Lib/MemLib/FPU")
-	else
-		MemLib.Load("FPU")
-	end
 
 	---@param _Address integer
 	---@return userdata|table
@@ -225,3 +213,5 @@ function MemLib.Internal.MapNodeSetValue(_MapMemory, _KeyIndex, _Key, _ValueInde
 	end
 	return false
 end
+--------------------------------------------------------------------------------
+MemLib.Load("Offsets")
