@@ -19,12 +19,12 @@ MemLib.Widget = {}
 ---@return userdata|table
 function MemLib.Widget.GetMemory(_Widget)
     _Widget = MemLib.Widget.GetId(_Widget)
-    return MemLib.GetMemory(8996300)[0][2][_Widget]
+    return MemLib.GetMemory(MemLib.Offsets.WidgetManager.GlobalObject)[0][2][_Widget]
 end
 --------------------------------------------------------------------------------
 function MemLib.Widget.IsValid(_Widget)
     if type(_Widget) == "number" and _Widget > 0 then
-        local widgetManagerMemory = MemLib.GetMemory(8996300)[0]
+        local widgetManagerMemory = MemLib.GetMemory(MemLib.Offsets.WidgetManager.GlobalObject)[0]
         MemLib.ArmPreciseFPU()
         MemLib.SetPreciseFPU()
         local lastWidgetId = widgetManagerMemory[3]:GetInt() - widgetManagerMemory[2]:GetInt()
@@ -137,6 +137,51 @@ if CWidget then
         assert(type(_Index) == "number" and _Index >= 0 and _Index <= 4)
         _Widget = MemLib.Widget.GetId(_Widget)
         return CWidget.GetTextureOffsets(_Widget, _Index)
+    end
+
+elseif CppLogic then
+
+    --------------------------------------------------------------------------------
+    ---@param _Widget integer|string
+    ---@return number X
+    ---@return number Y
+    function MemLib.Widget.GetPosition(_Widget)
+        local x, y = CppLogic.UI.WidgetGetPositionAndSize(_Widget)
+        return x, y
+    end
+    --------------------------------------------------------------------------------
+    ---@param _Widget integer|string
+    ---@param _X number
+    ---@param _Y number
+    function MemLib.Widget.SetPosition(_Widget, _X, _Y)
+        local _, _, w, h = CppLogic.UI.WidgetGetPositionAndSize(_Widget)
+        CppLogic.UI.WidgetSetPositionAndSize(_Widget, _X, _Y, w, h)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _Widget integer|string
+    ---@return number W
+    ---@return number H
+    function MemLib.Widget.GetSize(_Widget)
+        local _, _, w, h = CppLogic.UI.WidgetGetPositionAndSize(_Widget)
+        return w, h
+    end
+    --------------------------------------------------------------------------------
+    ---@param _Widget integer|string
+    ---@param _W number
+    ---@param _H number
+    function MemLib.Widget.SetSize(_Widget, _W, _H)
+        local x, y = CppLogic.UI.WidgetGetPositionAndSize(_Widget)
+        CppLogic.UI.WidgetSetPositionAndSize(_Widget, x, y, _W, _H)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _Widget integer|string
+    ---@param _Index integer
+    ---@return number X
+    ---@return number Y
+    ---@return number W
+    ---@return number H
+    function MemLib.Widget.ButtonGetTextureCoords(_Widget, _Index)
+        return CppLogic.UI.WidgetMaterialGetTextureCoordinates(_Widget, _Index)
     end
 
 else
@@ -431,7 +476,7 @@ function MemLib.Widget.Create(_WidgetConfig)
     -- following Order is imprtant:
 
     -- 1. add entry in WidgetManager
-    local widgetManagerMemory = MemLib.GetMemory(8996300)[0]
+    local widgetManagerMemory = MemLib.GetMemory(MemLib.Offsets.WidgetManager.GlobalObject)[0]
     local vectorStartMemory = widgetManagerMemory[2]
     local vectorEndMemory = widgetManagerMemory[3]
     local vectorAllocMemory = widgetManagerMemory[4]
@@ -451,7 +496,7 @@ function MemLib.Widget.Create(_WidgetConfig)
     _WidgetConfig.Id = widgetId
 
     -- 2. add entry in WidgetIDManager
-    local widgetIdManagerMemory = MemLib.GetMemory(8996296)[0]
+    local widgetIdManagerMemory = MemLib.GetMemory(MemLib.Offsets.WidgetIDManager.GlobalObject)[0]
 
     local vectorStartMemory = widgetIdManagerMemory[3]
     local vectorEndMemory = widgetIdManagerMemory[4]
@@ -487,7 +532,7 @@ function MemLib.Widget.Create(_WidgetConfig)
     end
 
     -- 3. create widget
-    local widgetManagerMemory = MemLib.GetMemory(8996300)[0]
+    local widgetManagerMemory = MemLib.GetMemory(MemLib.Offsets.WidgetManager.GlobalObject)[0]
     local vectorStartMemory = widgetManagerMemory[2]
     local vectorEndMemory = widgetManagerMemory[3]
     local vectorEnd = vectorEndMemory:GetInt()

@@ -29,17 +29,6 @@ function MemLib.Building.IsValid(_BuildingId)
 end
 --------------------------------------------------------------------------------
 ---@param _BuildingId integer
----@return number
----@return number
----@return number
----@return number
-function MemLib.Building.GetAproachAndDoorPosition(_BuildingId)
-	local x, y = Logic.GetEntityPosition(_BuildingId)
-	local xa, ya, xd, yd = MemLib.BuildingType.GetAproachAndDoorPosition(Logic.GetEntityType(_BuildingId))
-	return x + xa, y + ya, x + xd, y + yd
-end
---------------------------------------------------------------------------------
----@param _BuildingId integer
 ---@return integer
 function MemLib.Building.GetMaxNumWorkers(_BuildingId)
 	return MemLib.Building.GetMemory(_BuildingId)[72]:GetInt()
@@ -109,14 +98,6 @@ function MemLib.Building.AddUpgradeProgress(_BuildingId, _Progress)
     MemLib.Building.SetUpgradeProgress(_BuildingId, MemLib.Building.GetUpgradeProgress(_BuildingId) + _Progress)
 end
 --------------------------------------------------------------------------------
----@param _ConstructionSiteId integer
----@return integer
-function MemLib.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)
-    assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite, "MemLib.Building.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
-    -- if this line raises an error, something is REALLY WRONG!
-    return MemLib.Entity.GetReversedAttachedEntities(_ConstructionSiteId)[20][1]
-end
---------------------------------------------------------------------------------
 if CEntity then
 
     --------------------------------------------------------------------------------
@@ -172,6 +153,68 @@ else
             return marketBehaviorMemory[6]:GetInt(), marketBehaviorMemory[7]:GetFloat(), marketBehaviorMemory[5]:GetInt(), marketBehaviorMemory[8]:GetFloat()
         end
         return 0, 0, 0, 0
+    end
+
+end
+--------------------------------------------------------------------------------
+if CppLogic then
+
+    --------------------------------------------------------------------------------
+    ---@param _ConstructionSiteId integer
+    ---@return integer
+    function MemLib.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)
+        return CppLogic.Entity.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _ConstructionSiteId integer
+    ---@return integer
+    function MemLib.Building.GetConstructionSite(_ConstructionSiteId)
+        return CppLogic.Entity.Building.GetConstructionSite(_ConstructionSiteId)
+    end
+    --------------------------------------------------------------------------------
+    ---@param _BuildingId integer
+    ---@return number AproachX
+    ---@return number AproachY
+    ---@return number DoorX
+    ---@return number DoorY
+    ---@return number LeaveX
+    ---@return number LeaveY
+    function MemLib.Building.GetAproachAndDoorPosition(_BuildingId)
+        local a, l, d = CppLogic.Entity.Building.GetRelativePositions(_BuildingId)
+        return a.X, a.Y, d.X, d.Y, l.X, l.Y
+    end
+else
+
+    --------------------------------------------------------------------------------
+    ---@param _ConstructionSiteId integer
+    ---@return integer
+    function MemLib.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)
+        assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite, "MemLib.Building.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
+        -- if this line raises an error, something is REALLY WRONG!
+        return MemLib.Entity.GetReversedAttachedEntities(_ConstructionSiteId)[20][1]
+    end
+    --------------------------------------------------------------------------------
+    ---@param _BuildingId integer
+    ---@return integer
+    function MemLib.Building.GetConstructionSite(_BuildingId)
+        assert(MemLib.Entity.GetClass(_BuildingId) == EntityClasses.CConstructionSite, "MemLib.Building.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
+        if MemLib.Building.GetConstructionProgress(_BuildingId) then
+            return MemLib.Entity.GetAttachedEntities(_BuildingId)[20][1]
+        end
+        return 0
+    end
+    --------------------------------------------------------------------------------
+    ---@param _BuildingId integer
+    ---@return number AproachX
+    ---@return number AproachY
+    ---@return number DoorX
+    ---@return number DoorY
+    ---@return number LeaveX
+    ---@return number LeaveY
+    function MemLib.Building.GetAproachAndDoorPosition(_BuildingId)
+        local x, y = Logic.GetEntityPosition(_BuildingId)
+        local xa, ya, xd, yd, lx, ly = MemLib.BuildingType.GetAproachDoorAndLeavePosition(Logic.GetEntityType(_BuildingId))
+        return x + xa, y + ya, x + xd, y + yd, x + lx, y + ly
     end
 
 end

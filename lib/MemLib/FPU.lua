@@ -10,21 +10,30 @@ else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
 end
 --------------------------------------------------------------------------------
+function MemLib.ArmPreciseFPU() end
+function MemLib.DisarmPreciseFPU() end
+--------------------------------------------------------------------------------
 if CUtilMemory then
 
 	function MemLib.SetPreciseFPU()
 		CUtilMemory.SetPreciseFPU()
 	end
-	function MemLib.ArmPreciseFPU() end
-	function MemLib.DisarmPreciseFPU() end
 
 elseif S5Hook then
 
 	function MemLib.SetPreciseFPU()
 		S5Hook.SetPreciseFPU()
 	end
-	function MemLib.ArmPreciseFPU() end
-	function MemLib.DisarmPreciseFPU() end
+
+elseif CppLogic then
+
+	function MemLib.SetPreciseFPU()
+		CppLogic.Memory.SetFPU()
+	end
+
+elseif XNetwork.Manager_IsNATReady then
+
+	function MemLib.SetPreciseFPU() end
 
 else
 

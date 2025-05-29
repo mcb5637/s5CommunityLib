@@ -10,11 +10,13 @@ else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
 end
 --------------------------------------------------------------------------------
+MemLib.Player = {}
+--------------------------------------------------------------------------------
 ---@param _PlayerId integer
 ---@return userdata|table
-function MemLib.Player.GetState(_PlayerId)
+function MemLib.Player.StatusGetMemory(_PlayerId)
     assert(MemLib.Player.IsValid(_PlayerId), "MemLib.Player.GetState: _PlayerId invalid")
-	return MemLib.GetMemory(8758176)[0][10][_PlayerId * 2 + 1]
+	return MemLib.GetMemory(MemLib.Offsets.CGLGameLogic.GlobalObject)[0][MemLib.Offsets.CGLGameLogic.PlayerManager][_PlayerId * 2 + 1]
 end
 --------------------------------------------------------------------------------
 ---@param _PlayerId integer
@@ -25,12 +27,8 @@ end
 --------------------------------------------------------------------------------
 ---@param _PlayerId integer
 function MemLib.Player.PaydayReset(_PlayerId)
-
-	local playerState = MemLib.PlayerGetState(_PlayerId)
-
-	-- 197 in player
-	-- 3 in player attraction handler
-	playerState[197][3]:SetInt(Logic.GetCurrentTurn() - 1)
+	local playerStatusMemory = MemLib.Player.StatusGetMemory(_PlayerId)
+	playerStatusMemory[MemLib.Offsets.CPlayerStatus.CPlayerAttractionHandler][MemLib.Offsets.CPlayerAttractionHandler.PaydayStartTurn]:SetInt(Logic.GetCurrentTurn() - 1)
 end
 --------------------------------------------------------------------------------
 ---@param _PlayerId integer
@@ -58,8 +56,7 @@ function MemLib.Player.SetColor(_PlayerId, _R, _G, _B, _A)
 		return
 	end
 
-	-- get ED::CPlayerColors in ED::CGlobalsBaseEx
-	local playerColors = MemLib.GetMemory(8748684)[0][22]
+	local playerColors = MemLib.GetMemory(MemLib.Offsets.CGlobalsBaseEx.GlobalObject)[0][MemLib.Offsets.CGlobalsBaseEx.CPlayerColors]
 
 	-- set GUI color in BGRA
 	playerColors[_PlayerId + 1]:SetByte(0, _B)

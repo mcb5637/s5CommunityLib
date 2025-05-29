@@ -474,3 +474,56 @@ else
 	end
 
 end
+
+if CppLogic then
+
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetArmor(_SettlerId, _Armor)
+		CppLogic.Entity.SetArmor(_SettlerId, _Armor)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.GetExploration(_SettlerId)
+		return CppLogic.Entity.GetExploration(_SettlerId)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetExploration(_SettlerId, _Exploration)
+		CppLogic.Entity.SetExploration(_SettlerId, _Exploration)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.GetMovingSpeed(_SettlerId)
+		return CppLogic.Entity.GetSpeed(_SettlerId)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.GetExperiencePoints(_SettlerId)
+		return CppLogic.Entity.Leader.GetExperience(_SettlerId)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetExperiencePoints(_SettlerId, _Experience)
+		CppLogic.Entity.Leader.SetExperience(_SettlerId, _Experience)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.GetHealingPoints(_SettlerId)
+		return CppLogic.Entity.Leader.GetRegeneration(_SettlerId)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetHealingPoints(_SettlerId, _HealingPoints)
+		CppLogic.Entity.Leader.SetRegeneration(_SettlerId, _HealingPoints)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.GetAutoAttackRange(_SettlerId)
+		CppLogic.Entity.GetAutoAttackMaxRange(_SettlerId)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetAutoAttackRange(_SettlerId, _AutoAttackRange)
+		CppLogic.Entity.Leader.SetAutoAttackMaxRange(_SettlerId, _AutoAttackRange)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetDamage(_SettlerId, _Damage)
+		CppLogic.Entity.SetDamage(_SettlerId, _Damage)
+	end
+	--------------------------------------------------------------------------------
+	function MemLib.Settler.SetMotivation(_SettlerId, _Motivation)
+		CppLogic.Entity.Settler.WorkerChangeMotivation(_SettlerId, _Motivation, 0)
+	end
+
+end

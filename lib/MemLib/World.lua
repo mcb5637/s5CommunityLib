@@ -32,18 +32,75 @@ function MemLib.World.PositionIsValid(_X, _Y)
 	return type(_X) == "number" and type(_Y) == "number" and _X >= 0 and _Y >= 0 and _X <= worldSize and _Y <= worldSize
 end
 --------------------------------------------------------------------------------
----@param _TerrainType integer
----@return boolean
-function MemLib.World.TerrainTypeIsValid(_TerrainType)
-	local TerrainPropsLogic = MemLib.GetMemory(8712032)[0][150][7]
-	return _TerrainType >= 0 and _TerrainType < (TerrainPropsLogic[5]:GetInt() - TerrainPropsLogic[4]:GetInt()) / 8
+if XNetwork.Manager_IsNATReady then
+
+	--------------------------------------------------------------------------------
+	---@param _TerrainType integer
+	---@return boolean
+	function MemLib.World.TerrainTypeIsValid(_TerrainType)
+		local TerrainPropsLogic = MemLib.Internal.CGluePropsMgrGetMemory()[7]
+		local lastValidIndex = MemLib.LAU.ToNumber((MemLib.LAU.ToTable(TerrainPropsLogic[MemLib.Offsets.CTerrainPropsMgr.VectorStart + 1]:GetInt()) - TerrainPropsLogic[MemLib.Offsets.CTerrainPropsMgr.VectorStart]:GetInt()) / 8)
+		return _TerrainType >= 0 and _TerrainType < lastValidIndex
+	end
+	--------------------------------------------------------------------------------
+	---@param _WaterType integer
+	---@return boolean
+	function MemLib.World.WaterTypeIsValid(_WaterType)
+		local WaterPropsLogic = MemLib.Internal.CGluePropsMgrGetMemory()[8]
+		local lastValidIndex = MemLib.LAU.ToNumber((MemLib.LAU.ToTable(WaterPropsLogic[MemLib.Offsets.CGlueWaterPropsMgr.VectorStart + 1]:GetInt()) - WaterPropsLogic[MemLib.Offsets.CGlueWaterPropsMgr.VectorStart]:GetInt()) / 4)
+		return _WaterType >= 0 and _WaterType < lastValidIndex
+	end
+
+else
+
+	--------------------------------------------------------------------------------
+	---@param _TerrainType integer
+	---@return boolean
+	function MemLib.World.TerrainTypeIsValid(_TerrainType)
+		local TerrainPropsLogic = MemLib.Internal.CGluePropsMgrGetMemory()[7]
+		MemLib.ArmPreciseFPU()
+		MemLib.SetPreciseFPU()
+		local lastValidIndex = (TerrainPropsLogic[MemLib.Offsets.CTerrainPropsMgr.VectorStart + 1]:GetInt() - TerrainPropsLogic[MemLib.Offsets.CTerrainPropsMgr.VectorStart]:GetInt()) / 8
+		MemLib.DisarmPreciseFPU()
+		return _TerrainType >= 0 and _TerrainType < lastValidIndex
+	end
+	--------------------------------------------------------------------------------
+	---@param _WaterType integer
+	---@return boolean
+	function MemLib.World.WaterTypeIsValid(_WaterType)
+		local WaterPropsLogic = MemLib.Internal.CGluePropsMgrGetMemory()[8]
+		MemLib.ArmPreciseFPU()
+		MemLib.SetPreciseFPU()
+		local lastValidIndex = (WaterPropsLogic[MemLib.Offsets.CGlueWaterPropsMgr.VectorStart + 1]:GetInt() - WaterPropsLogic[MemLib.Offsets.CGlueWaterPropsMgr.VectorStart]:GetInt()) / 4
+		MemLib.DisarmPreciseFPU()
+		return _WaterType >= 0 and _WaterType < lastValidIndex
+	end
+
 end
 --------------------------------------------------------------------------------
----@param _WaterType integer
----@return boolean
-function MemLib.World.WaterTypeIsValid(_WaterType)
-	local WaterPropsLogic = MemLib.GetMemory(8712032)[0][150][8]
-	return _WaterType >= 0 and _WaterType < (WaterPropsLogic[5]:GetInt() - WaterPropsLogic[4]:GetInt()) / 4
+-- TODO: find CGLELandscape`s global object
+if MemLib.Offsets.CGLELandscape.GlobalObject then
+
+	--------------------------------------------------------------------------------
+	---@return userdata|table
+	function MemLib.Internal.LandscapeGetMemory()
+		return MemLib.GetMemory(MemLib.Offsets.CGLEGameLogic.GlobalObject)[0][MemLib.Offsets.CGLEGameLogic.CGLELandscape]
+	end
+
+else
+
+	--------------------------------------------------------------------------------
+	---@return userdata|table
+	function MemLib.Internal.LandscapeGetMemory()
+		return MemLib.GetMemory(MemLib.Offsets.CGLELandscape.GlobalObject)[0]
+	end
+
+end
+--------------------------------------------------------------------------------
+-- this looks exactly the same in all versions, no need for external offsets
+---@return userdata|table
+function MemLib.Internal.CGluePropsMgrGetMemory()
+	return MemLib.GetMemory(MemLib.Offsets.CMain.GlobalObject)[0][MemLib.Offsets.CMain.CGLUEPropsMgr]
 end
 --------------------------------------------------------------------------------
 -- returns a bitfield of blocking at position in sm
@@ -68,7 +125,7 @@ end
 ---@return integer
 function MemLib.World.NodeGetBlockingExtended(_X, _Y)
 	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.NodeGetBlocking: node invalid")
-	local blocking = MemLib.World.PositionGetBlocking(_X * 100, _Y * 100)
+	local blocking = MemLib.World.NodeGetBlocking(_X, _Y)
 	local entity = 0
 	local bridge = MemLib.Bit.And(blocking, 2)
 	local buildblock = MemLib.Bit.And(blocking, 4)
@@ -88,7 +145,7 @@ function MemLib.World.NodeIsBlockedExtended(_X, _Y, _BitField, _WeatherState)
 	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.NodeIsBlocked: node invalid")
 	_BitField = _BitField or 159
 	_WeatherState = _WeatherState or Logic.GetWeatherState()
-	if MemLib.Bit.And(_BitField, MemLib.World.GetBlocking(_X * 100, _Y * 100)) ~= 0 then
+	if MemLib.Bit.And(_BitField, MemLib.World.NodeGetBlocking(_X, _Y)) ~= 0 then
 		return true
 	elseif MemLib.Bit.And(_BitField, 8) ~= 0 and MemLib.World.NodeIsBlockedByTerrainType(_X, _Y) then
 		return true
@@ -113,9 +170,7 @@ end
 ---@return boolean
 function MemLib.World.TerrainTypeIsBlocked(_TerrainType)
 	assert(MemLib.World.TerrainTypeIsValid(_TerrainType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
-	--local CGluePropsMgr = MemLib.GetMemory(tonumber("84EF60", 16))[0][150]
-	--local VectorStart_TerrainPropsLogic = CGluePropsMgr[7][3+2]
-	return MemLib.GetMemory(8712032)[0][150][7][5][_TerrainType * 2]:GetByte(0) == 1
+	return MemLib.Internal.CGluePropsMgrGetMemory()[7][MemLib.Offsets.CTerrainPropsMgr.VectorStart][_TerrainType * 2]:GetByte(0) == 1
 end
 --------------------------------------------------------------------------------
 -- coordinates in sm
@@ -150,9 +205,7 @@ end
 ---@return boolean
 function MemLib.World.WaterTypeIsFreezing(_WaterType)
 	assert(MemLib.World.WaterTypeIsValid(_WaterType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
-	--local CGluePropsMgr = MemLib.GetMemory(tonumber("84EF60", 16))[0][150]
-	--local VectorStart_WaterPropsLogic = CGluePropsMgr[8][2+2]
-	return MemLib.GetMemory(8712032)[0][150][8][4][_WaterType]:GetByte(0) == 1
+	return MemLib.Internal.CGluePropsMgrGetMemory()[8][MemLib.Offsets.CGlueWaterPropsMgr.VectorStart][_WaterType]:GetByte(0) == 1
 end
 --------------------------------------------------------------------------------
 ---@param _X integer
@@ -161,9 +214,9 @@ end
 function MemLib.World.NodeGetWaterType(_X, _Y)
 	assert(MemLib.World.NodeIsValid(_X, _Y))
 	_X, _Y = math.floor(_X / 4), math.floor(_Y / 4)
-	local CGLETerrainLowRes = MemLib.GetMemory(9014148)[0][8]
-	local y = CGLETerrainLowRes[11]:GetInt()
-	local data = CGLETerrainLowRes[2][(_Y + 1) * y + _X + 1]:GetInt()
+	local CGLETerrainLowRes = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CGLETerrainLowRes]
+	local y = CGLETerrainLowRes[MemLib.Offsets.CGLETerrainLowRes.ArraySizeY]:GetInt()
+	local data = CGLETerrainLowRes[MemLib.Offsets.CGLETerrainLowRes.DataVectorStart][(_Y + 1) * y + _X + 1]:GetInt()
 	return MemLib.Bit.RShift(8, MemLib.Bit.And(data, 16128))
 end
 --------------------------------------------------------------------------------
@@ -173,37 +226,27 @@ end
 function MemLib.World.NodeGetWaterHeight(_X, _Y)
 	assert(MemLib.World.NodeIsValid(_X, _Y))
 	_X, _Y = math.floor(_X / 4), math.floor(_Y / 4)
-	local CGLETerrainLowRes = MemLib.GetMemory(9014148)[0][8]
+	local CGLETerrainLowRes = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CGLETerrainLowRes]
 	local y = CGLETerrainLowRes[11]:GetInt()
-	local data = CGLETerrainLowRes[2][(_Y + 1) * y + _X + 1]:GetInt()
+	local data = CGLETerrainLowRes[MemLib.Offsets.CGLETerrainLowRes.DataVectorStart][(_Y + 1) * y + _X + 1]:GetInt()
 	return MemLib.Bit.RShift(14, MemLib.Bit.And(data, 1073725440))
 end
 --------------------------------------------------------------------------------
----@param _X number
----@param _Y number
----@return integer
-function MemLib.World.NodeGetBlocking(_X, _Y)
-	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
-	local LandscapeBlockingData = MemLib.GetMemory(9014148)[0][1]
-	local arraySize = LandscapeBlockingData[0]:GetInt()
-	return LandscapeBlockingData[1][0]:GetByte(_Y * arraySize + _X)
-end
---------------------------------------------------------------------------------
+-- coordinates in sm
 ---@param _X integer
 ---@param _Y integer
----@return integer
-function MemLib.World.NodeGetSector(_X, _Y)
-	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
-	local LandscapeBlockingDataArraySize = MemLib.GetMemory(9014148)[0][1][0]:GetInt()
-	local eax = _Y * LandscapeBlockingDataArraySize + _X
-	local ecx = MemLib.GetMemory(10319212)[0]:GetInt()
-	MemLib.ArmPreciseFPU()
-	MemLib.SetPreciseFPU()
-	eax = ecx + eax * 2
-	-- no need to disarm, its done by GetMemory
-	eax = MemLib.GetMemory(eax)[0]:GetInt()
-	eax = MemLib.Bit.And(eax, 65535)
-	return MemLib.GetMemory(9663836)[eax * 5]:GetInt()
+---@return integer R
+---@return integer G
+---@return integer B
+function MemLib.World.NodeGetVertexColor(_X, _Y)
+	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.NodeGetVertexColor: node invalid")
+	local CTerrainVertexColors = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CTerrainVertexColors]
+	local y = CTerrainVertexColors[2]:GetInt()
+	local color = CTerrainVertexColors[3][(_Y + 1) * y + _X + 1]:GetInt()
+	local r = MemLib.Bit.And(MemLib.Bit.RShift(16, color), 255)
+	local g = MemLib.Bit.And(MemLib.Bit.RShift(8, color), 255)
+	local b = MemLib.Bit.And(color, 255)
+	return r, g, b
 end
 --------------------------------------------------------------------------------
 if CUtil then
@@ -262,6 +305,16 @@ if CUtil then
 		assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
 		return CUtil.GetSector(_X, _Y)
 	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X integer
+	---@param _Y integer
+	---@return integer R
+	---@return integer G
+	---@return integer B
+	function MemLib.World.NodeGetVertexColor(_X, _Y)
+		return CUtil.GetTerrainVertexColor(_X, _Y)
+	end
 
 elseif S5Hook then
 
@@ -306,7 +359,7 @@ elseif S5Hook then
 		return terrainType
 	end
 
-else
+elseif CppLogic then
 
 	--------------------------------------------------------------------------------
 	-- coordinates in sm
@@ -314,18 +367,65 @@ else
 	---@param _Y integer
 	---@return integer
 	function MemLib.World.NodeGetTerrainHeight(_X, _Y)
-		assert(MemLib.World.NodeIsValid(_X, _Y))
-		--local CGLELandscape = MemLib.GetMemory(9014148)[0]
-		--local CGLETerrainHiRes = CGLELandscape[7]
-		local CGLETerrainHiRes = MemLib.GetMemory(9014148)[0][7]
-		local y = CGLETerrainHiRes[8]:GetInt()
-		local address = CGLETerrainHiRes[2]:GetInt()
-		MemLib.ArmPreciseFPU()
-		MemLib.SetPreciseFPU()
-		address = address + ((_Y + 1) * y + _X + 1) * 2
-		MemLib.DisarmPreciseFPU()
-		return MemLib.Bit.And(MemLib.GetMemory(address)[0]:GetInt(), 65535)
+		return CppLogic.Logic.LandscapeGetTerrainHeight({X = _X * 100, Y = _Y * 100})
 	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X number
+	---@param _Y number
+	---@return integer
+	function MemLib.World.NodeGetBlocking(_X, _Y)
+		return CppLogic.Logic.LandscapeGetBlocking({X = _X * 100, Y = _Y * 100})
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X number
+	---@param _Y number
+	---@return integer
+	function MemLib.World.NodeGetSector(_X, _Y)
+		return CppLogic.Logic.LandscapeGetSector({X = _X * 100, Y = _Y * 100})
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X number
+	---@param _Y number
+	---@return integer
+	function MemLib.World.NodeGetTerrainType(_X, _Y)
+		return CppLogic.Logic.LandscapeGetTerrainType({X = _X * 100, Y = _Y * 100})
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X integer
+	---@param _Y integer
+	---@return integer
+	function MemLib.World.NodeGetWaterHeight(_X, _Y)
+		return CppLogic.Logic.LandscapeGetWaterHeight({X = _X * 100, Y = _Y * 100})
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X integer
+	---@param _Y integer
+	---@return integer
+	function MemLib.World.NodeGetWaterType(_X, _Y)
+		return CppLogic.Logic.LandscapeGetWaterType({X = _X * 100, Y = _Y * 100})
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X integer
+	---@param _Y integer
+	---@return integer R
+	---@return integer G
+	---@return integer B
+	function MemLib.World.NodeGetVertexColor(_X, _Y)
+		local color = CppLogic.Logic.LandscapeGetTerrainVertexColor({X = _X * 100, Y = _Y * 100})
+		local r = MemLib.Bit.And(MemLib.Bit.RShift(16, color), 255)
+		local g = MemLib.Bit.And(MemLib.Bit.RShift(8, color), 255)
+		local b = MemLib.Bit.And(color, 255)
+		return r, g, b
+	end
+
+else
+
 	--------------------------------------------------------------------------------
 	-- coordinates in sm
 	---@param _X integer
@@ -333,13 +433,93 @@ else
 	---@return integer
 	function MemLib.World.NodeGetTerrainType(_X, _Y)
 		assert(MemLib.World.NodeIsValid(_X, _Y))
-		--local CGLELandscape = MemLib.GetMemory(9014148)[0]
-		--local CGLETerrainLowRes = CGLELandscape[8]
 		_X, _Y = math.floor(_X / 4), math.floor(_Y / 4)
-		local CGLETerrainLowRes = MemLib.GetMemory(9014148)[0][8]
-		local y = CGLETerrainLowRes[11]:GetInt()
-		local data = CGLETerrainLowRes[2][(_Y + 1) * y + _X + 1]:GetInt()
+		local CGLETerrainLowRes = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CGLETerrainLowRes]
+		local y = CGLETerrainLowRes[MemLib.Offsets.CGLETerrainLowRes.ArraySizeY]:GetInt()
+		local data = CGLETerrainLowRes[MemLib.Offsets.CGLETerrainLowRes.DataVectorStart][(_Y + 1) * y + _X + 1]:GetInt()
 		return MemLib.Bit.And(data, 255)
+	end
+	--------------------------------------------------------------------------------
+	-- coordinates in sm
+	---@param _X number
+	---@param _Y number
+	---@return integer
+	function MemLib.World.NodeGetBlocking(_X, _Y)
+		assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
+		-- this was not missed, but it simply the same in all versions
+		local LandscapeBlockingData = MemLib.Internal.LandscapeGetMemory()[1]
+		local arraySize = LandscapeBlockingData[0]:GetInt()
+		return LandscapeBlockingData[1][0]:GetByte(_Y * arraySize + _X)
+	end
+	--------------------------------------------------------------------------------
+	if XNetwork.Manager_IsNATReady then
+
+		--------------------------------------------------------------------------------
+		-- coordinates in sm
+		---@param _X integer
+		---@param _Y integer
+		---@return integer
+		function MemLib.World.NodeGetTerrainHeight(_X, _Y)
+			assert(MemLib.World.NodeIsValid(_X, _Y))
+			local CGLETerrainHiRes = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CGLETerrainHiRes]
+			local y = CGLETerrainHiRes[MemLib.Offsets.CGLETerrainHiRes.DataVectorStart]:GetInt()
+			local address = CGLETerrainHiRes[MemLib.Offsets.CGLETerrainHiRes.ArraySizeY]:GetInt()
+			address = MemLib.LAU.ToNumber(MemLib.LAU.ToTable(address) + ((_Y + 1) * y + _X + 1) * 2)
+			return MemLib.Bit.And(MemLib.GetMemory(address)[0]:GetInt(), 65535)
+		end
+		--------------------------------------------------------------------------------
+		-- coordinates in sm
+		---@param _X integer
+		---@param _Y integer
+		---@return integer
+		function MemLib.World.NodeGetSector(_X, _Y)
+			assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
+			local LandscapeBlockingDataArraySize = MemLib.Internal.LandscapeGetMemory()[1][0]:GetInt()
+			local eax = _Y * LandscapeBlockingDataArraySize + _X
+			local ecx = MemLib.GetMemory(MemLib.Offsets.Sector_Unknown1)[0]:GetInt()
+			eax = MemLib.LAU.ToNumber(MemLib.LAU.ToTable(ecx) + eax * 2)
+			eax = MemLib.GetMemory(eax)[0]:GetInt()
+			eax = MemLib.Bit.And(eax, 65535)
+			return MemLib.GetMemory(MemLib.Offsets.Sector_Unknown2)[eax * 5]:GetInt()
+		end
+
+	else
+
+		--------------------------------------------------------------------------------
+		-- coordinates in sm
+		---@param _X integer
+		---@param _Y integer
+		---@return integer
+		function MemLib.World.NodeGetTerrainHeight(_X, _Y)
+			assert(MemLib.World.NodeIsValid(_X, _Y))
+			local CGLETerrainHiRes = MemLib.Internal.LandscapeGetMemory()[MemLib.Offsets.CGLELandscape.CGLETerrainHiRes]
+			local y = CGLETerrainHiRes[MemLib.Offsets.CGLETerrainHiRes.DataVectorStart]:GetInt()
+			local address = CGLETerrainHiRes[MemLib.Offsets.CGLETerrainHiRes.ArraySizeY]:GetInt()
+			MemLib.ArmPreciseFPU()
+			MemLib.SetPreciseFPU()
+			address = address + ((_Y + 1) * y + _X + 1) * 2
+			MemLib.DisarmPreciseFPU()
+			return MemLib.Bit.And(MemLib.GetMemory(address)[0]:GetInt(), 65535)
+		end
+		--------------------------------------------------------------------------------
+		-- coordinates in sm
+		---@param _X integer
+		---@param _Y integer
+		---@return integer
+		function MemLib.World.NodeGetSector(_X, _Y)
+			assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.GetBlocking: node invalid")
+			local LandscapeBlockingDataArraySize = MemLib.Internal.LandscapeGetMemory()[1][0]:GetInt()
+			local eax = _Y * LandscapeBlockingDataArraySize + _X
+			local ecx = MemLib.GetMemory(MemLib.Offsets.Sector_Unknown1)[0]:GetInt()
+			MemLib.ArmPreciseFPU()
+			MemLib.SetPreciseFPU()
+			eax = ecx + eax * 2
+			-- no need to disarm, its done by GetMemory
+			eax = MemLib.GetMemory(eax)[0]:GetInt()
+			eax = MemLib.Bit.And(eax, 65535)
+			return MemLib.GetMemory(MemLib.Offsets.Sector_Unknown2)[eax * 5]:GetInt()
+		end
+
 	end
 
 end

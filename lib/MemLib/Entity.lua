@@ -48,7 +48,7 @@ else
 	function MemLib.Entity.GetMemory(_EntityId)
 		assert(MemLib.Entity.IsValid(_EntityId), "MemLib.Entity.GetMemory: _EntityId invalid")
 		local lowBits = MemLib.Bit.And(_EntityId, 65535)
-		local entityManager = MemLib.GetMemory(9008472)[0]
+		local entityManager = MemLib.GetMemory(MemLib.Offsets.CGLEEntityManager.GlobalObject)[0]
 		return MemLib.GetMemory(entityManager[2 * lowBits + 5]:GetInt())
 	end
 
@@ -89,8 +89,9 @@ else
 	---@return userdata|table?
 	function MemLib.Entity.BehaviorGetMemory(_EntityId, _Behavior)
 		local entityMemory = MemLib.Entity.GetMemory(_EntityId)
-		local vectorStartMemory = entityMemory[31]
-		local vectorEndMemory = entityMemory[32]
+		local vectorStartOffset = MemLib.Offsets.Entity.BehaviorVectorStart
+		local vectorStartMemory = entityMemory[vectorStartOffset]
+		local vectorEndMemory = entityMemory[vectorStartOffset + 1]
 		local lastindex = (vectorEndMemory:GetInt() - vectorStartMemory:GetInt()) / 4 - 1
 		for i = 0, lastindex do
 			local behaviorMemory = vectorStartMemory[i]
@@ -123,9 +124,9 @@ end
 ---@param _ResourceDoodadId integer
 ---@param _ResourceType integer
 function MemLib.Entity.ResourceDoodadSetResourceType(_ResourceDoodadId, _ResourceType)
-	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad, "MemLib.Util.ResourceDoodadSetResourceType: _ResourceDoodadId invalid")
-	assert(MemLib.Util.ResourceTypeIsValid(_ResourceType), "MemLib.Util.ResourceDoodadSetResourceType: _ResourceType invalid")
-	MemLib.Entity.GetMemory(_ResourceDoodadId)[66]:SetInt(_ResourceType)
+	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad, "MemLib.Entity.ResourceDoodadSetResourceType: _ResourceDoodadId invalid")
+	assert(MemLib.Entity.ResourceTypeIsValid(_ResourceType), "MemLib.Entity.ResourceDoodadSetResourceType: _ResourceType invalid")
+	MemLib.Entity.GetMemory(_ResourceDoodadId)[MemLib.Offsets.ResourceDoodad.ResourceType]:SetInt(_ResourceType)
 end
 --------------------------------------------------------------------------------
 if CEntity then
@@ -183,13 +184,13 @@ else
 	---@param _EntityId integer
 	---@return table
 	function MemLib.Entity.GetAttachedEntities(_EntityId)
-		return MemLib.Internal.GetAttachedEntities(_EntityId, 9)
+		return MemLib.Internal.GetAttachedEntities(_EntityId, MemLib.Offsets.Entity.Attachments)
 	end
 	--------------------------------------------------------------------------------
 	---@param _EntityId integer
 	---@return table
 	function MemLib.Entity.GetReversedAttachedEntities(_EntityId)
-		return MemLib.Internal.GetAttachedEntities(_EntityId, 15)
+		return MemLib.Internal.GetAttachedEntities(_EntityId, MemLib.Offsets.Entity.AttachedTos)
 	end
 	--------------------------------------------------------------------------------
 	---@param _EntityId integer
@@ -249,8 +250,16 @@ if CUtil then
 	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
 		local entityTypeMemory = MemLib.EntityType.GetMemory(Logic.GetEntityType(_ResourceEntityId))
 		assert(entityTypeMemory[0]:GetInt() == EntityTypeClasses.CEntityProperties)
-		assert(MemLib.EntityType.IsValid(entityTypeMemory[38]:GetInt()))
+		assert(MemLib.EntityType.IsValid(entityTypeMemory[MemLib.Offsets.ResourceDoodadType.ResourceEntityType]:GetInt()))
 		CUtil.ReplaceEntityWithResourceEntity(_ResourceEntityId)
+	end
+
+elseif CppLogic then
+
+	--------------------------------------------------------------------------------
+	---@param _ResourceEntityId integer
+	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
+		CppLogic.Entity.ReplaceWithResourceEntity(_ResourceEntityId)
 	end
 
 else
@@ -260,7 +269,7 @@ else
 	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
 		local entityTypeMemory = MemLib.EntityType.GetMemory(Logic.GetEntityType(_ResourceEntityId))
 		assert(entityTypeMemory[0]:GetInt() == EntityTypeClasses.CEntityProperties)
-		local resourceEntityType = entityTypeMemory[38]:GetInt()
+		local resourceEntityType = entityTypeMemory[MemLib.Offsets.ResourceDoodadType.ResourceEntityType]:GetInt()
 		assert(MemLib.EntityType.IsValid(resourceEntityType))
 
 		local x, y = Logic.GetEntityPosition(_ResourceEntityId)
