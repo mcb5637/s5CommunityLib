@@ -2,7 +2,7 @@
 -- MemLib
 -- author: RobbiTheFox
 -- current maintainer: RobbiTheFox
--- Version: v1.0
+-- Version: v1.1
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 MemLib = {}
 MemLib.Internal = {}
@@ -13,9 +13,9 @@ function MemLib.Load(...)
 		if type(module) == "string" and not MemLib[module] then
 			module = string.gsub(module, "/", "\\")
 			if string.find(module, "\\") then
-				Script.Load("D:\\Privat\\Spiele\\Siedler5\\extra2\\shr\\maps\\user\\EMS\\tools\\s5CommunityLib\\" .. module .. ".lua")
+				Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\" .. module .. ".lua")
 			else
-				Script.Load("D:\\Privat\\Spiele\\Siedler5\\extra2\\shr\\maps\\user\\EMS\\tools\\s5CommunityLib\\Lib\\MemLib\\" .. module .. ".lua")
+				Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\Lib\\MemLib\\" .. module .. ".lua")
 			end
 		end
 	end
