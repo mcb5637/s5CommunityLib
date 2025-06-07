@@ -242,14 +242,26 @@ else
 	---@param _BuildingType integer
 	---@return table
 	function MemLib.BuildingType.GetConstructionCostTable(_BuildingType)
-		return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(56))
+		return MemLib.Internal.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(56))
 	end
 	--------------------------------------------------------------------------------
 	-- like Logic.FillBuildingUpgradeCostTable but 0s are left out
 	---@param _BuildingType integer
 	---@return table
 	function MemLib.BuildingType.GetUpgradeCostTable(_BuildingType)
-		return MemLib.Util.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(81))
+		return MemLib.Internal.GetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(81))
 	end
 
+end
+--------------------------------------------------------------------------------
+---@param _BuildingType integer
+---@param _CostTable table
+function MemLib.BuildingType.SetConstructionCostTable(_BuildingType, _CostTable)
+	MemLib.Internal.SetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(56), _CostTable)
+end
+--------------------------------------------------------------------------------
+---@param _BuildingType integer
+---@param _CostTable table
+function MemLib.BuildingType.SetUpgradeCostTable(_BuildingType, _CostTable)
+	MemLib.Internal.SetCostTable(MemLib.BuildingType.GetMemory(_BuildingType):Offset(81), _CostTable)
 end

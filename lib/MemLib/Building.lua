@@ -98,6 +98,26 @@ function MemLib.Building.AddUpgradeProgress(_BuildingId, _Progress)
     MemLib.Building.SetUpgradeProgress(_BuildingId, MemLib.Building.GetUpgradeProgress(_BuildingId) + _Progress)
 end
 --------------------------------------------------------------------------------
+---@param _BuildingId integer
+---@return integer
+function MemLib.Building.GetUpgradeSite(_BuildingId)
+    local attachedUpgradeSites = MemLib.Entity.GetReversedAttachedEntities(_BuildingId)[57]
+    if attachedUpgradeSites then
+        return attachedUpgradeSites[1]
+    end
+    return 0
+end
+--------------------------------------------------------------------------------
+---@param _UpgradeSiteId integer
+---@return integer
+function MemLib.Building.UpgradeSiteGetBuilding(_UpgradeSiteId)
+    local attachedUpgradeSites = MemLib.Entity.GetAttachedEntities(_UpgradeSiteId)[57]
+    if attachedUpgradeSites then
+        return attachedUpgradeSites[1]
+    end
+    return 0
+end
+--------------------------------------------------------------------------------
 if CEntity then
 
     --------------------------------------------------------------------------------

@@ -230,6 +230,39 @@ function MemLib.EntityType.TreeTypeGetResourceAmount(_TreeType)
 	return entityTypeMemory[39]:GetInt()
 end
 --------------------------------------------------------------------------------
+---@param _EntityType integer
+---@return boolean
+function MemLib.EntityType.HasBlocking(_EntityType)
+	local entityTypeMemory = MemLib.EntityType.GetMemory(_EntityType)
+	local numBlockedPoints = entityTypeMemory[22]:GetInt()
+	if numBlockedPoints > 0 then
+		return true
+	end
+	local vectorStartAdress = entityTypeMemory[35]:GetInt()
+	local vectorEndAddress = entityTypeMemory[36]:GetInt()
+	return vectorEndAddress > vectorStartAdress
+end
+--------------------------------------------------------------------------------
+function MemLib.EntityType.GetBlocking(_EntityType)
+	local entityTypeMemory = MemLib.EntityType.GetMemory(_EntityType)
+	local numBlockedPoints = entityTypeMemory[22]:GetInt()
+
+	if numBlockedPoints > 0 then
+		return numBlockedPoints
+	end
+
+	local vectorStartMemory = entityTypeMemory[35]
+	local vectorEndMemory = entityTypeMemory[36]
+	local blockingAreas = {}
+	local lastindex = (vectorEndMemory:GetInt() - vectorStartMemory:GetInt()) / 4 - 1
+
+	for i = 0, lastindex, 4 do
+		table.insert(blockingAreas, { { X = vectorStartMemory[i]:GetFloat(), Y = vectorStartMemory[i + 1]:GetFloat() }, { X = vectorStartMemory[i + 2]:GetFloat(), Y = vectorStartMemory[i + 3]:GetFloat() } })
+	end
+
+	return blockingAreas
+end
+--------------------------------------------------------------------------------
 if CppLogic then
 
 	--------------------------------------------------------------------------------
