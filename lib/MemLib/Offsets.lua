@@ -86,6 +86,7 @@ if XNetwork.Manager_IsNATReady then
                 Attachments = 9,
                 AttachedTos = 15,
                 BehaviorVectorStart = 31,
+                NamePointer = 0,
                 ScriptingValue = 50,
             },
             Settler = {
@@ -222,6 +223,7 @@ else -- GE
             Attachments = 9,
             AttachedTos = 15,
             BehaviorVectorStart = 31,
+            NamePointer = 51,
             ScriptingValue = 58,
         },
         Settler = {

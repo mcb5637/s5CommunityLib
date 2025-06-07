@@ -166,6 +166,17 @@ function MemLib.SettlerType.GetAttractionSlots(_SettlerType)
 	return Logic.GetAttractionLimitValueByEntityType(_SettlerType)
 end
 --------------------------------------------------------------------------------
+---@param _SettlerType integer
+---@return number?
+function MemLib.SettlerType.GetCamperRange(_SettlerType)
+
+	local camperBehaviorProps = MemLib.EntityType.BehaviorGetMemory(_SettlerType, BehaviorProperties.CCamperBehaviorProperties)
+
+	if camperBehaviorProps then
+		return camperBehaviorProps[4]:GetFloat()
+	end
+end
+--------------------------------------------------------------------------------
 if CLogic then
 
 	--------------------------------------------------------------------------------
@@ -220,7 +231,7 @@ else
 	---@param _SettlerType integer
 	---@return table
 	function MemLib.SettlerType.GetCostTable(_SettlerType)
-		return MemLib.Util.GetCostTable(MemLib.SettlerType.GetMemory(_SettlerType):Offset(40))
+		return MemLib.Internal.GetCostTable(MemLib.SettlerType.GetMemory(_SettlerType):Offset(40))
 	end
 	--------------------------------------------------------------------------------
 	---@param _SettlerType integer
@@ -229,4 +240,10 @@ else
 		return MemLib.SettlerType.GetMemory(_SettlerType)[84]:GetInt()
 	end
 
+end
+--------------------------------------------------------------------------------
+---@param _SettlerType integer
+---@param _CostTable table
+function MemLib.SettlerType.SetCostTable(_SettlerType, _CostTable)
+	MemLib.Internal.SetCostTable(MemLib.SettlerType.GetMemory(_SettlerType):Offset(40), _CostTable)
 end

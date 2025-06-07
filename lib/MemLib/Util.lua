@@ -19,9 +19,9 @@ function MemLib.Util.ResourceTypeIsValid(_ResourceType)
 	return type(_ResourceType) == "number" and _ResourceType > 0 and _ResourceType <= 17
 end
 --------------------------------------------------------------------------------
----@param _CostInfoMemory userdata
+---@param _CostInfoMemory userdata|table
 ---@return table
-function MemLib.Util.GetCostTable(_CostInfoMemory)
+function MemLib.Internal.GetCostTable(_CostInfoMemory)
 	local costTable = {}
 	for i = 1, 17 do
 		local cost = _CostInfoMemory[i]:GetFloat()
@@ -30,4 +30,13 @@ function MemLib.Util.GetCostTable(_CostInfoMemory)
 		end
 	end
 	return costTable
+end
+--------------------------------------------------------------------------------
+---@param _CostInfoMemory userdata|table
+---@param _CostTable table
+function MemLib.Internal.SetCostTable(_CostInfoMemory, _CostTable)
+	assert(type(_CostTable) == "table")
+	for i = 1, 17 do
+		_CostInfoMemory[i]:SetFloat(_CostTable[i] or 0)
+	end
 end

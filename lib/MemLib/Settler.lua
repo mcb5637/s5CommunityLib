@@ -157,12 +157,6 @@ function MemLib.Settler.GetBaseMovementSpeed(_SettlerId)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
----@return number
-function MemLib.Settler.GetMovementSpeed(_SettlerId)
-	return MemLib.Settler.GetMemory(_SettlerId)[89]:GetFloat()
-end
---------------------------------------------------------------------------------
----@param _SettlerId integer
 ---@return integer
 function MemLib.Settler.GetStamina(_SettlerId)
 	local workerBehaviorMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CWorkerBehavior)
@@ -203,7 +197,7 @@ end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
 ---@return number
-function MemLib.Settler.GetMovingSpeed(_SettlerId)
+function MemLib.Settler.GetMovementSpeed(_SettlerId)
 	return MemLib.Settler.GetMemory(_SettlerId)[89]:GetFloat()
 end
 --------------------------------------------------------------------------------
@@ -280,9 +274,9 @@ function MemLib.Settler.SetExperienceLevel(_SettlerId, _ExperienceLevel)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
----@param _MovingSpeed integer
-function MemLib.Settler.SetMovingSpeed(_SettlerId, _MovingSpeed)
-	MemLib.Settler.SetModifyableValue(_SettlerId, 2, _MovingSpeed)
+---@param _MovementSpeed integer
+function MemLib.Settler.SetMovementSpeed(_SettlerId, _MovementSpeed)
+	MemLib.Settler.SetModifyableValue(_SettlerId, 2, _MovementSpeed)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer

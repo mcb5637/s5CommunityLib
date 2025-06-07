@@ -2,8 +2,12 @@
 -- MemLib
 -- author: RobbiTheFox
 -- current maintainer: RobbiTheFox
--- Version: v1.1
+-- Version: v1.2
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+if MemLib then
+	return
+end
+--------------------------------------------------------------------------------
 MemLib = {}
 MemLib.Internal = {}
 --------------------------------------------------------------------------------
@@ -107,7 +111,7 @@ else
 
 		Logic.SetEntityName(id, name)
 
-		local namepointer = MemLib.Entity.GetMemory(id)[51]
+		local namepointer = MemLib.Entity.GetMemory(id)[MemLib.Offsets.Entity.NamePointer]
 		local address = namepointer:GetInt()
 
 		namepointer:SetInt(0)
@@ -127,7 +131,7 @@ else
 		assert(type(_Address) == "number" and _Address > 0, "MemLib.GetMemory: _Address invalid")
 
 		local id = Logic.CreateEntity(Entities.XD_Rock1, 500, 500, 0, 0)
-		local namepointer = MemLib.Entity.GetMemory(id)[51]
+		local namepointer = MemLib.Entity.GetMemory(id)[MemLib.Offsets.Entity.NamePointer]
 
 		namepointer:SetInt(_Address)
 		Logic.SetEntityName(id, nil)
@@ -163,8 +167,10 @@ end
 ---@param _Bytes integer
 function MemLib.Copy(_SourceAddress, _TargetAddress, _Bytes)
 	assert(type(_Bytes) == "number" and _Bytes > 0, "MemLib.GetMemory: _Bytes invalid")
+	local sourceMemory = MemLib.GetMemory(_SourceAddress)
+	local targetMemory = MemLib.GetMemory(_TargetAddress)
 	for i = 0, _Bytes - 1 do
-		MemLib.GetMemory(_TargetAddress):SetByte(i, MemLib.GetMemory(_SourceAddress):GetByte(i))
+		targetMemory:SetByte(i, sourceMemory:GetByte(i))
 	end
 end
 --------------------------------------------------------------------------------
@@ -214,4 +220,4 @@ function MemLib.Internal.MapNodeSetValue(_MapMemory, _KeyIndex, _Key, _ValueInde
 	return false
 end
 --------------------------------------------------------------------------------
-MemLib.Load("Offsets")
+MemLib.Load("FPU", "Offsets")
