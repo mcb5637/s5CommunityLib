@@ -208,6 +208,7 @@ function UnlimitedArmy:New(data) end
 UnlimitedArmy:AMethod()
 ---konstruktor (von LuaObject:Init aufgerufen)
 ---@param data UACreator
+---@private
 function UnlimitedArmy:Init(data)
 	self:CallBaseMethod("Init", UnlimitedArmy)
 	---@type number[]
