@@ -506,11 +506,11 @@ UnlimitedArmy:AMethod()
 function UnlimitedArmy:RemoveAllDestroyedLeaders()
 	self:CheckValidArmy()
 	for i = table.getn(self.Leaders), 1, -1 do
-		if IsDestroyed(self.Leaders[i]) then
-			table.remove(self.Leaders, i)
-			self:RequireNewFormat()
-		elseif IsDead(self.Leaders[i]) and Logic.IsHero(self.Leaders[i]) == 1 then
-			table.insert(self.DeadHeroes, table.remove(self.Leaders, i))
+		if IsDead(self.Leaders[i]) then
+			local id = table.remove(self.Leaders, i)
+			if IsValid(id) and Logic.IsHero(id) == 1 then
+				table.insert(self.DeadHeroes, id)
+			end
 			self:RequireNewFormat()
 		end
 	end
@@ -1756,7 +1756,7 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive, excludeFl
 				if excludeFleeing then
 					if id == currentTarget then
 						valid = false
-					elseif UnlimitedArmy.IsEntityFleeingFrom(id, p) then 
+					elseif UnlimitedArmy.IsEntityFleeingFrom(id, p) then
 						valid = false
 					end
 				end
@@ -1901,21 +1901,16 @@ function UnlimitedArmy.IsEntityFleeingFrom(id, pos)
 	if Logic.IsSettler(id) == 0 then
 		return false
 	end
-	--new
 	if Logic.IsEntityInCategory(id, EntityCategories.Soldier) == 1 then
-		id = SVLib.GetLeaderOfSoldier(id)
+		local leader = SVLib.GetLeaderOfSoldier(id)
+		if IsAlive(leader) then
+			id = leader
+		end
 	end
-	--new end
-	--[[
-	if CppLogic.Entity.IsSoldier(id) then
-		id = CppLogic.Entity.GetLeaderOfSoldier(id)
-	end
-	]]
 	local p = GetPosition(id)
 	local p2 = {}
 	p2.X = SVLib.GetXTarget(id)
 	p2.Y = SVLib.GetYTarget(id)
-	--local p2 = CppLogic.Entity.MovingEntityGetTargetPos(id)
 	return GetDistance(pos, p) + 800 < GetDistance(pos, p2)
 end
 
