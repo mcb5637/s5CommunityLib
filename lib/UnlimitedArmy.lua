@@ -1,6 +1,5 @@
 --AutoFixArg
 if mcbPacker then --mcbPacker.ignore
---mcbPacker.require("s5CommunityLib/comfort/table/CopyTable")
 mcbPacker.require("s5CommunityLib/comfort/other/PredicateHelper")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/IsEntityOfType")
@@ -21,7 +20,7 @@ mcbPacker.require("s5CommunityLib/fixes/TriggerFixCppLogicExtension")
 end --mcbPacker.ignore
 end --mcbPacker.ignore
 
---- author:mcb		current maintainer:mcb		v0.1b
+--- author:mcb		current maintainer:mcb		v1.0
 -- Neue Armeefunktion, basierend auf OOP.
 -- Keine Mengenbegrenzung an Armeen.
 -- Steuerung über OOP.
@@ -106,18 +105,7 @@ end --mcbPacker.ignore
 -- 
 -- 
 -- Benötigt:
--- - CopyTable
--- - CppLogic (optional, aber ohne eingeschränkte funktionalität (Heldenfähigkeiten und zielfindung))
--- - PredicateHelper (optional, siehe CppLogic)
--- - GetDistance
--- - IsEntityOfType
--- - GetCirclePosition
--- - GetAngleBetween
--- - TriggerFix
--- - EntityIdChangedHelper
--- - LuaObject
--- - TargetFilter
--- - IsValidPosition
+-- - siehe requires
 --- @class UnlimitedArmy : LuaObject
 --- @field Leaders number[]
 --- @field Player number
@@ -484,7 +472,7 @@ function UnlimitedArmy:CreateLeaderForArmy(ety, sol, pos, experience)
 	assert(Logic.GetEntityTypeName(ety))
 	assert(IsValidPosition(pos))
 	assert(sol >= 0)
-	self:AddLeader(AI.Entity_CreateFormation(self.Player, ety, nil, sol, pos.X, pos.Y, nil, nil, experience or 0, 0))
+	self:AddLeader(AI.Entity_CreateFormation(self.Player, ety, nil, sol, pos.X, pos.Y, 0, 0, experience or 0, 0))
 end
 
 UnlimitedArmy:AMethod()
@@ -517,7 +505,7 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 end
 
 UnlimitedArmy:AMethod()
----ermittelt die anzahl der leasder in der UACommand
+---ermittelt die anzahl der leader in der UACommand
 ---@param addTransit boolean?
 ---@param adddeadhero boolean?
 ---@return number
@@ -662,7 +650,6 @@ function UnlimitedArmy:DoBattleCommands()
 		self:NormalizeSpeed(false)
 	end
 	local tpos = GetPosition(self.CurrentBattleTarget)
-	-- Logic.CreateEffect(GGL_Effects.FXSalimHeal, tpos.X, tpos.Y, 0)
 	local nume = UnlimitedArmy.GetNumberOfEnemiesInArea(self:GetPosition(), self.Player, self.Area, self.IgnoreFleeing)
 	for num, id in ipairs(self.Leaders) do
 		local DoCommands = not self:DoHeroAbilities(id, nume)
@@ -1335,7 +1322,7 @@ function UnlimitedArmy.CreateCommandMove(p, looped)
 				self:SetReMove(true)
 			end
 			return true
-		end
+		end,
 	}
 end
 
@@ -1354,7 +1341,7 @@ function UnlimitedArmy.CreateCommandFlee(p, looped)
 			self:SetStatus(UnlimitedArmy.Status.MovingNoBattle)
 			self:SetReMove(true)
 			return true
-		end
+		end,
 	}
 end
 
@@ -1407,7 +1394,7 @@ function UnlimitedArmy.CreateCommandDefend(defendPos, defendArea, looped, agress
 					self:SetStatus(UnlimitedArmy.Status.Moving)
 				end
 			end
-		end
+		end,
 	}
 end
 
@@ -1422,7 +1409,7 @@ function UnlimitedArmy.CreateCommandWaitForIdle(looped)
 			if self:IsIdle() then
 				return true
 			end
-		end
+		end,
 	}
 end
 
@@ -1442,7 +1429,7 @@ function UnlimitedArmy.CreateCommandWaitForTroopSize(size, lessthan, looped)
 			if (s >= com.Size and not com.LessThan) or (s < com.Size and com.LessThan) then
 				return true
 			end
-		end
+		end,
 	}
 end
 
@@ -1477,7 +1464,7 @@ function UnlimitedArmy.CreateCommandAttackNearestTarget(maxrange, looped)
 					return true
 				end
 			end
-		end
+		end,
 	}
 end
 
@@ -1493,7 +1480,7 @@ function UnlimitedArmy.CreateCommandSetSpawnerStatus(status, looped)
 		Command = function(self, com)
 			self.SpawnerActive = com.Status
 			return true
-		end
+		end,
 	}
 end
 
@@ -1509,7 +1496,7 @@ function UnlimitedArmy.CreateCommandWaitForSpawnerFull(looped)
 			if not self.Spawner or s >= self.Spawner.ArmySize then
 				return true
 			end
-		end
+		end,
 	}
 end
 
@@ -1531,7 +1518,7 @@ function UnlimitedArmy.CreateCommandDirectAttack(target, looped)
 				self:SetStatus(UnlimitedArmy.Status.Battle)
 				self:SetReMove(true)
 			end
-		end
+		end,
 	}
 end
 
@@ -1558,7 +1545,7 @@ function UnlimitedArmy.CreateCommandGuardEntity(target, looped)
 					self:SetReMove(true)
 				end
 			end
-		end
+		end,
 	}
 end
 
@@ -1628,7 +1615,7 @@ function UnlimitedArmy.CreateCommandRallypoint(onExpedition, expeditionSize, num
 				ua:AddLeader(id)
 			end
 			return ua
-		end
+		end,
 	}
 end
 
@@ -1658,7 +1645,7 @@ function UnlimitedArmy.CreateCommandTransferTroops(target)
 			if not self.Target or GetDistance(self.Target, com.Target.Target) >= 1000 then
 				return false, UnlimitedArmy.CreateCommandMove(com.Target.Target)
 			end
-		end
+		end,
 	}
 end
 
@@ -1678,7 +1665,7 @@ function UnlimitedArmy.CreateCommandWaitSeconds(s)
 				return true
 			end
 			return false
-		end
+		end,
 	}
 end
 
@@ -1752,6 +1739,12 @@ function UnlimitedArmy.NoHookGetEnemyInArea(p, player, area, aiactive, excludeFl
 			local d = {Logic.GetPlayerEntitiesInArea(i, 0, p.X, p.Y, area or 999999999, 16)}
 			table.remove(d, 1)
 			for _,id in ipairs(d) do
+				if Logic.IsEntityInCategory(id, EntityCategories.Soldier) == 1 then
+					local l = SVLib.GetLeaderOfSoldier(id)
+					if IsValid(l) then
+						id = l
+					end
+				end
 				local valid = true
 				if excludeFleeing then
 					if id == currentTarget then
@@ -1903,15 +1896,20 @@ function UnlimitedArmy.IsEntityFleeingFrom(id, pos)
 	end
 	if Logic.IsEntityInCategory(id, EntityCategories.Soldier) == 1 then
 		local leader = SVLib.GetLeaderOfSoldier(id)
-		if IsAlive(leader) then
+		if IsValid(leader) then
 			id = leader
 		end
 	end
-	local p = GetPosition(id)
+	local _targetEntityPos = GetPosition(id)
 	local p2 = {}
 	p2.X = SVLib.GetXTarget(id)
 	p2.Y = SVLib.GetYTarget(id)
-	return GetDistance(pos, p) + 800 < GetDistance(pos, p2)
+	local _angleEntity = math.atan2(pos.Y - _targetEntityPos.Y, pos.X - _targetEntityPos.X)
+	local _angleTargetPos = math.atan2(pos.Y - p2.Y, pos.X - p2.X)
+	if math.abs(_angleEntity - _angleTargetPos) >= (math.pi / 2) then
+		return false
+	end
+	return GetDistance(pos, _targetEntityPos) + 800 < GetDistance(pos, p2)
 end
 
 UnlimitedArmy:AStatic()
@@ -2054,7 +2052,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityCircularAttack] = {
 	Range = 0,
 	IsInstant = false,
 	RequiredEnemiesInArea = 5,
-	RequiredRange = 500
+	RequiredRange = 500,
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityInflictFear] = {
 	Use = function(army, id)
@@ -2067,7 +2065,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityInflictFear] = {
 	Range = 0,
 	IsInstant = false,
 	RequiredEnemiesInArea = 5,
-	RequiredRange = 1000
+	RequiredRange = 1000,
 }
 UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 	Use = function(army, id)
@@ -2091,7 +2089,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilityRangedEffect] = {
 		local r = Logic.GetEntityType(id) == Entities.PU_Hero10 and 2500 or 1000
 		return UnlimitedArmy.GetNumberOfEnemiesInArea(GetPosition(id), army.Player, r, army.IgnoreFleeing) < 5
 	end,
-	IsInstant = true
+	IsInstant = true,
 	-- RequiredEnemiesInArea = 5,
 	-- RequiredRange = 1000,
 }
@@ -2105,7 +2103,7 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilitySummon] = {
 	end,
 	Range = 0,
 	IsInstant = true,
-	RequiredEnemiesInArea = 5
+	RequiredEnemiesInArea = 5,
 }
 
 UnlimitedArmy:FinalizeClass()
