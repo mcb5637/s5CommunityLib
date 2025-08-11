@@ -4,6 +4,7 @@ mcbPacker.require("s5CommunityLib/lib/UnlimitedArmy")
 mcbPacker.require("s5CommunityLib/comfort/math/GetDistance")
 mcbPacker.require("s5CommunityLib/comfort/entity/EntityIdChangedHelper")
 mcbPacker.require("s5CommunityLib/comfort/number/GetRandom")
+mcbPacker.require("s5CommunityLib/comfort/pos/RotatePositionAround")
 end --mcbPacker.ignore
 
 --- author:mcb		current maintainer:mcb		v0.1b
@@ -39,13 +40,35 @@ end --mcbPacker.ignore
 -- - EntityIdChangedHelper
 -- - GetRandom
 --- @class UnlimitedArmyRecruiter : UnlimitedArmyFiller
-UnlimitedArmyRecruiter = {Army=nil, Buildings=nil, ArmySize=nil, UCats=nil, ResCheat=nil, InRecruitment=nil, AddTrigger=nil,
-	TriggerType=nil, TriggerBuild=nil, Cannons=nil, ReorderAllowed=nil, RemoveUnavailable=nil, RandomizeSpawn=nil,DoNotRemoveIfDeadOrEmpty=nil, IdChangedTrigger=nil
-}
---- @type UnlimitedArmyRecruiterUCat[]
-UnlimitedArmyRecruiter.UCats=nil
---- @type UnlimitedArmyRecruiterInRec[]
-UnlimitedArmyRecruiter.InRecruitment=nil
+--- @field Army UnlimitedArmy
+--- @field Buildings number[]
+--- @field ArmySize number
+--- @field UCats UnlimitedArmyRecruiterUCat[]
+--- @field ResCheat boolean?
+--- @field ReorderAllowed boolean?
+--- @field RemoveUnavailable boolean?
+--- @field RandomizeSpawn boolean?
+--- @field DoNotRemoveIfDeadOrEmpty boolean?
+--- @field private InRecruitment UnlimitedArmyRecruiterInRec[]
+--- @field private AddTrigger number
+--- @field private TriggerType number
+--- @field private TriggerBuild number
+--- @field private IdChangedTrigger number
+--- @field private Cannons number[]
+UnlimitedArmyRecruiter = {}
+
+if false then
+	---@class UnlimitedArmyRecruiterCtor
+	---@field Buildings number[]
+	---@field UCats UnlimitedArmyRecruiterUCat[]
+	---@field ArmySize number
+	---@field ResCheat boolean?
+	---@field ReorderAllowed boolean?
+	---@field RemoveUnavailable boolean?
+	---@field RandomizeSpawn boolean?
+	---@field DoNotRemoveIfDeadOrEmpty boolean?
+	local UnlimitedArmyRecruiterCtor = {}
+end
 
 --- @type UnlimitedArmyRecruiter
 UnlimitedArmyRecruiter = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmyRecruiter")
@@ -55,9 +78,16 @@ UnlimitedArmyRecruiter:AStatic()
 UnlimitedArmyRecruiter.NumCache = {}
 
 UnlimitedArmyRecruiter:AReference()
+---@param army UnlimitedArmy
+---@param data UnlimitedArmyRecruiterCtor
+---@return UnlimitedArmyRecruiter
+---@diagnostic disable-next-line: missing-return
 function UnlimitedArmyRecruiter:New(army, data) end
 
 UnlimitedArmyRecruiter:AMethod()
+---@param army UnlimitedArmy
+---@param data UnlimitedArmyRecruiterCtor
+---@private
 function UnlimitedArmyRecruiter:Init(army, data)
 	self:CallBaseMethod("Init", UnlimitedArmyRecruiter)
 	assert(army:InstanceOf(UnlimitedArmy))
@@ -448,6 +478,10 @@ function UnlimitedArmyRecruiter:CheckAddRecruitment()
 	local ep = GetPosition(id)
 	local tp = GetPosition(self.TriggerBuild)
 	local off = UnlimitedArmyRecruiter.SpawnOffset[Logic.GetEntityType(self.TriggerBuild)]
+	local rot = Logic.GetEntityOrientation(self.TriggerBuild)
+	if rot ~= 0 then
+		off = RotatePositionAround(off, rot)
+	end
 	if GetDistance(ep, {X=tp.X+off.X, Y=tp.Y+off.Y}) <= 200 then
 		self:AddRecruitedLeader(id, self.TriggerBuild)
 		self.TriggerBuild = nil

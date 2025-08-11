@@ -40,18 +40,54 @@ end --mcbPacker.ignore
 -- - IsValidPosition
 -- - GetRandom
 --- @class UnlimitedArmySpawnGenerator : UnlimitedArmyFiller
-UnlimitedArmySpawnGenerator = {Generator=nil, Pos=nil, FreeArea=nil, ArmySize=nil, Army=nil, LeaderDesc=nil, SpawnCounter=nil, SpawnLeaders=nil, CCounter=nil,
-	RefillSoldiers=nil, RandomizeSpawn=nil, RandomizeSpawnPoint=nil, DoNotRemoveIfDeadOrEmpty=nil,
-}
---- @type UnlimitedArmySpawnGeneratorLT[]
-UnlimitedArmySpawnGenerator.LeaderDesc=nil
+--- @field Generator number|string?
+--- @field Pos Position|UnlimitedArmySpawnGeneratorSpawnPos[]
+--- @field FreeArea number?
+--- @field ArmySize number
+--- @field Army UnlimitedArmy
+--- @field private LeaderDesc UnlimitedArmySpawnGeneratorLT[]
+--- @field SpawnCounter number
+--- @field SpawnLeaders number
+--- @field private CCounter UpdatelessTimer
+--- @field RefillSoldiers boolean?
+--- @field RandomizeSpawn boolean?
+--- @field RandomizeSpawnPoint boolean?
+--- @field DoNotRemoveIfDeadOrEmpty boolean?
+UnlimitedArmySpawnGenerator = {}
+
+if false then
+	---@class UnlimitedArmySpawnGeneratorData
+	---@field Position Position|UnlimitedArmySpawnGeneratorSpawnPos[]
+	---@field ArmySize number
+	---@field SpawnCounter number
+	---@field SpawnLeaders number
+	---@field Generator number|string|nil
+	---@field FreeArea number?
+	---@field RefillSoldiers boolean?
+	---@field RandomizeSpawn boolean?
+	---@field RandomizeSpawnPoint boolean?
+	---@field DoNotRemoveIfDeadOrEmpty boolean?
+	---@field LeaderDesc UnlimitedArmySpawnGeneratorLT[]
+	local UnlimitedArmySpawnGeneratorData = {}
+
+	---@class UnlimitedArmySpawnGeneratorSpawnPos : Position
+	---@field Generator number|string|nil
+	local UnlimitedArmySpawnGeneratorSpawnPos = {}
+end
 
 UnlimitedArmySpawnGenerator = UnlimitedArmyFiller:CreateSubClass("UnlimitedArmySpawnGenerator")
 
 UnlimitedArmySpawnGenerator:AReference()
+---@param army UnlimitedArmy
+---@param spawndata UnlimitedArmySpawnGeneratorData
+---@return UnlimitedArmySpawnGenerator
+---@diagnostic disable-next-line: missing-return
 function UnlimitedArmySpawnGenerator:New(army, spawndata)end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@private
+---@param army UnlimitedArmy
+---@param spawndata UnlimitedArmySpawnGeneratorData
 function UnlimitedArmySpawnGenerator:Init(army, spawndata)
 	self:CallBaseMethod("Init", UnlimitedArmySpawnGenerator)
 	self.Pos = assert(spawndata.Position)
@@ -120,8 +156,7 @@ function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
 	local s = 0
 	if self.RefillSoldiers then
 		for id in self.Army:Iterator(true) do
-			if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0
-			and Logic.LeaderGetNumberOfSoldiers(id)<Logic.LeaderGetMaxNumberOfSoldiers(id) then
+			if UnlimitedArmySpawnGenerator.IsValidForRefill(id) then
 				s = s + 1
 			end
 		end
@@ -133,9 +168,8 @@ UnlimitedArmySpawnGenerator:AMethod()
 function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
 	self:CheckValidSpawner()
 	for id in self.Army:Iterator(true) do
-		if Logic.IsLeader(id)==1 and Logic.LeaderGetMaxNumberOfSoldiers(id)>0
-			and Logic.LeaderGetNumberOfSoldiers(id)<Logic.LeaderGetMaxNumberOfSoldiers(id) then
-			Tools.CreateSoldiersForLeader(id, Logic.LeaderGetMaxNumberOfSoldiers(id)-Logic.LeaderGetNumberOfSoldiers(id))
+		if UnlimitedArmySpawnGenerator.IsValidForRefill(id) then
+			UnlimitedArmySpawnGenerator.SpawnSoldiersSafe(id, Logic.LeaderGetMaxNumberOfSoldiers(id)-Logic.LeaderGetNumberOfSoldiers(id))
 			num = num - 1
 			if num <= 0 then
 				break
@@ -165,12 +199,14 @@ function UnlimitedArmySpawnGenerator:IsDead()
 	end
 	if self.Pos[1] then
 		for i=table.getn(self.Pos),1,-1 do
-			if self.Pos[i].Generator and UnlimitedArmy.IsReferenceDead(self.Pos[i].Generator) then
+			---@type UnlimitedArmySpawnGeneratorSpawnPos
+			local p = self.Pos[i]
+			if p.Generator and UnlimitedArmy.IsReferenceDead(p.Generator) then
 				table.remove(self.Pos, i)
 			end
 		end
 	end
----@diagnostic disable-next-line: undefined-field
+	---@diagnostic disable-next-line: undefined-field
 	if not self.Pos[1] and not self.Pos.X then
 		return true
 	end
@@ -191,6 +227,7 @@ function UnlimitedArmySpawnGenerator:ForceSpawn(num)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@return Position?
 function UnlimitedArmySpawnGenerator:GetSpawnPos()
 	if self:IsDead() then
 		return nil
@@ -213,6 +250,12 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	end
 	if self.LeaderDesc[spawningLeader] then
 		local p = self:GetSpawnPos()
+		if not p then
+			if self.DoNotRemoveIfDeadOrEmpty then
+				self:Remove()
+			end
+			return true
+		end
 		self.Army:CreateLeaderForArmy(self.LeaderDesc[spawningLeader].LeaderType, self.LeaderDesc[spawningLeader].SoldierNum, p, self.LeaderDesc[spawningLeader].Experience)
 		self.LeaderDesc[spawningLeader].CurrNum = self.LeaderDesc[spawningLeader].CurrNum - 1
 		if self.LeaderDesc[spawningLeader].CurrNum <= 0 then
@@ -270,6 +313,60 @@ function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
 		ldesc.CurrNum = ldesc.SpawnNum
 	else
 		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
+	end
+end
+
+UnlimitedArmySpawnGenerator:AStatic()
+function UnlimitedArmySpawnGenerator.IsValidForRefill(id)
+	if Logic.IsLeader(id) == 0 then
+		return false
+	end
+	if Logic.LeaderGetMaxNumberOfSoldiers(id) == 0 then
+		return false
+	end
+	if Logic.LeaderGetNumberOfSoldiers(id)>=Logic.LeaderGetMaxNumberOfSoldiers(id) then
+		return false
+	end
+	if Logic.LeaderGetBarrack(id) ~= 0 then
+		return false
+	end
+	return true
+end
+
+UnlimitedArmySpawnGenerator:AStatic()
+function UnlimitedArmySpawnGenerator.SpawnSoldiersSafe(id, num)
+	if not UnlimitedArmySpawnGenerator.IsValidForRefill(id) then
+		return
+	end
+	local sty = Logic.LeaderGetSoldiersType(id)
+	if not CppLogic then
+		Logic.GroupDefend(id) -- clear attack status
+	end
+	local x,y = Logic.GetEntityPosition(id)
+	local p = Logic.EntityGetPlayer(id)
+	for i=1,num do
+		local sol = Logic.CreateEntity(sty, x, y, 0, p)
+		if IsDead(sol) then
+			return
+		end
+		if CppLogic then
+			CppLogic.Entity.Leader.AttachSoldier(id, sol)
+		else
+			Logic.LeaderGetOneSoldier(id)
+		end
+		local s = {Logic.GetSoldiersAttachedToLeader(id)}
+		local found = false
+		for j=2,s[1]+1 do
+			if s[j] == sol then
+				found = true
+				break
+			end
+		end
+		if not found then
+			LuaDebugger.Log("failed to attach soldier")
+			Logic.DestroyEntity(sol)
+			return
+		end
 	end
 end
 
