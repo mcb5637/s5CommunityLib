@@ -157,12 +157,6 @@ function MemLib.Settler.GetBaseMovementSpeed(_SettlerId)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
----@return number
-function MemLib.Settler.GetMovementSpeed(_SettlerId)
-	return MemLib.Settler.GetMemory(_SettlerId)[89]:GetFloat()
-end
---------------------------------------------------------------------------------
----@param _SettlerId integer
 ---@return integer
 function MemLib.Settler.GetStamina(_SettlerId)
 	local workerBehaviorMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CWorkerBehavior)
@@ -203,7 +197,7 @@ end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
 ---@return number
-function MemLib.Settler.GetMovingSpeed(_SettlerId)
+function MemLib.Settler.GetMovementSpeed(_SettlerId)
 	return MemLib.Settler.GetMemory(_SettlerId)[89]:GetFloat()
 end
 --------------------------------------------------------------------------------
@@ -280,9 +274,9 @@ function MemLib.Settler.SetExperienceLevel(_SettlerId, _ExperienceLevel)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
----@param _MovingSpeed integer
-function MemLib.Settler.SetMovingSpeed(_SettlerId, _MovingSpeed)
-	MemLib.Settler.SetModifyableValue(_SettlerId, 2, _MovingSpeed)
+---@param _MovementSpeed integer
+function MemLib.Settler.SetMovementSpeed(_SettlerId, _MovementSpeed)
+	MemLib.Settler.SetModifyableValue(_SettlerId, 2, _MovementSpeed)
 end
 --------------------------------------------------------------------------------
 ---@param _SettlerId integer
@@ -429,6 +423,33 @@ function MemLib.Settler.ResetModifyableValue(_SettlerId, _Offset)
 	assert(type(_Offset) == "number" and _Offset >= 0 and _Offset <= 14)
 	local settlerMemory = MemLib.Settler.GetMemory(_SettlerId)
 	settlerMemory[80][_Offset]:SetInt(settlerMemory:Offset(84 + _Offset * 2):GetInt())
+end
+--------------------------------------------------------------------------------
+---@param _SettlerId integer
+---@return integer
+function MemLib.Settler.GetCurrentTaskListId(_SettlerId)
+	assert(MemLib.Settler.IsValid(_SettlerId))
+	local taskList = Logic.GetCurrentTaskList(_SettlerId)
+	return TaskLists[taskList]
+end
+--------------------------------------------------------------------------------
+---@param _SettlerId integer
+---@return integer?
+function MemLib.Settler.GetAnimation(_SettlerId)
+	local behaviorAnimExMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CGLBehaviorAnimationEx)
+	if behaviorAnimExMemory then
+		return behaviorAnimExMemory[4]:GetInt()
+	end
+end
+--------------------------------------------------------------------------------
+-- WARNING: This function does not check, if the anim is compatible with this entity. An incompatible anim may CRASH the game!
+---@param _SettlerId integer
+---@param _AnimId integer
+function MemLib.Settler.SetAnimation(_SettlerId, _AnimId)
+	local behaviorAnimExMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CGLBehaviorAnimationEx)
+	if behaviorAnimExMemory then
+		behaviorAnimExMemory[4]:SetInt(_AnimId)
+	end
 end
 --------------------------------------------------------------------------------
 if CEntity then

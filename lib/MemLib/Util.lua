@@ -19,9 +19,9 @@ function MemLib.Util.ResourceTypeIsValid(_ResourceType)
 	return type(_ResourceType) == "number" and _ResourceType > 0 and _ResourceType <= 17
 end
 --------------------------------------------------------------------------------
----@param _CostInfoMemory userdata
+---@param _CostInfoMemory userdata|table
 ---@return table
-function MemLib.Util.GetCostTable(_CostInfoMemory)
+function MemLib.Internal.GetCostTable(_CostInfoMemory)
 	local costTable = {}
 	for i = 1, 17 do
 		local cost = _CostInfoMemory[i]:GetFloat()
@@ -30,4 +30,35 @@ function MemLib.Util.GetCostTable(_CostInfoMemory)
 		end
 	end
 	return costTable
+end
+--------------------------------------------------------------------------------
+---@param _CostInfoMemory userdata|table
+---@param _CostTable table
+function MemLib.Internal.SetCostTable(_CostInfoMemory, _CostTable)
+	assert(type(_CostTable) == "table")
+	for i = 1, 17 do
+		_CostInfoMemory[i]:SetFloat(_CostTable[i] or 0)
+	end
+end
+--------------------------------------------------------------------------------
+-- works only inside of a Trigger of type Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
+---@return integer?
+function MemLib.Util.HurtTriggerGetDamage()
+	local event = MemLib.GetMemory(MemLib.Offsets.Event.GlobalObject)[0]
+	if event:GetInt() ~= 0 then
+		if event[1]:GetInt() == tonumber("1C007", 16) then
+			return event[MemLib.Offsets.Event.Damage]:GetInt()
+		end
+	end
+end
+--------------------------------------------------------------------------------
+-- works only inside of a Trigger of type Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
+---@param _Damage integer
+function MemLib.Util.HurtTriggerSetDamage(_Damage)
+	local event = MemLib.GetMemory(MemLib.Offsets.Event.GlobalObject)[0]
+	if event:GetInt() ~= 0 then
+		if event[1]:GetInt() == tonumber("1C007", 16) then
+			return event[MemLib.Offsets.Event.Damage]:SetInt(_Damage)
+		end
+	end
 end

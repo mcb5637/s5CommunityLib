@@ -83,9 +83,10 @@ if XNetwork.Manager_IsNATReady then
             Sector_Unknown1 = MemLib.LAU.ToNumber(CSettlerVtpLAU + 3407860),
             Sector_Unknown2 = MemLib.LAU.ToNumber(CSettlerVtpLAU + 2735608),
             Entity = {
-                Attachments = 9,
-                AttachedTos = 15,
-                BehaviorVectorStart = 31,
+                Attachments = 8,
+                AttachedTos = 12,
+                BehaviorVectorStart = 26,
+                NamePointer = 43,
                 ScriptingValue = 50,
             },
             Settler = {
@@ -138,6 +139,10 @@ if XNetwork.Manager_IsNATReady then
                 [Modifiers.DodgeChance]	=  97,
                 [Modifiers.GroupLimit]	= 104,
             },
+            Event = {
+                GlobalObject = MemLib.LAU.ToNumber(CSettlerVtpLAU + 3629932),
+                Damage = 37,
+            }
         }
         --[[if mcbPacker then
             mcbPacker.require("s5CommunityLib/Lib/MemLib/Internal/UHE")
@@ -222,6 +227,7 @@ else -- GE
             Attachments = 9,
             AttachedTos = 15,
             BehaviorVectorStart = 31,
+            NamePointer = 51,
             ScriptingValue = 58,
         },
         Settler = {
@@ -273,6 +279,10 @@ else -- GE
             [Modifiers.Armor]		= 104,
             [Modifiers.DodgeChance]	= 112,
             [Modifiers.GroupLimit]	= 120,
+        },
+        Event = {
+            GlobalObject = tonumber("A06540", 16),
+            Damage = 41,
         },
     }
     --[[if mcbPacker then

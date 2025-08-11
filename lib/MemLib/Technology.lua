@@ -118,8 +118,40 @@ function MemLib.Technology.CancelResearch(_PlayerId, _Technology)
 end
 --------------------------------------------------------------------------------
 ---@param _Technology integer
+---@return number
+function MemLib.Technology.GetTimeToResearch(_Technology)
+	return MemLib.Technology.GetMemory(_Technology)[1]:GetFloat()
+end
+--------------------------------------------------------------------------------
+---@param _Technology integer
+---@param _Seconds number
+function MemLib.Technology.SetTimeToResearch(_Technology, _Seconds)
+	assert(type(_Seconds) == "number" and _Seconds > 0)
+	return MemLib.Technology.GetMemory(_Technology)[1]:SetFloat(_Seconds)
+end
+--------------------------------------------------------------------------------
+---@param _Technology integer
+---@return boolean
+function MemLib.Technology.GetIsAutoResearch(_Technology)
+	return MemLib.Technology.GetMemory(_Technology)[2]:GetByte(0) == 1
+end
+--------------------------------------------------------------------------------
+---@param _Technology integer
+---@param _IsAutoResearch boolean
+function MemLib.Technology.SetIsAutoResearch(_Technology, _IsAutoResearch)
+	return MemLib.Technology.GetMemory(_Technology)[2]:SetByte(0, _IsAutoResearch and 1 or 0)
+end
+--------------------------------------------------------------------------------
+---@param _Technology integer
 ---@return table
-function MemLib.TechnologyGetCostTable(_Technology)
+function MemLib.Technology.GetCostTable(_Technology)
 	local technology = MemLib.Technology.GetMemory(_Technology)
-	return MemLib.Util.GetCostTable(technology:Offset(3))
+	return MemLib.Internal.GetCostTable(technology:Offset(3))
+end
+--------------------------------------------------------------------------------
+---@param _Technology integer
+---@param _CostTable table
+function MemLib.Technology.SetCostTable(_Technology, _CostTable)
+	local technology = MemLib.Technology.GetMemory(_Technology)
+	MemLib.Internal.SetCostTable(technology:Offset(3), _CostTable)
 end

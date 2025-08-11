@@ -41,6 +41,8 @@ else
 	--------------------------------------------------------------------------------
 	if mcbPacker then
 		mcbPacker.require("s5CommunityLib/Lib/MemLib/Bit")
+	else
+		MemLib.Load("Bit")
 	end
 	--------------------------------------------------------------------------------
 	---@param _EntityId integer
@@ -127,6 +129,28 @@ function MemLib.Entity.ResourceDoodadSetResourceType(_ResourceDoodadId, _Resourc
 	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad, "MemLib.Entity.ResourceDoodadSetResourceType: _ResourceDoodadId invalid")
 	assert(MemLib.Entity.ResourceTypeIsValid(_ResourceType), "MemLib.Entity.ResourceDoodadSetResourceType: _ResourceType invalid")
 	MemLib.Entity.GetMemory(_ResourceDoodadId)[MemLib.Offsets.ResourceDoodad.ResourceType]:SetInt(_ResourceType)
+end
+--------------------------------------------------------------------------------
+---@param _ResourceDoodadId integer
+---@return table?
+function MemLib.Entity.ResourceDoodadGetAttachedSerfs(_ResourceDoodadId)
+	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad)
+	return MemLib.Entity.GetAttachedEntities(_ResourceDoodadId)[AttachmentTypes.ATTACHMENT_SERF_RESOURCE]
+end
+--------------------------------------------------------------------------------
+---@param _ResourceDoodadId integer
+---@return integer
+function MemLib.Entity.ResourceDoodadGetNumberOfAttachedSerfs(_ResourceDoodadId)
+	assert(MemLib.Entity.GetClass(_ResourceDoodadId) == EntityClasses.CResourceDoodad)
+	return table.getn(MemLib.Entity.GetAttachedEntities(_ResourceDoodadId)[AttachmentTypes.ATTACHMENT_SERF_RESOURCE] or {})
+end
+--------------------------------------------------------------------------------
+---@param _ResourcePitId integer
+---@return integer
+function MemLib.Entity.ResourcePitGetMineBuilding(_ResourcePitId)
+	assert(MemLib.Entity.GetClass(_ResourcePitId) == EntityClasses.CResourceDoodad)
+	local attachedMineBuildings = MemLib.Entity.GetAttachedEntities(_ResourcePitId)[AttachmentTypes.ATTACHMENT_MINE_RESOURCE]
+	return attachedMineBuildings and attachedMineBuildings[1] or 0
 end
 --------------------------------------------------------------------------------
 if CEntity then
@@ -247,25 +271,28 @@ if CUtil then
 
 	--------------------------------------------------------------------------------
 	---@param _ResourceEntityId integer
+	---@return integer
 	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
 		local entityTypeMemory = MemLib.EntityType.GetMemory(Logic.GetEntityType(_ResourceEntityId))
 		assert(entityTypeMemory[0]:GetInt() == EntityTypeClasses.CEntityProperties)
 		assert(MemLib.EntityType.IsValid(entityTypeMemory[MemLib.Offsets.ResourceDoodadType.ResourceEntityType]:GetInt()))
-		CUtil.ReplaceEntityWithResourceEntity(_ResourceEntityId)
+		return CUtil.ReplaceEntityWithResourceEntity(_ResourceEntityId)
 	end
 
 elseif CppLogic then
 
 	--------------------------------------------------------------------------------
 	---@param _ResourceEntityId integer
+	---@return integer
 	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
-		CppLogic.Entity.ReplaceWithResourceEntity(_ResourceEntityId)
+		return CppLogic.Entity.ReplaceWithResourceEntity(_ResourceEntityId)
 	end
 
 else
 
 	--------------------------------------------------------------------------------
 	---@param _ResourceEntityId integer
+	---@return integer
 	function MemLib.Entity.ReplaceEntityWithResourceEntity(_ResourceEntityId)
 		local entityTypeMemory = MemLib.EntityType.GetMemory(Logic.GetEntityType(_ResourceEntityId))
 		assert(entityTypeMemory[0]:GetInt() == EntityTypeClasses.CEntityProperties)
@@ -276,7 +303,7 @@ else
 		local r = Logic.GetEntityOrientation(_ResourceEntityId)
 		local p = Logic.EntityGetPlayer(_ResourceEntityId)
 		Logic.DestroyEntity(_ResourceEntityId)
-		Logic.CreateEntity(resourceEntityType, x, y, r, p)
+		return Logic.CreateEntity(resourceEntityType, x, y, r, p)
 	end
 
 end
