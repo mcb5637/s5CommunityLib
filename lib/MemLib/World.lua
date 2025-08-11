@@ -149,9 +149,7 @@ function MemLib.World.NodeIsBlockedExtended(_X, _Y, _BitField, _WeatherState)
 		return true
 	elseif MemLib.Bit.And(_BitField, 8) ~= 0 and MemLib.World.NodeIsBlockedByTerrainType(_X, _Y) then
 		return true
-	elseif MemLib.Bit.And(_BitField, 16) ~= 0 and MemLib.World.NodeIsUnderWater(_X, _Y) then
-		return true
-	elseif MemLib.Bit.And(_BitField, 32) ~= 0 and MemLib.World.NodeIsWaterFreezing(_X, _Y) and _WeatherState ~= 3 then
+	elseif MemLib.Bit.And(_BitField, 48) == 48 and MemLib.World.NodeIsUnderWater(_X, _Y) and (_WeatherState ~= 3 or not MemLib.World.NodeIsWaterFreezing(_X, _Y)) then
 		return true
 	end
 	return false
@@ -163,13 +161,13 @@ end
 ---@return boolean
 function MemLib.World.NodeIsBlockedByTerrainType(_X, _Y)
 	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.NodeIsBlockedByTerrainType: node invalid")
-	return MemLib.TerrainTypeIsBlocked(MemLib.World.NodeGetTerrainType(_X, _Y))
+	return MemLib.World.TerrainTypeIsBlocked(MemLib.World.NodeGetTerrainType(_X, _Y))
 end
 --------------------------------------------------------------------------------
 ---@param _TerrainType integer
 ---@return boolean
 function MemLib.World.TerrainTypeIsBlocked(_TerrainType)
-	assert(MemLib.World.TerrainTypeIsValid(_TerrainType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
+	--assert(MemLib.World.TerrainTypeIsValid(_TerrainType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
 	return MemLib.Internal.CGluePropsMgrGetMemory()[7][MemLib.Offsets.CTerrainPropsMgr.VectorStart][_TerrainType * 2]:GetByte(0) == 1
 end
 --------------------------------------------------------------------------------
@@ -198,13 +196,13 @@ end
 ---@return boolean
 function MemLib.World.NodeIsWaterFreezing(_X, _Y)
 	assert(MemLib.World.NodeIsValid(_X, _Y), "MemLib.World.NodeIsWaterFreezing: node invalid")
-	return MemLib.WaterTypeIsFreezing(MemLib.NodeGetWaterType(_X, _Y))
+	return MemLib.World.WaterTypeIsFreezing(MemLib.World.NodeGetWaterType(_X, _Y))
 end
 --------------------------------------------------------------------------------
 ---@param _WaterType integer
 ---@return boolean
 function MemLib.World.WaterTypeIsFreezing(_WaterType)
-	assert(MemLib.World.WaterTypeIsValid(_WaterType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
+	--assert(MemLib.World.WaterTypeIsValid(_WaterType), "MemLib.World.WaterTypeIsFreezing: _WaterType invalid")
 	return MemLib.Internal.CGluePropsMgrGetMemory()[8][MemLib.Offsets.CGlueWaterPropsMgr.VectorStart][_WaterType]:GetByte(0) == 1
 end
 --------------------------------------------------------------------------------

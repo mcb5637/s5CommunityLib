@@ -425,6 +425,33 @@ function MemLib.Settler.ResetModifyableValue(_SettlerId, _Offset)
 	settlerMemory[80][_Offset]:SetInt(settlerMemory:Offset(84 + _Offset * 2):GetInt())
 end
 --------------------------------------------------------------------------------
+---@param _SettlerId integer
+---@return integer
+function MemLib.Settler.GetCurrentTaskListId(_SettlerId)
+	assert(MemLib.Settler.IsValid(_SettlerId))
+	local taskList = Logic.GetCurrentTaskList(_SettlerId)
+	return TaskLists[taskList]
+end
+--------------------------------------------------------------------------------
+---@param _SettlerId integer
+---@return integer?
+function MemLib.Settler.GetAnimation(_SettlerId)
+	local behaviorAnimExMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CGLBehaviorAnimationEx)
+	if behaviorAnimExMemory then
+		return behaviorAnimExMemory[4]:GetInt()
+	end
+end
+--------------------------------------------------------------------------------
+-- WARNING: This function does not check, if the anim is compatible with this entity. An incompatible anim may CRASH the game!
+---@param _SettlerId integer
+---@param _AnimId integer
+function MemLib.Settler.SetAnimation(_SettlerId, _AnimId)
+	local behaviorAnimExMemory = MemLib.Entity.BehaviorGetMemory(_SettlerId, Behaviors.CGLBehaviorAnimationEx)
+	if behaviorAnimExMemory then
+		behaviorAnimExMemory[4]:SetInt(_AnimId)
+	end
+end
+--------------------------------------------------------------------------------
 if CEntity then
 
 	--------------------------------------------------------------------------------

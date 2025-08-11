@@ -2,7 +2,7 @@
 -- MemLib
 -- author: RobbiTheFox
 -- current maintainer: RobbiTheFox
--- Version: v1.3
+-- Version: v1.4
 --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
 if MemLib then
 	return

@@ -10,7 +10,7 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/Lib/MemLib/Technology")
 else
 	if not MemLib then Script.Load("maps\\user\\EMS\\tools\\s5CommunityLib\\lib\\MemLib\\MemLib.lua") end
-	MemLib.Load("Entity", "Technology")
+	MemLib.Load("BuildingType", "Entity", "Technology", "Tables/AttachmentTypes")
 end
 --------------------------------------------------------------------------------
 MemLib.Building = {}
@@ -118,6 +118,19 @@ function MemLib.Building.UpgradeSiteGetBuilding(_UpgradeSiteId)
     return 0
 end
 --------------------------------------------------------------------------------
+---@param _ConstructionSiteId integer
+---@return integer
+function MemLib.Building.ConstructionSiteGetNumberOfAttachedSerfs(_ConstructionSiteId)
+    local numberOfAttachedSerfs = 0
+    for attachmentType = AttachmentTypes.ATTACHMENT_APPROACHING_SERF_CONSTRUCTION_SITE, AttachmentTypes.ATTACHMENT_SERF_CONSTRUCTION_SITE do
+        local attachedSerfs = MemLib.Entity.GetAttachedEntities(_ConstructionSiteId)[attachmentType]
+        if attachedSerfs then
+            numberOfAttachedSerfs = numberOfAttachedSerfs + table.getn(attachedSerfs)
+        end
+    end
+    return numberOfAttachedSerfs
+end
+--------------------------------------------------------------------------------
 if CEntity then
 
     --------------------------------------------------------------------------------
@@ -177,6 +190,30 @@ else
 
 end
 --------------------------------------------------------------------------------
+if CUtil then
+
+    --------------------------------------------------------------------------------
+    ---@param _ConstructionSiteId integer
+    ---@return integer
+    function MemLib.Building.ConstructionSiteGetNumberOfFreeConstructionSlots(_ConstructionSiteId)
+        assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite)
+        return CUtil.GetFreeBuildingSlots(_ConstructionSiteId)
+    end
+
+else
+
+    --------------------------------------------------------------------------------
+    ---@param _ConstructionSiteId integer
+    ---@return integer
+    function MemLib.Building.ConstructionSiteGetNumberOfFreeConstructionSlots(_ConstructionSiteId)
+        assert(MemLib.Entity.GetClass(_ConstructionSiteId) == EntityClasses.CConstructionSite)
+        local numberOfAttachedSerfs = MemLib.Building.ConstructionSiteGetNumberOfAttachedSerfs(_ConstructionSiteId)
+        local numberOfConstructionSlots = MemLib.BuildingType.GetNumberOfConstructionSlots(Logic.GetEntityType(MemLib.Building.ConstructionSiteGetBuilding(_ConstructionSiteId)))
+        return numberOfConstructionSlots - numberOfAttachedSerfs
+    end
+
+end
+--------------------------------------------------------------------------------
 if CppLogic then
 
     --------------------------------------------------------------------------------
@@ -199,10 +236,11 @@ if CppLogic then
     ---@return number DoorY
     ---@return number LeaveX
     ---@return number LeaveY
-    function MemLib.Building.GetAproachAndDoorPosition(_BuildingId)
+    function MemLib.Building.GetAproachDoorAndLeavePosition(_BuildingId)
         local a, l, d = CppLogic.Entity.Building.GetRelativePositions(_BuildingId)
         return a.X, a.Y, d.X, d.Y, l.X, l.Y
     end
+
 else
 
     --------------------------------------------------------------------------------
@@ -217,7 +255,7 @@ else
     ---@param _BuildingId integer
     ---@return integer
     function MemLib.Building.GetConstructionSite(_BuildingId)
-        assert(MemLib.Entity.GetClass(_BuildingId) == EntityClasses.CConstructionSite, "MemLib.Building.ConstructionSiteGetBuilding: _ConstructionSiteId invalid")
+        assert(MemLib.Building.IsValid(_BuildingId), "MemLib.Building.GetConstructionSite: _BuildingId invalid")
         if MemLib.Building.GetConstructionProgress(_BuildingId) then
             return MemLib.Entity.GetAttachedEntities(_BuildingId)[20][1]
         end
@@ -231,7 +269,7 @@ else
     ---@return number DoorY
     ---@return number LeaveX
     ---@return number LeaveY
-    function MemLib.Building.GetAproachAndDoorPosition(_BuildingId)
+    function MemLib.Building.GetAproachDoorAndLeavePosition(_BuildingId)
         local x, y = Logic.GetEntityPosition(_BuildingId)
         local xa, ya, xd, yd, lx, ly = MemLib.BuildingType.GetAproachDoorAndLeavePosition(Logic.GetEntityType(_BuildingId))
         return x + xa, y + ya, x + xd, y + yd, x + lx, y + ly

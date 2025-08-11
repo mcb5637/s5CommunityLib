@@ -115,6 +115,19 @@ function MemLib.BuildingType.SetRefineResourceType(_BuildingType)
 	end
 end
 --------------------------------------------------------------------------------
+---@param _BuildingType integer
+---@return integer
+function MemLib.BuildingType.GetNumberOfConstructionSlots(_BuildingType)
+	local buildingTypeMemory = MemLib.BuildingType.GetMemory(_BuildingType)
+	local vectorStart = buildingTypeMemory[52]:GetInt()
+	local vectorEnd = buildingTypeMemory[53]:GetInt()
+	MemLib.ArmPreciseFPU()
+	MemLib.SetPreciseFPU()
+	local numberOfConstructionSlots = (vectorEnd - vectorStart) / 12
+	MemLib.DisarmPreciseFPU()
+	return numberOfConstructionSlots
+end
+--------------------------------------------------------------------------------
 if CLogic then
 
 	--------------------------------------------------------------------------------
@@ -226,7 +239,7 @@ if CppLogic then
 	---@return table
 	function MemLib.BuildingType.GetUpgradeCostTable(_BuildingType)
 		local result = {}
-		local costs = CppLogic.EntityType.Building.GetUpradeCost(_BuildingType)
+		local costs = CppLogic.EntityType.Building.GetUpgradeCost(_BuildingType)
 		for i = 1, 17 do
 			if costs[i] > 0 then
 				result[i] = costs[i]

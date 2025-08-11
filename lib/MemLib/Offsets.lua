@@ -83,10 +83,10 @@ if XNetwork.Manager_IsNATReady then
             Sector_Unknown1 = MemLib.LAU.ToNumber(CSettlerVtpLAU + 3407860),
             Sector_Unknown2 = MemLib.LAU.ToNumber(CSettlerVtpLAU + 2735608),
             Entity = {
-                Attachments = 9,
-                AttachedTos = 15,
-                BehaviorVectorStart = 31,
-                NamePointer = 0,
+                Attachments = 8,
+                AttachedTos = 12,
+                BehaviorVectorStart = 26,
+                NamePointer = 43,
                 ScriptingValue = 50,
             },
             Settler = {

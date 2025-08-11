@@ -32,6 +32,13 @@ function MemLib.Player.PaydayReset(_PlayerId)
 end
 --------------------------------------------------------------------------------
 ---@param _PlayerId integer
+---@return integer
+function MemLib.Player.PaydayGetStartTurn(_PlayerId)
+	local playerStatusMemory = MemLib.Player.StatusGetMemory(_PlayerId)
+	return playerStatusMemory[MemLib.Offsets.CPlayerStatus.CPlayerAttractionHandler][MemLib.Offsets.CPlayerAttractionHandler.PaydayStartTurn]:GetInt()
+end
+--------------------------------------------------------------------------------
+---@param _PlayerId integer
 ---@param _R integer
 ---@param _G integer
 ---@param _B integer
