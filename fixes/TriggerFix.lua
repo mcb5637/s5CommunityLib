@@ -363,7 +363,9 @@ function TriggerFix.CreateEmptyEvent()
 end
 
 function TriggerFix.CreateEventHurtIn(cev, event)
-
+	if TriggerFix.HurtTriggers[event] and not CppLogic and not CUtil and not S5Hook and MemLib then
+		cev.Damage = MemLib.Util.HurtTriggerGetDamage()
+	end
 end
 function TriggerFix.CreateEventHurtInCppLogic(cev, event)
 	if TriggerFix.HurtTriggers[event] then
@@ -379,7 +381,9 @@ function TriggerFix.CreateEventHurtInCEntity(cev, event)
 end
 
 function TriggerFix.CreateEventHurtOut(cev, event)
-
+	if TriggerFix.HurtTriggers[event] and not CppLogic and not CUtil and not S5Hook and MemLib then
+		MemLib.Util.HurtTriggerSetDamage(cev.Damage)
+	end
 end
 function TriggerFix.CreateEventHurtOutCppLogic(cev, event)
 	if TriggerFix.HurtTriggers[event] then
