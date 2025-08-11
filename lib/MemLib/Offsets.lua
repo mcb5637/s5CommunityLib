@@ -139,6 +139,10 @@ if XNetwork.Manager_IsNATReady then
                 [Modifiers.DodgeChance]	=  97,
                 [Modifiers.GroupLimit]	= 104,
             },
+            Event = {
+                GlobalObject = MemLib.LAU.ToNumber(CSettlerVtpLAU + 3629932),
+                Damage = 37,
+            }
         }
         --[[if mcbPacker then
             mcbPacker.require("s5CommunityLib/Lib/MemLib/Internal/UHE")
@@ -275,6 +279,10 @@ else -- GE
             [Modifiers.Armor]		= 104,
             [Modifiers.DodgeChance]	= 112,
             [Modifiers.GroupLimit]	= 120,
+        },
+        Event = {
+            GlobalObject = tonumber("A06540", 16),
+            Damage = 41,
         },
     }
     --[[if mcbPacker then

@@ -44,10 +44,10 @@ end
 -- works only inside of a Trigger of type Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
 ---@return integer?
 function MemLib.Util.HurtTriggerGetDamage()
-	local event = MemLib.GetMemory(tonumber("A06540", 16))[0]
+	local event = MemLib.GetMemory(MemLib.Offsets.Event.GlobalObject)[0]
 	if event:GetInt() ~= 0 then
 		if event[1]:GetInt() == tonumber("1C007", 16) then
-			return event[41]:GetInt()
+			return event[MemLib.Offsets.Event.Damage]:GetInt()
 		end
 	end
 end
@@ -55,10 +55,10 @@ end
 -- works only inside of a Trigger of type Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
 ---@param _Damage integer
 function MemLib.Util.HurtTriggerSetDamage(_Damage)
-	local event = MemLib.GetMemory(tonumber("A06540", 16))[0]
+	local event = MemLib.GetMemory(MemLib.Offsets.Event.GlobalObject)[0]
 	if event:GetInt() ~= 0 then
 		if event[1]:GetInt() == tonumber("1C007", 16) then
-			return event[41]:SetInt(_Damage)
+			return event[MemLib.Offsets.Event.Damage]:SetInt(_Damage)
 		end
 	end
 end
