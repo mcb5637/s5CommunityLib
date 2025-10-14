@@ -21,6 +21,21 @@ end --mcbPacker.ignore
 -- - CNetEventCallbacks
 CommandQueue = {SerfAutoBuild = true}
 
+if false then
+	---@class CommandQueueData
+	---@field Cmd CNetEventIDs
+	---@field Done boolean?
+	local cmddata = {}
+
+	---@class CommandQueueCmd
+	---@field Add fun(self:CommandQueueCmd, ev:table, queue:boolean):boolean?
+	---@field IsDone fun(self:CommandQueueData, d:number):boolean
+	---@field Execute fun(self:CommandQueueData, d:number)
+	---@field SerfAutoBuild boolean?
+	local cmd = {}
+end
+
+---@type table<number,CommandQueueData[]>
 CommandQueue.Queue = {}
 
 function CommandQueue.Init()
@@ -94,6 +109,8 @@ function CommandQueue.AutoAddSerfCommandsTT()
     XGUIEng.SetText("TooltipBottomShortCut", "")
 end
 
+---@param id number
+---@param ev table
 function CommandQueue.OnAddCommand(id, ev)
     if CommandQueue.CommandTypes[id] and CommandQueue.CommandTypes[id]:Add(ev, XGUIEng.IsModifierPressed(Keys.ModifierControl)==1) then
         return false, true
@@ -120,6 +137,9 @@ function CommandQueue.OnTick()
     end
 end
 
+---@param id number
+---@param cs CommandQueueData[]
+---@return boolean?
 function CommandQueue.CheckEntity(id, cs)
     if not cs[1] then
         return true
@@ -137,6 +157,8 @@ function CommandQueue.CheckEntity(id, cs)
     CommandQueue.CommandTypes[cs[1].Cmd].Execute(cs[1], id)
 end
 
+---@param id number
+---@return boolean?
 function CommandQueue.CheckSerfAutoBuild(id)
     local p = GetPosition(id)
     local pl = GUI.GetPlayerID()
@@ -161,10 +183,14 @@ function CommandQueue.CheckSerfAutoBuild(id)
     end
 end
 
+---@param id number
+---@param c CommandQueueData
 function CommandQueue.AddToEntity(id, c)
     MPSyncer.ExecuteSynced("CommandQueueAdd", id, c)
 end
 
+---@param id number
+---@param c CommandQueueData
 function CommandQueue.AddToEntitySynced(id, c)
     if not CommandQueue.Queue[id] then
         CommandQueue.Queue[id] = {}
@@ -172,16 +198,25 @@ function CommandQueue.AddToEntitySynced(id, c)
     table.insert(CommandQueue.Queue[id], c)
 end
 
+---@param id number
 function CommandQueue.ClearEntity(id)
     MPSyncer.ExecuteSynced("CommandQueueClear", id)
 end
 
+---@param id number
 function CommandQueue.ClearEntitySynced(id)
     CommandQueue.Queue[id] = nil
 end
 
+---@param ty number
+---@param x number
+---@param y number
+---@param r number
+---@param pl number
+---@param serfs number[]
+---@param queue number
 function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs, queue)
-    queue = queue == 1
+    local q  = queue == 1
     if not CppLogic.Logic.CanPlaceBuildingAt(ty, pl, {X=x,Y=y}, r) then
         Message("err cannot place!")
         return true
@@ -194,19 +229,29 @@ function CommandQueue.PlaceBuildingSynced(ty, x, y, r, pl, serfs, queue)
     local bid = CppLogic.Entity.Building.ConstructionSiteGetBuilding(csite)
     --LuaDebugger.Log(bid)
     for _,id in ipairs(serfs) do
-        local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding}
-        c.Target = bid
+		---@type CommandQueueDataTargetID
+        local c = {
+			Cmd = CNetEventCallbacks.CNetEvents.CommandSerfConstructBuilding,
+			Target = bid,
+		}
+		if not q then
+			CommandQueue.ClearEntitySynced(id)
+		end
         CommandQueue.AddToEntitySynced(id, c)
-        if CppLogic.Entity.Settler.IsIdle(id) or not queue then
+        if CppLogic.Entity.Settler.IsIdle(id) or not q then
             CommandQueue.CheckEntity(id, CommandQueue.Queue[id])
         end
     end
 end
 
+---@param id number
+---@param ab number
+---@return boolean
 function CommandQueue.IsAbilityReady(id, ab)
     return Logic.HeroGetAbiltityChargeSeconds(id, ab)==Logic.HeroGetAbilityRechargeTime(id, ab)
 end
 
+---@type table<CNetEventIDs,CommandQueueCmd>
 CommandQueue.CommandTypes = {
     [CNetEventCallbacks.CNetEvents.CommandEntityAttackEntity] = {
         Add = function(self, ev, queue)
@@ -217,14 +262,20 @@ CommandQueue.CommandTypes = {
             if CppLogic.Entity.Settler.IsIdle(ev.EntityID1) then
                 return
             end
-            local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandEntityAttackEntity}
-            c.Target = ev.EntityID2
+			---@class CommandQueueDataTargetID : CommandQueueData
+			---@field Target number
+            local c = {
+				Cmd = CNetEventCallbacks.CNetEvents.CommandEntityAttackEntity,
+				Target = ev.EntityID2
+			}
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or Logic.GetDiplomacyState(GetPlayer(id), GetPlayer(self.Target))~=Diplomacy.Hostile
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             Logic.GroupAttack(id, self.Target)
         end
@@ -242,10 +293,12 @@ CommandQueue.CommandTypes = {
             end
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDestroyed(self.Target) or Logic.GetEntityHealth(self.Target)==0 or Logic.IsConstructionComplete(self.Target)==1 -- isdead doesnt work for bridges
                 or CppLogic.Entity.Building.GetNearestFreeConstructionSlotFor(self.Target, GetPosition(id))==-1
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfConstructBuilding(id, self.Target)
         end,
@@ -264,10 +317,12 @@ CommandQueue.CommandTypes = {
             end
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or Logic.GetEntityHealth(self.Target)==Logic.GetEntityMaxHealth(self.Target)
                 or CppLogic.Entity.Building.GetNearestFreeRepairSlotFor(self.Target, GetPosition(id))==-1
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSerfRepairBuilding(id, self.Target)
         end,
@@ -287,9 +342,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             Logic.GroupGuard(id, self.Target)
         end
@@ -308,9 +365,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or not CommandQueue.IsAbilityReady(id, Abilities.AbilityConvertSettlers)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandConvert(id, self.Target)
         end
@@ -329,9 +388,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
-            return IsDead(self.Target) or self.Done
+            return IsDead(self.Target) or self.Done or false
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandStealFrom(id, self.Target)
             self.Done = true
@@ -351,9 +412,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or Logic.GetStolenResourceInfo(id)==0
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSecureGoods(id, self.Target)
         end
@@ -372,9 +435,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or not CommandQueue.IsAbilityReady(id, Abilities.AbilityPlaceKeg)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSabotage(id, self.Target)
         end
@@ -393,9 +458,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandDefuse(id, self.Target)
         end
@@ -414,9 +481,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or not CommandQueue.IsAbilityReady(id, Abilities.AbilitySniper)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSnipe(id, self.Target)
         end
@@ -435,9 +504,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID1, c)
             return true
         end,
+		---@param self CommandQueueDataTargetID
         IsDone = function(self, id)
             return IsDead(self.Target) or not CommandQueue.IsAbilityReady(id, Abilities.AbilityShuriken)
         end,
+		---@param self CommandQueueDataTargetID
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandShuriken(id, self.Target)
         end
@@ -451,17 +522,24 @@ CommandQueue.CommandTypes = {
             if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
-            local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceCannonAt}
-            c.Bottom = ev.FoundationType
-            c.Top = ev.CannonType
-            c.X = ev.Position.X
-            c.Y = ev.Position.Y
+			---@class CommandQueueDataPlaceCannon : CommandQueueData, Position
+			---@field Bottom number
+			---@field Top number
+            local c = {
+				Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceCannonAt,
+				Bottom = ev.FoundationType,
+				Top = ev.CannonType,
+				X = ev.Position.X,
+				Y = ev.Position.Y,
+			}
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataPlaceCannon
         IsDone = function(self, id)
             return not CommandQueue.IsAbilityReady(id, Abilities.AbilityBuildCannon) or not CppLogic.Logic.CanPlaceBuildingAt(self.Bottom, GetPlayer(id), self, 0, 0)
         end,
+		---@param self CommandQueueDataPlaceCannon
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandPlaceCannon(id, self, self.Bottom, self.Top)
         end
@@ -475,15 +553,21 @@ CommandQueue.CommandTypes = {
             if CppLogic.Entity.Settler.IsIdle(ev.EntityID) then
                 return
             end
-            local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceBombAt}
-            c.X = ev.X
-            c.Y = ev.Y
+			---@class CommandQueueDataTargetPos : CommandQueueData, Position
+			---@field Rot number?
+            local c = {
+				Cmd = CNetEventCallbacks.CNetEvents.CommandHeroPlaceBombAt,
+            	X = ev.X,
+            	Y = ev.Y,
+			}
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
             return not CommandQueue.IsAbilityReady(id, Abilities.AbilityPlaceBomb)
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandPlaceBomb(id, self)
         end
@@ -503,9 +587,11 @@ CommandQueue.CommandTypes = {
             end
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
             return GetDistance(id, self) <= 500
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             Logic.GroupAttackMove(id, self.X, self.Y, -1)
         end
@@ -525,9 +611,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
             return not CommandQueue.IsAbilityReady(id, Abilities.AbilitySendHawk)
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandSendHawk(id, self)
         end
@@ -547,12 +635,14 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
-            return self.Cancel
+            return self.Done or false
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandBinocular(id, self)
-            self.Cancel = true
+            self.Done = true
         end
     },
     [CNetEventCallbacks.CNetEvents.CommandScoutPlaceTorchAtPos] = {
@@ -570,9 +660,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
             return not CommandQueue.IsAbilityReady(id, Abilities.AbilityScoutTorches)
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandPlaceTorch(id, self)
         end
@@ -595,9 +687,11 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.EntityID, c)
             return true
         end,
+		---@param self CommandQueueDataTargetPos
         IsDone = function(self, id)
             return GetDistance(id, self) <= 500
         end,
+		---@param self CommandQueueDataTargetPos
         Execute = function(self, id)
             CppLogic.Entity.Settler.CommandMove(id, self, self.Rot)
         end
@@ -620,16 +714,17 @@ CommandQueue.CommandTypes = {
             return true
         end,
         IsDone = function(self, id)
-            return self.Cancel
+            return self.Done
         end,
         Execute = function(self, id)
+			---@diagnostic disable-next-line: undefined-field
             Logic.GroupPatrol(id, self.X1, self.Y1)
             local i = 2
             while self["X"..i] do
                 Logic.GroupAddPatrolPoint(id, self["X"..i], self["Y"..i])
                 i = i + 1
             end
-            self.Cancel = true
+            self.Done = true
         end
     },
     [CNetEventCallbacks.CNetEvents.CommandLeaderHoldPosition] = {
@@ -646,11 +741,11 @@ CommandQueue.CommandTypes = {
             return true
         end,
         IsDone = function(self, id)
-            return self.Cancel
+            return self.Done or false
         end,
         Execute = function(self, id)
             Logic.GroupStand(id)
-            self.Cancel = true
+            self.Done = true
         end
     },
     [CNetEventCallbacks.CNetEvents.CommandLeaderDefend] = {
@@ -667,11 +762,11 @@ CommandQueue.CommandTypes = {
             return true
         end,
         IsDone = function(self, id)
-            return self.Cancel
+            return self.Done or false
         end,
         Execute = function(self, id)
             Logic.GroupDefend(id)
-            self.Cancel = true
+            self.Done = true
         end
     },
     [CNetEventCallbacks.CNetEvents.CommandHeroActivateCamouflage] = {
@@ -871,7 +966,14 @@ CommandQueue.CommandTypes = {
             end
             MPSyncer.ExecuteSynced("CommandQueuePlaceBuilding", ty, ev.Position.X, ev.Position.Y, math.deg(ev.Orientation), ev.PlayerID, ev.Serf, queue and 1 or 0)
             return true
-        end
+        end,
+		IsDone = function(self, d)
+			assert(false)
+			return true
+		end,
+		Execute = function(self, d)
+			assert(false)
+		end,
     },
     [CNetEventCallbacks.CNetEvents.CommandSerfExtractResource] = {
         Add = function(self, ev, queue)
@@ -882,6 +984,8 @@ CommandQueue.CommandTypes = {
             if CppLogic.Entity.Settler.IsIdle(ev.SerfID) then
                 return
             end
+			---@class CommandQueueDataExtract : CommandQueueData, Position
+			---@field Res number
             local c = {Cmd = CNetEventCallbacks.CNetEvents.CommandSerfExtractResource}
             c.Res = ev.ResourceType
             c.X = ev.Position.X
@@ -889,11 +993,13 @@ CommandQueue.CommandTypes = {
             CommandQueue.AddToEntity(ev.SerfID, c)
             return true
         end,
+		---@param self CommandQueueDataExtract
         IsDone = function(self, id)
             return not IsValid(CppLogic.Entity.EntityIteratorGetNearest(CppLogic.Entity.Predicates.ProvidesResource(self.Res),
                 CppLogic.Entity.Predicates.InCircle(self.X, self.Y, 1000)
             ))
         end,
+		---@param self CommandQueueDataExtract
         Execute = function(self, id)
             local tid = CppLogic.Entity.EntityIteratorGetNearest(CppLogic.Entity.Predicates.ProvidesResource(self.Res),
                 CppLogic.Entity.Predicates.InCircle(self.X, self.Y, 1000)

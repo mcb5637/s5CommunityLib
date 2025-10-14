@@ -139,6 +139,8 @@ end --mcbPacker.ignore
 -- 
 CNetEventCallbacks = {cbs = {}}
 
+---@param eventid CNetEventIDs|"all"
+---@param func fun(id:CNetEventIDs, ev:table):boolean,boolean|fun(ev:table):boolean,boolean
 function CNetEventCallbacks.Add(eventid, func)
 	if not CNetEventCallbacks.cbs[eventid] then
 		CNetEventCallbacks.cbs[eventid] = {}
@@ -182,6 +184,7 @@ AddMapStartAndSaveLoadedCallback(function()
 	CppLogic.Logic.UICommands.SetCallback(CNetEventCallbacks.DoCB)
 end)
 
+---@enum CNetEventIDs
 CNetEventCallbacks.CNetEvents = {
 	CommandEntityAttackEntity			= 69650,
 	CommandSerfConstructBuilding		= 69655,
