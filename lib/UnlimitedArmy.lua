@@ -2108,19 +2108,23 @@ UnlimitedArmy.HeroAbilityConfigs[Abilities.AbilitySummon] = {
 
 UnlimitedArmy:FinalizeClass()
 
---- @class UnlimitedArmyFiller : LuaObject
+---@class UnlimitedArmyFiller : LuaObject
+---@field ArmySize number zielgröße (anzahl leader) der army
 UnlimitedArmyFiller = {}
 --- @type UnlimitedArmy
 UnlimitedArmyFiller.Army = nil
 UnlimitedArmyFiller = LuaObject:CreateSubClass("UnlimitedArmyFiller")
 
 UnlimitedArmyFiller:AMethod()
+---@param active boolean?
 function UnlimitedArmyFiller:Tick(active)
 	LuaObject_AbstractMethod()
 end
 
 UnlimitedArmyFiller:AMethod()
+---@return boolean
 function UnlimitedArmyFiller:IsDead()
+---@diagnostic disable-next-line: missing-return
 	LuaObject_AbstractMethod()
 end
 
