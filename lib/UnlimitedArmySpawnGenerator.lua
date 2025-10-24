@@ -40,38 +40,38 @@ end --mcbPacker.ignore
 -- - IsValidPosition
 -- - GetRandom
 --- @class UnlimitedArmySpawnGenerator : UnlimitedArmyFiller
---- @field Generator number|string?
---- @field Pos Position|UnlimitedArmySpawnGeneratorSpawnPos[]
---- @field FreeArea number?
---- @field ArmySize number
---- @field Army UnlimitedArmy
+--- @field Generator number|string|nil der spawner ist inaktiv, wenn ~= nil und dieses entity tot ist
+--- @field Pos Position|UnlimitedArmySpawnGeneratorSpawnPos[] eine oder mehrere spawn positionen
+--- @field FreeArea number? wenn feindliche einheiten näher als diese distanz an der spawn pos sind, pausiert spawnen (aber nicht den counter bis zum nächsten spawn)
+--- @field ArmySize number zielgröße (anzahl leader) der army
+--- @field Army UnlimitedArmy army die der spawner versorgt
 --- @field private LeaderDesc UnlimitedArmySpawnGeneratorLT[]
---- @field SpawnCounter number
---- @field SpawnLeaders number
+--- @field SpawnCounter number|fun(self:UnlimitedArmySpawnGenerator):number zeit zwischen den spawns (sekunden, unabhängig von tickrate der ua)
+--- @field SpawnLeaders number anzahl der leader die auf ein mal gespawn werden
 --- @field private CCounter UpdatelessTimer
---- @field RefillSoldiers boolean?
---- @field RandomizeSpawn boolean?
---- @field RandomizeSpawnPoint boolean?
---- @field DoNotRemoveIfDeadOrEmpty boolean?
+--- @field RefillSoldiers boolean? wenn true, nutzt ungenutzte SpawnLeaders um die soldiers von existierenden leadern aufzufüllen
+--- @field RandomizeSpawn boolean? wenn true, wählt zufällig aus der spawn queue, anstatt in reihenfolge
+--- @field RandomizeSpawnPoint boolean? wenn true, wählt zufällig aus Pos, anstatt in reihenfolge
+--- @field DoNotRemoveIfDeadOrEmpty boolean? wenn nicht gesetzt und ein Generator ist gesetzt, entfernt den spawner, sobald Generator tot ist oder LeaderDesc leer ist
 UnlimitedArmySpawnGenerator = {}
 
 if false then
 	---@class UnlimitedArmySpawnGeneratorData
-	---@field Position Position|UnlimitedArmySpawnGeneratorSpawnPos[]
-	---@field ArmySize number
-	---@field SpawnCounter number
-	---@field SpawnLeaders number
-	---@field Generator number|string|nil
-	---@field FreeArea number?
-	---@field RefillSoldiers boolean?
-	---@field RandomizeSpawn boolean?
-	---@field RandomizeSpawnPoint boolean?
-	---@field DoNotRemoveIfDeadOrEmpty boolean?
-	---@field LeaderDesc UnlimitedArmySpawnGeneratorLT[]
+	---@field Position Position|UnlimitedArmySpawnGeneratorSpawnPos[] eine oder mehrere spawn positionen
+	---@field ArmySize number zielgröße (anzahl leader) der army
+	---@field SpawnCounter number|fun(self:UnlimitedArmySpawnGenerator):number zeit zwischen den spawns (sekunden, unabhängig von tickrate der ua)
+	---@field SpawnLeaders number anzahl der leader die auf ein mal gespawn werden
+	---@field Generator number|string|nil der spawner ist inaktiv, wenn ~= nil und dieses entity tot ist
+	---@field FreeArea number? wenn feindliche einheiten näher als diese distanz an der spawn pos sind, pausiert spawnen (aber nicht den counter bis zum nächsten spawn)
+	---@field RefillSoldiers boolean? wenn true, nutzt ungenutzte SpawnLeaders um die soldiers von existierenden leadern aufzufüllen
+	---@field RandomizeSpawn boolean? wenn true, wählt zufällig aus der spawn queue anstatt in reihenfolge
+	---@field RandomizeSpawnPoint boolean? wenn true, wählt zufällig aus Pos, anstatt in reihenfolge
+	---@field DoNotRemoveIfDeadOrEmpty boolean? wenn nicht gesetzt und ein Generator ist gesetzt, entfernt den spawner, sobald Generator tot ist oder LeaderDesc leer ist
+	---@field LeaderDesc UnlimitedArmySpawnGeneratorLT[] spawn queue, wird einer nach dem anderen abgearbeitet
 	local UnlimitedArmySpawnGeneratorData = {}
 
 	---@class UnlimitedArmySpawnGeneratorSpawnPos : Position
-	---@field Generator number|string|nil
+	---@field Generator number|string|nil diese spawn pos ist inaktiv, wenn ~= nil und dieses entity tot ist (automatisch entfernt, wenn inaktiv)
 	local UnlimitedArmySpawnGeneratorSpawnPos = {}
 end
 
@@ -86,6 +86,7 @@ function UnlimitedArmySpawnGenerator:New(army, spawndata)end
 
 UnlimitedArmySpawnGenerator:AMethod()
 ---@private
+---@param self UnlimitedArmySpawnGenerator
 ---@param army UnlimitedArmy
 ---@param spawndata UnlimitedArmySpawnGeneratorData
 function UnlimitedArmySpawnGenerator:Init(army, spawndata)
@@ -111,12 +112,15 @@ function UnlimitedArmySpawnGenerator:Init(army, spawndata)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
 function UnlimitedArmySpawnGenerator:CheckValidSpawner()
 	assert(self ~= UnlimitedArmySpawnGenerator)
 	assert(self.Army)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param active boolean?
+---@param self UnlimitedArmySpawnGenerator
 function UnlimitedArmySpawnGenerator:Tick(active)
 	self:CheckValidSpawner()
 	if self:IsDead() then
@@ -140,9 +144,11 @@ function UnlimitedArmySpawnGenerator:Tick(active)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
 function UnlimitedArmySpawnGenerator:ResetCounter()
 	self:CheckValidSpawner()
-	if type(self.SpawnCounter)=="number" then
+	if type(self.SpawnCounter) == "number" then
+		---@diagnostic disable-next-line: param-type-mismatch
 		self.CCounter:Set(self.SpawnCounter, true)
 	else
 		self.CCounter:Set(self:SpawnCounter(), true)
@@ -150,6 +156,9 @@ function UnlimitedArmySpawnGenerator:ResetCounter()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@return number l number of needed leaders
+---@return number s number of leaders without full soldiers
 function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
 	self:CheckValidSpawner()
 	local l = self.ArmySize-self.Army:GetSize(true, true)
@@ -165,6 +174,8 @@ function UnlimitedArmySpawnGenerator:GetNeededSpawnAmount()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@param num number refill this may leaders of the ua
 function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
 	self:CheckValidSpawner()
 	for id in self.Army:Iterator(true) do
@@ -179,6 +190,8 @@ function UnlimitedArmySpawnGenerator:RefillSoldiersOfLeaders(num)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@return boolean
 function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 	self:CheckValidSpawner()
 	if self:IsDead() then
@@ -192,6 +205,8 @@ function UnlimitedArmySpawnGenerator:IsSpawnPossible()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@return boolean
 function UnlimitedArmySpawnGenerator:IsDead()
 	assert(self ~= UnlimitedArmySpawnGenerator)
 	if not self.Army then
@@ -206,7 +221,6 @@ function UnlimitedArmySpawnGenerator:IsDead()
 			end
 		end
 	end
-	---@diagnostic disable-next-line: undefined-field
 	if not self.Pos[1] and not self.Pos.X then
 		return true
 	end
@@ -217,6 +231,8 @@ function UnlimitedArmySpawnGenerator:IsDead()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@param num number of leaders to spawn
 function UnlimitedArmySpawnGenerator:ForceSpawn(num)
 	self:CheckValidSpawner()
 	for i=1, num do
@@ -227,6 +243,7 @@ function UnlimitedArmySpawnGenerator:ForceSpawn(num)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
 ---@return Position?
 function UnlimitedArmySpawnGenerator:GetSpawnPos()
 	if self:IsDead() then
@@ -242,6 +259,8 @@ function UnlimitedArmySpawnGenerator:GetSpawnPos()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@param self UnlimitedArmySpawnGenerator
+---@return boolean? error
 function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 	self:CheckValidSpawner()
 	local spawningLeader = 1
@@ -275,15 +294,31 @@ function UnlimitedArmySpawnGenerator:SpawnOneLeader()
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---entfernt den spawner von der UA
+---@param self UnlimitedArmySpawnGenerator
 function UnlimitedArmySpawnGenerator:Remove()
 	self.Army.Spawner = nil
 	self.Army = nil
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---fügt einen leader am ende der spawn queue ein
+---@see UnlimitedArmySpawnGeneratorLT
+---@param self UnlimitedArmySpawnGenerator
+---@param ety number
+---@param solnum number
+---@param spawnnum number|fun(self:UnlimitedArmySpawnGenerator, lt:UnlimitedArmySpawnGeneratorLT):number
+---@param exp number?
+---@param looped boolean?
 function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, looped)
 	self:CheckValidSpawner()
 	--- @class UnlimitedArmySpawnGeneratorLT
+	--- @field LeaderType number entitytyp des leaders
+	--- @field SoldierNum number anzahl der soldier
+	--- @field SpawnNum number|fun(self:UnlimitedArmySpawnGenerator, lt:UnlimitedArmySpawnGeneratorLT):number anzahl der leader dieses types
+	--- @field Experience number? level des leaders [LOW_EXPERIENCE,VERYHIGH_EXPERIENCE]
+	--- @field Looped boolean? wenn true, wird nach dem spawnen von SpawnNum leadern wieder hinten in die queue eingefügt
+	--- @field package CurrNum number?
 	local t = {
 		LeaderType = assert(ety),
 		SoldierNum = assert(solnum),
@@ -297,6 +332,9 @@ function UnlimitedArmySpawnGenerator:AddLeaderType(ety, solnum, spawnnum, exp, l
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---entfernt alle einträge in der spawn queue, die diesen entitytyp als leader haben
+---@param self UnlimitedArmySpawnGenerator
+---@param ety number
 function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
 	self:CheckValidSpawner()
 	for i=table.getn(self.LeaderDesc),1,-1 do
@@ -307,9 +345,13 @@ function UnlimitedArmySpawnGenerator:RemoveLeaderType(ety)
 end
 
 UnlimitedArmySpawnGenerator:AMethod()
+---@private
+---@param self UnlimitedArmySpawnGenerator
+---@param ldesc UnlimitedArmySpawnGeneratorLT
 function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
 	self:CheckValidSpawner()
 	if type(ldesc.SpawnNum)=="number" then
+		---@diagnostic disable-next-line: assign-type-mismatch
 		ldesc.CurrNum = ldesc.SpawnNum
 	else
 		ldesc.CurrNum = ldesc.SpawnNum(self, ldesc)
@@ -317,6 +359,9 @@ function UnlimitedArmySpawnGenerator:ResetLeaderNum(ldesc)
 end
 
 UnlimitedArmySpawnGenerator:AStatic()
+---prüft, ob ein leader einen solier respawn benötigt
+---@param id number
+---@return boolean
 function UnlimitedArmySpawnGenerator.IsValidForRefill(id)
 	if Logic.IsLeader(id) == 0 then
 		return false
@@ -334,6 +379,9 @@ function UnlimitedArmySpawnGenerator.IsValidForRefill(id)
 end
 
 UnlimitedArmySpawnGenerator:AStatic()
+---spawnt soldiers für einen leader
+---@param id number
+---@param num number
 function UnlimitedArmySpawnGenerator.SpawnSoldiersSafe(id, num)
 	if not UnlimitedArmySpawnGenerator.IsValidForRefill(id) then
 		return
