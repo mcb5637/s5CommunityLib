@@ -107,49 +107,47 @@ end --mcbPacker.ignore
 -- Benötigt:
 -- - siehe requires
 --- @class UnlimitedArmy : LuaObject
---- @field Leaders number[]
---- @field Player number
---- @field AutoDestroyIfEmpty boolean?
---- @field HadOneLeader boolean?
---- @field Trigger Trigger
---- @field Area number
---- @field CurrentBattleTarget number?
---- @field Target Position?
---- @field FormationRotation number?
---- @field Formation fun(ua:UnlimitedArmy, p:Position)
---- @field CommandQueue UACommand[]
---- @field ReMove boolean?
---- @field HeroTargetingCache table<number, number>
---- @field PrepDefense boolean?
+--- @field package Leaders number[]
+--- @field Player number spieler der army
+--- @field AutoDestroyIfEmpty boolean? wenn true, ruft automatisch Destroy auf, wenn die army keinen leader und keinen spawner/recruiter mehr hat
+--- @field private HadOneLeader boolean?
+--- @field private Trigger Trigger
+--- @field Area number reichweite der army, innerhalb der gegner angegriffen werden
+--- @field private CurrentBattleTarget number?
+--- @field package Target Position?
+--- @field FormationRotation number? rotiert die formation (der leader) um diesen winkel
+--- @field Formation fun(ua:UnlimitedArmy, p:Position) formation der leader an einer bestimmten position
+--- @field CommandQueue UACommand[] queue der commands, die nacheinander ausgeführt werden
+--- @field private ReMove boolean?
+--- @field private HeroTargetingCache table<number, number>
+--- @field private PrepDefense boolean?
 --- @field FormationResets table
---- @field DestroyBridges boolean?
---- @field CannonCommandCache table
---- @field LeaderTransit number[]
---- @field TransitAttackMove boolean?
---- @field LeaderFormation number|nil|fun(ua:UnlimitedArmy, id:number):number
---- @field AIActive boolean?
---- @field SpawnerActive boolean
---- @field DeadHeroes number[]
---- @field DefendDoNotHelpHeroes boolean?
---- @field AutoRotateRange number?
---- @field DoNotNormalizeSpeed boolean?
---- @field SpeedNormalizationFactors table
---- @field PosCacheTick number
---- @field PosCache Position
---- @field IgnoreFleeing boolean?
---- @field ForceNoHook boolean?
---- @field TroopsPerLine number?
---- @field ChaoticCache table<number,PositionR>
---- @field EntityChangedTriggerId Trigger
---- @field ConversionTrigger Trigger
---- @field WaitForTick number?
---- @field Status UAStatus
+--- @field private DestroyBridges boolean?
+--- @field private CannonCommandCache table<number, number>
+--- @field private LeaderTransit number[]
+--- @field TransitAttackMove boolean? wenn true, greifen truppen auf dem weg zur army gegner an, sonst werden gegner ignoriert
+--- @field LeaderFormation number|nil|fun(ua:UnlimitedArmy, id:number):number formation der soldiers
+--- @field AIActive boolean? wenn die BB spieler ki aktiv ist, kann die UA abfragen, ob diebe/ari gerade unsichtbar sind (kein effekt, wenn CppLogic aktiv ist)
+--- @field SpawnerActive boolean aktiviert/deaktiviert den spawner/recruiter
+--- @field package DeadHeroes number[]
+--- @field DefendDoNotHelpHeroes boolean? wenn nicht true, bewegt der defend command die army, um gefallene helden wieder aufzuwecken
+--- @field AutoRotateRange number? wenn gesetzt, rotiert die army, damit sie den nächsten gegner innerhalb dieser reichweite ansieht
+--- @field private DoNotNormalizeSpeed boolean?
+--- @field private SpeedNormalizationFactors table
+--- @field private PosCacheTick number
+--- @field private PosCache Position
+--- @field package IgnoreFleeing boolean?
+--- @field ForceNoHook boolean? static, wenn true, ignoriert CppLogic, sembst wenn es vorhanden ist
+--- @field TroopsPerLine number? anzahl der leader pro linie in UnlimitedArmy.Formations.Lines
+--- @field package ChaoticCache table<number,PositionR>
+--- @field private EntityChangedTriggerId Trigger
+--- @field private ConversionTrigger Trigger
+--- @field package WaitForTick number?
+--- @field package Status UAStatus
+--- @field Spawner UnlimitedArmyFiller|nil der spawner/recruiter der diese army auffüllt
+--- @field package UACore UACore|nil
 UnlimitedArmy = {}
 
---- @type UnlimitedArmyFiller|nil
-UnlimitedArmy.Spawner = nil
----@type UACore|nil
-UnlimitedArmy.UACore = nil
 --- @type UnlimitedArmy
 UnlimitedArmy = LuaObject:CreateSubClass("UnlimitedArmy")
 
@@ -157,34 +155,30 @@ UnlimitedArmy:AStatic()
 ---@enum UAStatus
 UnlimitedArmy.Status = {Idle = 1, Moving = 2, Battle = 3, Destroyed = 4, IdleUnformated = 5, MovingNoBattle = 6}
 
-if false then
-	---@class UACreator
-	---@field Player number
-	---@field Area number
-	---@field Formation fun(ua:UnlimitedArmy, p:Position)?
-	---@field AutoDestroyIfEmpty boolean?
-	---@field PrepDefense boolean?
-	---@field DestroyBridges boolean?
-	---@field AIActive boolean?
-	---@field DefendDoNotHelpHeroes boolean?
-	---@field AutoRotateRange number?
-	---@field DoNotNormalizeSpeed boolean?
-	---@field IgnoreFleeing boolean?
-	---@field TransitAttackMove boolean?
-	---@field HiResJob boolean?
-	---@field LeaderFormation number|nil|fun(ua:UnlimitedArmy, id:number):number
-	local UACreator = {}
+---@class UACreator
+---@field Player number spieler der army
+---@field Area number reichweite der army, innerhalb der gegner angegriffen werden
+---@field Formation fun(ua:UnlimitedArmy, p:Position)? formation der leader an einer bestimmten position
+---@field AutoDestroyIfEmpty boolean? wenn true, ruft automatisch Destroy auf, wenn die army keinen leader und keinen spawner/recruiter mehr hat
+---@field PrepDefense boolean? wenn true, bereites sich die UA sich auf verteidigung vor. (etwa durch das aufstellen von pilgrims kanonen).
+---@field DestroyBridges boolean? wenn true, zerstören diebe in der army brücken in reichweite
+---@field AIActive boolean? wenn die BB spieler ki aktiv ist, kann die UA abfragen, ob diebe/ari gerade unsichtbar sind (kein effekt, wenn CppLogic aktiv ist)
+---@field DefendDoNotHelpHeroes boolean? wenn nicht true, bewegt der defend command die army, um gefallene helden wieder aufzuwecken
+---@field AutoRotateRange number? wenn gesetzt, rotiert die army, damit sie den nächsten gegner innerhalb dieser reichweite ansieht
+---@field DoNotNormalizeSpeed boolean? wenn nicht true, normalisiert die geschwindigkeit der leader in der army während einem move
+---@field IgnoreFleeing boolean? wenn true, ignoriert fliehende gegner
+---@field TransitAttackMove boolean? wenn true, greifen truppen auf dem weg zur army gegner an, sonst werden gegner ignoriert
+---@field HiResJob boolean? wenn true, nutzt einen HiResJob anstelle eines SimpleJobs. (nützlich für LazyUnlimitedArmy)
+---@field LeaderFormation number|nil|fun(ua:UnlimitedArmy, id:number):number formation der soldiers
 
-	---@class UACommand
-	---@field Command fun(ua:UnlimitedArmy, c:UACommand):boolean,UACommand?
-	local UACommand = {}
+---@class UACommand
+---@field Command fun(ua:UnlimitedArmy, c:UACommand):boolean,UACommand?
+---@field Looped boolean? wenn true, wird der command am ende in die queue eingefügt, wenn er abgearbetet wurde
 
-	---@class UARallypointCommand : UACommand
-	---@field Create fun(parent:UnlimitedArmy, cmd:UARallypointCommand) kann überschrieben werden, um die erstellte UA zu ersetzen (z.b. mit einer LazyUA)
-	---@field ArmyCtor UACreator|nil wird an UnlimitedArmy:New übergeben (Player und Area werden aus der rallyUA übernommen, wenn nicht gesetzt). AutoDestroyIfEmpty ist zu beginn gesetzt.
-	---@field Cmd UACommand|nil wird von der rallyUA ausgeführt, empfehle CreateCommandDefend oder nil
-	local UARallypointCommand = {}
-end
+---@class UARallypointCommand : UACommand
+---@field Create fun(parent:UnlimitedArmy, cmd:UARallypointCommand) kann überschrieben werden, um die erstellte UA zu ersetzen (z.b. mit einer LazyUA)
+---@field ArmyCtor UACreator|nil wird an UnlimitedArmy:New übergeben (Player und Area werden aus der rallyUA übernommen, wenn nicht gesetzt). AutoDestroyIfEmpty ist zu beginn gesetzt.
+---@field Cmd UACommand|nil wird von der rallyUA ausgeführt, empfehle CreateCommandDefend oder nil
 
 UnlimitedArmy:AReference()
 --- erstellt eine neue UnlimitedArmy.
@@ -195,6 +189,7 @@ function UnlimitedArmy:New(data) end
 
 UnlimitedArmy:AMethod()
 ---konstruktor (von LuaObject:Init aufgerufen)
+---@param self UnlimitedArmy
 ---@param data UACreator
 ---@private
 function UnlimitedArmy:Init(data)
@@ -240,6 +235,8 @@ function UnlimitedArmy:Init(data)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:CheckUACore()
 	if UnlimitedArmy.HasHook() and not self.UACore then
 		self.UACore = CppLogic.UA.New(self.Player, function(self, r)
@@ -266,12 +263,16 @@ function UnlimitedArmy:CheckUACore()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:CheckValidArmy()
 	assert(self.Status ~= UnlimitedArmy.Status.Destroyed)
 	assert(self ~= UnlimitedArmy)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@protected
 function UnlimitedArmy:Tick()
 	self:CheckValidArmy()
 	self:CheckUACore()
@@ -351,6 +352,8 @@ function UnlimitedArmy:Tick()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:HandleTransit()
 	if self.LeaderTransit[1] then
 		local p = self:GetPosition()
@@ -386,7 +389,9 @@ function UnlimitedArmy:HandleTransit()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param st UAStatus
+---@private
 function UnlimitedArmy:CheckStatus(st)
 	self:CheckValidArmy()
 	if self.Status ~= st then
@@ -397,6 +402,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt einen leader der UA hinzu
+---@param self UnlimitedArmy
 ---@param id number|string
 function UnlimitedArmy:AddLeader(id)
 	self:CheckValidArmy()
@@ -431,6 +437,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---entfernt einen leader
+---@param self UnlimitedArmy
 ---@param id number|string
 function UnlimitedArmy:RemoveLeader(id)
 	self:CheckValidArmy()
@@ -462,7 +469,8 @@ function UnlimitedArmy:RemoveLeader(id)
 end
 
 UnlimitedArmy:AMethod()
----spawn einen leader + soldiers für die UACommand
+---spawnt einen leader + soldiers für die UACommand
+---@param self UnlimitedArmy
 ---@param ety number
 ---@param sol number
 ---@param pos Position
@@ -476,6 +484,8 @@ function UnlimitedArmy:CreateLeaderForArmy(ety, sol, pos, experience)
 end
 
 UnlimitedArmy:AMethod()
+---wenn die army idle ist, wendet die leader formation neu an
+---@param self UnlimitedArmy
 function UnlimitedArmy:RequireNewFormat()
 	self:CheckValidArmy()
 	self:CheckUACore()
@@ -491,6 +501,8 @@ function UnlimitedArmy:RequireNewFormat()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:RemoveAllDestroyedLeaders()
 	self:CheckValidArmy()
 	for i = table.getn(self.Leaders), 1, -1 do
@@ -505,7 +517,8 @@ function UnlimitedArmy:RemoveAllDestroyedLeaders()
 end
 
 UnlimitedArmy:AMethod()
----ermittelt die anzahl der leader in der UACommand
+---ermittelt die anzahl der leader in der UA
+---@param self UnlimitedArmy
 ---@param addTransit boolean?
 ---@param adddeadhero boolean?
 ---@return number
@@ -527,6 +540,8 @@ function UnlimitedArmy:GetSize(addTransit, adddeadhero)
 end
 
 UnlimitedArmy:AMethod()
+---zerstört die UA
+---@param self UnlimitedArmy
 function UnlimitedArmy:Destroy()
 	self:SetStatus(UnlimitedArmy.Status.Destroyed)
 	self.Status = UnlimitedArmy.Status.Destroyed
@@ -539,6 +554,8 @@ function UnlimitedArmy:Destroy()
 end
 
 UnlimitedArmy:AMethod()
+---setzt die HP aller leader (und deren soldier) auf 0
+---@param self UnlimitedArmy
 function UnlimitedArmy:KillAllLeaders()
 	self:CheckValidArmy()
 	for id in self:Iterator(true) do
@@ -555,6 +572,7 @@ end
 
 UnlimitedArmy:AMethod()
 --- ermittelt die Position der UA.
+---@param self UnlimitedArmy
 --- @return Position
 function UnlimitedArmy:GetPosition()
 	self:CheckValidArmy()
@@ -574,6 +592,8 @@ function UnlimitedArmy:GetPosition()
 end
 
 UnlimitedArmy:AMethod()
+---erzwingt eine neue positionsberechnung
+---@param self UnlimitedArmy
 function UnlimitedArmy:RefreshPosCache()
 	self:CheckValidArmy()
 	local num = table.getn(self.Leaders)
@@ -606,9 +626,11 @@ function UnlimitedArmy:CheckHeroTargetingCache(tid, d)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param id number
 ---@param numEnemiesNearby number
 ---@return boolean noCommands
+---@private
 function UnlimitedArmy:DoHeroAbilities(id, numEnemiesNearby)
 	self:CheckValidArmy()
 	if Logic.IsHero(id) == 0 and not UnlimitedArmy.IsNonCombatEntity(id) then
@@ -644,6 +666,8 @@ function UnlimitedArmy:DoHeroAbilities(id, numEnemiesNearby)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:DoBattleCommands()
 	self:CheckValidArmy()
 	if self.ReMove then
@@ -673,6 +697,8 @@ function UnlimitedArmy:DoBattleCommands()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:DoMoveCommands()
 	self:CheckValidArmy()
 	if self.ReMove then
@@ -695,6 +721,8 @@ function UnlimitedArmy:DoMoveCommands()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:DoFormationCommands()
 	self:CheckValidArmy()
 	if self.ReMove then
@@ -705,6 +733,8 @@ function UnlimitedArmy:DoFormationCommands()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:ProcessCommandQueue()
 	self:CheckValidArmy()
 	local com = self.CommandQueue[1]
@@ -714,8 +744,10 @@ function UnlimitedArmy:ProcessCommandQueue()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param com UACommand
 ---@param ind number
+---@private
 function UnlimitedArmy:ProcessCommand(com, ind)
 	local adv, rep = com.Command(self, com)
 	if adv and com == self.CommandQueue[1] then
@@ -727,9 +759,12 @@ function UnlimitedArmy:ProcessCommand(com, ind)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:AdvanceCommand()
 	self:CheckValidArmy()
 	if self.CommandQueue[1] then
+		---@type UACommand
 		local c = table.remove(self.CommandQueue, 1)
 		if c.Looped then
 			table.insert(self.CommandQueue, c)
@@ -738,6 +773,7 @@ function UnlimitedArmy:AdvanceCommand()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@return number|nil
 function UnlimitedArmy:GetFirstEnemyInArmyRange()
 	self:CheckValidArmy()
@@ -746,6 +782,12 @@ function UnlimitedArmy:GetFirstEnemyInArmyRange()
 end
 
 UnlimitedArmy:AMethod()
+---prüft, ob die UA idle ist
+--- - Idle status
+--- - kein leader im transit
+--- - nah an der zielposition
+--- - alle leader idle
+---@param self UnlimitedArmy
 ---@return boolean
 function UnlimitedArmy:IsIdle()
 	self:CheckValidArmy()
@@ -776,6 +818,7 @@ end
 
 UnlimitedArmy:AMethod()
 --- false->alive, -1->destroyed, 2->kein leader, aber spawner, 1->kein leader, 3->hatte keinen leader, false->min 1 leader, 4->nur noch tote helden.
+---@param self UnlimitedArmy
 ---@return boolean|number
 function UnlimitedArmy:IsDead()
 	if self.Status == UnlimitedArmy.Status.Destroyed then
@@ -797,9 +840,10 @@ function UnlimitedArmy:IsDead()
 end
 
 UnlimitedArmy:AMethod()
----@return number[]
----@return number[]
----@return number[]
+---@param self UnlimitedArmy
+---@return number[] ranged
+---@return number[] melee
+---@return number[] nonCombat
 function UnlimitedArmy:GetRangedAndMelee()
 	self:CheckValidArmy()
 	self:CheckUACore()
@@ -821,6 +865,8 @@ function UnlimitedArmy:GetRangedAndMelee()
 end
 
 UnlimitedArmy:AMethod()
+---entfernt alle commands aus der queue
+---@param self UnlimitedArmy
 function UnlimitedArmy:ClearCommandQueue()
 	self:CheckValidArmy()
 	self.CommandQueue = {}
@@ -829,6 +875,7 @@ end
 UnlimitedArmy:AMethod()
 --- fügt einen bewegungsbefehl hinzu.
 --- Befehl ist sofort beendet, eventuell einen WaitForIdle danach ausführen.
+---@param self UnlimitedArmy
 --- @param p Position
 --- @param looped boolean?
 --- @return UACommand
@@ -842,6 +889,7 @@ end
 UnlimitedArmy:AMethod()
 --- fügt einen bewegungsbefehl hinzu, während dem die UA nicht anhält um zu kämpfen.
 --- Befehl ist sofort beendet, eventuell einen WaitForIdle danach ausführen.
+---@param self UnlimitedArmy
 --- @param p Position
 --- @param looped boolean?
 --- @return UACommand
@@ -856,6 +904,7 @@ UnlimitedArmy:AMethod()
 ---fügt einen verteidigungsbefehl hinzu.
 ---(beendet wenn keine leader mehr übrig)(pos/area optional).
 ---sucht nach gegnern in agressiveArea or self.Area, kehrt zu defendPos zurück, wenn außerhalb von defendArea.
+---@param self UnlimitedArmy
 ---@param defendPos Position|nil
 ---@param defendArea any
 ---@param looped any
@@ -870,6 +919,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt einen wartebefehl hinzu. beendet, wenn die UA idle ist.
+---@param self UnlimitedArmy
 ---@param looped boolean?
 ---@return UACommand
 function UnlimitedArmy:AddCommandWaitForIdle(looped)
@@ -881,6 +931,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt einen wartebefehl hinzu. beendet, wenn die UA die entsprechende anzahl an leadern hat.
+---@param self UnlimitedArmy
 ---@param size number
 ---@param lessthan boolean?
 ---@param looped boolean?
@@ -894,6 +945,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt einen benutzerdefinierten befehl hinzu.
+---@param self UnlimitedArmy
 ---@param func fun(ua:UnlimitedArmy, c:UACommand):boolean,UACommand?
 ---@param looped boolean?
 ---@return UACommand
@@ -908,6 +960,7 @@ UnlimitedArmy:AMethod()
 ---fügt einen angriffsbefehl hinzu.
 ---beendet, wenn die UA tot ist, oder ein angriffsziel gefunden wurde.
 ---ist maxrange nil, wird die ganze map abgesucht.
+---@param self UnlimitedArmy
 ---@param maxrange number?
 ---@param looped boolean?
 ---@return UACommand
@@ -921,6 +974,7 @@ end
 UnlimitedArmy:AMethod()
 ---fügt einen spawnerbefehl hinzu um den spawner an/aus zu schalten.
 ---beendet sofort.
+---@param self UnlimitedArmy
 ---@param spawnerActive boolean
 ---@param looped boolean?
 ---@return UACommand
@@ -933,6 +987,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt einen wartebefehl hinzu, der beendet wird, wenn der spawner die UA auf volle stärke gebracht hat.
+---@param self UnlimitedArmy
 ---@param looped boolean?
 ---@return UACommand
 function UnlimitedArmy:AddCommandWaitForSpawnerFull(looped)
@@ -945,6 +1000,7 @@ end
 UnlimitedArmy:AMethod()
 ---fügt einen bewachen befehl hinzu.
 ---beendet, wenn ziel oder UA tot.
+---@param self UnlimitedArmy
 ---@param target number|string
 ---@param looped boolean?
 ---@return UACommand
@@ -960,6 +1016,7 @@ UnlimitedArmy:AMethod()
 --- immer wenn genug truppen für eine expedition vorhanden sind, erstellt eine neue UA, transferiert truppen und schickt sie los.
 --- expeditionen können mit AddCommandTransferTroops zurück in den cache recycelt werden.
 --- beendet nicht.
+---@param self UnlimitedArmy
 ---@param onExpedition fun(exped:UnlimitedArmy, c:UACommand, parent:UnlimitedArmy) wird aufgerufen, um die expedition loszuschicken. die expeditionUA hat schon alle truppen.
 ---@param expeditionSize number anzahl der leader pro expedition
 ---@param numberExpeditions number? maximalzahl der expeditionen, nil->kein limit
@@ -975,6 +1032,7 @@ end
 UnlimitedArmy:AMethod()
 ---fügt einen command hinzu, der alle truppen der UA an eine andere UA transferiert.
 ---beendet sofort.
+---@param self UnlimitedArmy
 ---@param target UnlimitedArmy
 ---@return UACommand
 function UnlimitedArmy:AddCommandTransferTroops(target)
@@ -986,6 +1044,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---fügt ein command hinzu, der nach s sekunden beendet.
+---@param self UnlimitedArmy
 ---@param s number
 ---@return UACommand
 function UnlimitedArmy:AddCommandWaitSeconds(s)
@@ -998,6 +1057,8 @@ end
 UnlimitedArmy:AMethod()
 --- iteriert über alle leader in der UA.
 --- (die iterator func nutzt upvalues)
+---@param self UnlimitedArmy
+---@param transit boolean?
 --- @return fun():number?
 function UnlimitedArmy:Iterator(transit)
 	self:CheckValidArmy()
@@ -1034,8 +1095,10 @@ function UnlimitedArmy:Iterator(transit)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param normalize boolean
 ---@param forcerefresh boolean?
+---@private
 function UnlimitedArmy:NormalizeSpeed(normalize, forcerefresh)
 	self:CheckValidArmy()
 	if self.DoNotNormalizeSpeed and not forcerefresh then
@@ -1076,6 +1139,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt, ob die geschwindigkeit der leader normalisiert werden sollen
+---@param self UnlimitedArmy
 ---@param val boolean
 function UnlimitedArmy:SetDoNotNormalizeSpeed(val)
 	self:CheckValidArmy()
@@ -1089,6 +1153,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt die leader formation der leader. (formation der soldier um den leader)
+---@param self UnlimitedArmy
 ---@param form number|nil|fun(ua:UnlimitedArmy, id:number):number
 function UnlimitedArmy:SetLeaderFormation(form)
 	self:CheckValidArmy()
@@ -1102,6 +1167,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---prüft, ob ein leader in der UA ist
+---@param self UnlimitedArmy
 ---@param id number|string
 ---@return boolean
 function UnlimitedArmy:IsLeaderPartOfArmy(id)
@@ -1116,7 +1182,9 @@ function UnlimitedArmy:IsLeaderPartOfArmy(id)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param id number
+---@private
 function UnlimitedArmy:SetLeaderFormationForLeader(id)
 	self:CheckValidArmy()
 	local f = self.LeaderFormation
@@ -1131,6 +1199,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt die zielposition der UA.
+---@param self UnlimitedArmy
 ---@param p Position
 ---@return nil
 function UnlimitedArmy:SetTarget(p)
@@ -1143,6 +1212,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---gibt den status der UA zurück
+---@param self UnlimitedArmy
 ---@return UAStatus
 function UnlimitedArmy:GetStatus()
 	self:CheckUACore()
@@ -1154,6 +1224,7 @@ function UnlimitedArmy:GetStatus()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
 ---@param s UAStatus
 function UnlimitedArmy:SetStatus(s)
 	self:CheckUACore()
@@ -1165,6 +1236,9 @@ function UnlimitedArmy:SetStatus(s)
 end
 
 UnlimitedArmy:AMethod()
+---wenn true, gibt eien neuen move befehl
+---(in jedem normalen move befehl mit dabei)
+---@param self UnlimitedArmy
 ---@param s boolean
 function UnlimitedArmy:SetReMove(s)
 	self:CheckUACore()
@@ -1176,6 +1250,8 @@ function UnlimitedArmy:SetReMove(s)
 end
 
 UnlimitedArmy:AMethod()
+---greit ein entity direkt an
+---@param self UnlimitedArmy
 ---@param id number
 function UnlimitedArmy:SetCurrentBattleTarget(id)
 	self:CheckUACore()
@@ -1188,6 +1264,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt, ob die UA fliehende gegner ignoriert
+---@param self UnlimitedArmy
 ---@param b boolean
 function UnlimitedArmy:SetIgnoreFleeing(b)
 	self:CheckUACore()
@@ -1199,6 +1276,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt die reichweite, in der die UA ihre formation zum nächsten gegner rotiert.
+---@param self UnlimitedArmy
 ---@param r number?
 function UnlimitedArmy:SetAutoRotateRange(r)
 	self:CheckUACore()
@@ -1210,6 +1288,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt, ob die UA sich auf verteidigung vorbereitet. (etwa durch das aufstellen von pilgrims kanonen).
+---@param self UnlimitedArmy
 ---@param r boolean
 function UnlimitedArmy:SetPrepDefense(r)
 	self:CheckUACore()
@@ -1222,6 +1301,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---setzt, ob die UA brücken in reichweite sprengt.
+---@param self UnlimitedArmy
 ---@param r boolean
 function UnlimitedArmy:SetSabotageBridges(r)
 	self:CheckUACore()
@@ -1233,6 +1313,8 @@ function UnlimitedArmy:SetSabotageBridges(r)
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:OnIdChanged()
 	self:CheckValidArmy()
 	local ol, ne = Event.GetEntityID1(), Event.GetEntityID2()
@@ -1259,6 +1341,8 @@ function UnlimitedArmy:OnIdChanged()
 end
 
 UnlimitedArmy:AMethod()
+---@param self UnlimitedArmy
+---@private
 function UnlimitedArmy:OnConversion()
 	self:CheckValidArmy()
 	if self.Player ~= Event.GetPlayerID() then
@@ -1273,6 +1357,7 @@ end
 
 UnlimitedArmy:AMethod()
 ---prüft, ob die UA sich zu einem ziel bewegen kann.
+---@param self UnlimitedArmy
 ---@param p Position|number|string
 ---@return boolean
 function UnlimitedArmy:CanPathTo(p)
@@ -1296,11 +1381,12 @@ function UnlimitedArmy:CanPathTo(p)
 end
 
 UnlimitedArmy:AStatic()
+---@return boolean
 function UnlimitedArmy.HasHook()
 	if UnlimitedArmy.ForceNoHook then
 		return false
 	end
-	return CppLogic and TriggerFixCppLogicExtension and FrameworkWrapper
+	return CppLogic and TriggerFixCppLogicExtension and FrameworkWrapper and true or false
 end
 
 UnlimitedArmy:AStatic()
