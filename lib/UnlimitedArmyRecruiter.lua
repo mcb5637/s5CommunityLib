@@ -353,6 +353,7 @@ function UnlimitedArmyRecruiter:SpawnOneLeader()
 		assert(false)
 	end
 	if buyingAt ~= 0 then
+		assert(self.Army.Player == GetPlayer(buyingAt))
 		local c = {}
 		Logic.FillLeaderCostsTable(self.Army.Player, self.UCats[index].UCat, c)
 		if self:CheckResources(c, true) then
