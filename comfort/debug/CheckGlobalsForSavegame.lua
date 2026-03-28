@@ -123,7 +123,7 @@ function CheckGlobalsForSavegame(t, str, done, ignoreCFuncsIn)
 				else
 					LuaDebugger.Log("error: table has invalid key "..type(k).." at "..str.."."..tostring(k))
 				end
-				CheckGlobalsForSavegame(v, str.."."..k, done, ignoreCFuncsIn)
+				CheckGlobalsForSavegame(v, str.."."..tostring(k), done, ignoreCFuncsIn)
 			end
 			if getmetatable(t) then
 				LuaDebugger.Log("warning: table has metatable at "..str)
