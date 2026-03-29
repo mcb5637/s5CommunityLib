@@ -38,15 +38,14 @@ end
 --
 TriggerFix = {triggers={}, currStartTime=0, afterTriggerCB={}, onHackTrigger={}, ShowErrorMessageText={}, xpcallTimeMsg=false, currentEvent=nil,
 	ScriptTriggers={}, TriggersToDelete={}, HurtTriggers={[Events.LOGIC_EVENT_ENTITY_HURT_ENTITY]=true},
+	RequestedTriggers = {},
 }
 TriggerFix_mode = TriggerFix_mode or (LuaDebugger.Log and not LuaDebugger.HandleXPCallErrorMessage and "Debugger" or "Xpcall")
 
 ---@alias Trigger number|nil|table
 
 function TriggerFix.AddTrigger(event, con, act, active, acon, aact, comm)
-	if not TriggerFix.triggers[event] then
-		TriggerFix.triggers[event] = {}
-	end
+	TriggerFix.TryEnableTrigger(event)
 	if con == "" then
 		con = nil
 	end
@@ -243,6 +242,14 @@ function TriggerFix.SplitTableIndexPath(s)
 	end
 end
 
+function TriggerFix.TryEnableTrigger(ev)
+	if not TriggerFix.triggers[ev] then
+		TriggerFix.triggers[ev] = {}
+	end
+	if not TriggerFix.RequestedTriggers[ev] then
+		TriggerFix.RequestedTriggers[ev] = TriggerFix.RequestTrigger(ev, nil, "TriggerFix_action", 1, nil, {ev})
+	end
+end
 
 function TriggerFix.HackTrigger()
 	if not unpack{true} then
@@ -254,10 +261,12 @@ function TriggerFix.HackTrigger()
 		end
 	end
 	TriggerFix.RequestTrigger = Trigger.RequestTrigger
+	---@diagnostic disable-next-line: duplicate-set-field
 	Trigger.RequestTrigger = function(typ, con, act, active, acon, aact)
 		return TriggerFix.AddTrigger(typ, con, act, active, acon, aact)
 	end
 	TriggerFix.UnrequestTrigger = Trigger.UnrequestTrigger
+	---@diagnostic disable-next-line: duplicate-set-field
 	Trigger.UnrequestTrigger = function(tid)
 		if type(tid)=="table" and tid.event and not tid.invalid then
 			return TriggerFix.RemoveTrigger(tid)
@@ -266,6 +275,7 @@ function TriggerFix.HackTrigger()
 		end
 	end
 	TriggerFix.DisableTrigger = Trigger.DisableTrigger
+	---@diagnostic disable-next-line: duplicate-set-field
 	Trigger.DisableTrigger = function(tid)
 		if type(tid)=="table" and tid.event and not tid.invalid then
 			tid.active = 0
@@ -275,6 +285,7 @@ function TriggerFix.HackTrigger()
 		end
 	end
 	TriggerFix.EnableTrigger = Trigger.EnableTrigger
+	---@diagnostic disable-next-line: duplicate-set-field
 	Trigger.EnableTrigger = function(tid)
 		if type(tid)=="table" and tid.event and not tid.invalid then
 			tid.active = 1
@@ -284,6 +295,7 @@ function TriggerFix.HackTrigger()
 		end
 	end
 	TriggerFix.IsTriggerEnabled = Trigger.IsTriggerEnabled
+	---@diagnostic disable-next-line: duplicate-set-field
 	Trigger.IsTriggerEnabled = function(tid)
 		if type(tid)=="table" and tid.event then
 			if tid.invalid then
@@ -362,6 +374,7 @@ function TriggerFix.CreateEmptyEvent()
 	return cev
 end
 
+---@diagnostic disable-next-line: duplicate-set-field
 function TriggerFix.CreateEventHurtIn(cev, event)
 	if TriggerFix.HurtTriggers[event] and not CppLogic and not CUtil and not S5Hook and MemLib then
 		cev.Damage = MemLib.Util.HurtTriggerGetDamage()
@@ -380,6 +393,7 @@ function TriggerFix.CreateEventHurtInCEntity(cev, event)
 	end
 end
 
+---@diagnostic disable-next-line: duplicate-set-field
 function TriggerFix.CreateEventHurtOut(cev, event)
 	if TriggerFix.HurtTriggers[event] and not CppLogic and not CUtil and not S5Hook and MemLib then
 		MemLib.Util.HurtTriggerSetDamage(cev.Damage)
@@ -445,10 +459,7 @@ function TriggerFix.Init()
 		Events.LOGIC_EVENT_RESEARCH_DONE, Events.LOGIC_EVENT_TRIBUTE_PAID, Events.LOGIC_EVENT_WEATHER_STATE_CHANGED,
 		Events.LOGIC_EVENT_ENTITY_HURT_ENTITY
 	} do
-		if not TriggerFix.triggers[event] then
-			TriggerFix.triggers[event] = {}
-		end
-		TriggerFix.RequestTrigger(event, nil, "TriggerFix_action", 1, nil, {event})
+		TriggerFix.TryEnableTrigger(event)
 	end
 	StartSimpleJob = function(f, ...)
 		return Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, nil, f, 1, nil, arg)

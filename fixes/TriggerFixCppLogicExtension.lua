@@ -194,10 +194,7 @@ function TriggerFixCppLogicExtension.StaticInit()
             , Events.CPPLOGIC_EVENT_ON_EFFECT_DESTROYED, Events.CPPLOGIC_EVENT_ON_RESOURCE_REFINED, Events.CPPLOGIC_EVENT_ON_REFINER_SUPPLY_TAKEN
             , Events.CPPLOGIC_EVENT_ON_RESOURCE_MINED, Events.CPPLOGIC_EVENT_CAN_BUY_SETTLER
 			, Events.CPPLOGIC_EVENT_ON_MAP_STARTED, Events.CPPLOGIC_EVENT_ON_SAVEGAME_LOADED} do
-        if not TriggerFix.triggers[event] then
-			TriggerFix.triggers[event] = {}
-		end
-		TriggerFix.RequestTrigger(event, nil, "TriggerFix_action", 1, nil, {event})
+        TriggerFix.TryEnableTrigger(event)
     end
     TriggerFix.HurtTriggers[Events.CPPLOGIC_EVENT_ON_ENTITY_KILLS_ENTITY]=true
 end
