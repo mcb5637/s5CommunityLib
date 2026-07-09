@@ -54,12 +54,36 @@ function SVLib.GetHightOfBuilding(_id)
 end
 
 --Gibt den Leader eines Soldiers im Trupp zurück
-function SVLib.GetLeaderOfSoldier(_SoldierID)
+function SVLib.GetLeaderOfSoldier(_SoldierId)
+	local leader, offset, targetMap, size
 	if SVLib.HistoryFlag == 1 then
-		return Logic.GetEntityScriptingValue(_SoldierID, 66)
-	elseif SVLib.HistoryFlag == 0 then
-		return Logic.GetEntityScriptingValue(_SoldierID, 69)
+		leader = 66
+		offset = -50
+		targetMap = 12
+		size = 1
+	else
+		leader = 69
+		offset = -58
+		targetMap = 14
+		size = 2
 	end
+
+	local result = Logic.GetEntityScriptingValue(_SoldierId, leader)
+	if result == 0 then
+		local sourceMap = 8
+		local backup = {}
+
+		for i = 0, size do
+			backup[i] = Logic.GetEntityScriptingValue(_SoldierId, offset + i + targetMap)
+			Logic.SetEntityScriptingValue(_SoldierId, offset + i + targetMap, Logic.GetEntityScriptingValue(_SoldierId, offset + i + sourceMap))
+		end
+		result = Logic.SoldierGetLeaderEntityID(_SoldierId)
+		for i = 0, size do
+			Logic.SetEntityScriptingValue(_SoldierId, offset + i + targetMap, backup[i])
+		end
+	end
+
+	return result
 end
 
 --Setzt die Leben einer Entity. Mehr als maximale HP möglich.
