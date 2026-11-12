@@ -142,7 +142,10 @@ function FrameworkWrapper.Savegame.IsSaveAllowed()
 	end
 	return true
 end
-FrameworkWrapper.Savegame.DoNotSaveGlobals = {"LuaDebugger", "CppLogic"}
+FrameworkWrapper.Savegame.DoNotSaveGlobals = {"LuaDebugger"}
+if CppLogic and CppLogic.Version < 2.04 then
+	table.insert(FrameworkWrapper.Savegame.DoNotSaveGlobals, "CppLogic")
+end
 function FrameworkWrapper.Savegame.DoPreSaveCallback(slot)
 	local ev = TriggerFix.CreateEmptyEvent()
     ev.Slot = slot

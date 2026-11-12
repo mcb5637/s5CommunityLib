@@ -1,1 +1,1 @@
-S5LibLastCommit = 20260709.195619
+S5LibLastCommit = 20261112.203528
